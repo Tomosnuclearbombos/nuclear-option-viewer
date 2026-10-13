@@ -13,8 +13,14 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
 - **Hosting:** a static site on GitHub Pages. No server and no replay hosting: people download the `.zip.acmi` from the
   GitHub release (repo `Tomosnuclearbombos/tomosnukes-replays`, one release per mission) and drag it into the viewer,
   or watch it in Tacview. "Let's not overcook it." No pack/convert step: the viewer reads the raw file.
-- **Models:** Tomo made his own 3D models from scratch, based on the game. They live on his gaming PC and are his to
-  publish.
+- **Models:** Tomo's model kit on the gaming PC, `~/.local/share/tacview-no-models` (built 10-04/05 for Tacview).
+  It holds 108 .obj meshes, heightmaps, map textures at 5 m/px, cities, the Ignus towns and the bridges. The `NOX_`
+  models and the map data were extracted from the game files. The other 54 entries came from the community NOBlackBox
+  Tacview pack: someone else's work, licence unknown. Prefer models rebuilt from the game files (the kit's
+  `scripts/no_tacview_mesh.py`) over that pack.
+- **Permission (2026-10-14):** the game's developers told Tomo on Discord that using the game's models and maps is
+  fine, as long as they aren't used for a similar purpose (in another game). They had recently given the same OK for
+  3D and art competitions. A replay viewer qualifies, so game-derived models and map data may ship with the viewer.
 - **Credit:** acmi-viewer.github.io (author Aleksi Lassila) for the inspiration and idea. Tomo will contact him. That
   repo has **no licence**, so learn from its design but never copy its code. three.js and fflate are MIT and fine to
   use.
