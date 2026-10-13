@@ -1,0 +1,10 @@
+# replays and local test data
+*.acmi
+*.zip.acmi
+data/
+
+# editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
