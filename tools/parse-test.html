@@ -1,0 +1,64 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Parse test</title>
+<pre id="out">running…</pre>
+<script type="module">
+// Reads ?file=<path> through the real worker and POSTs a summary to /__result (see tools/devserver.py).
+import { Replay } from "../src/replay.js";
+import { KIND_NAMES, CHANNELS } from "../src/parser/acmi.js";
+
+const out = document.getElementById("out");
+const report = async (obj) => {
+  out.textContent = JSON.stringify(obj, null, 2);
+  try { await fetch("/__result", { method: "POST", body: JSON.stringify(obj) }); } catch (e) {}
+};
+
+try {
+  const path = new URL(location.href).searchParams.get("file");
+  const t0 = performance.now();
+  const blob = await (await fetch("../" + path)).blob();
+  const file = new File([blob], path.split("/").pop());
+  const t1 = performance.now();
+  const worker = new Worker(new URL("../src/parser/worker.js", import.meta.url), { type: "module" });
+  const result = await new Promise((resolve, reject) => {
+    worker.onmessage = (m) => { if (m.data.type === "done") resolve(m.data.result); else if (m.data.type === "error") reject(new Error(m.data.message)); };
+    worker.onerror = (e) => reject(new Error(e.message || "worker error"));
+    worker.postMessage({ file });
+  });
+  const t2 = performance.now();
+  const rp = new Replay(result);
+  const t3 = performance.now();
+
+  const o = result.objects;
+  const kinds = {};
+  for (let i = 0; i < o.count; i++) { const k = KIND_NAMES[o.kind[i]]; kinds[k] = (kinds[k] || 0) + 1; }
+  const channels = {};
+  result.channels.forEach((c, i) => { channels[CHANNELS[i]] = c.t.length; });
+  let bytes = 0;
+  for (const a of [...Object.values(result.samples), ...Object.values(o)]) if (ArrayBuffer.isView(a)) bytes += a.byteLength;
+  for (const c of result.channels) for (const a of Object.values(c)) if (ArrayBuffer.isView(a)) bytes += a.byteLength;
+
+  // spot checks: some aircraft with names, an evaluated position mid-mission, the events
+  const air = [];
+  for (let i = 0; i < o.count && air.length < 8; i++) if (o.kind[i] === 1 || o.kind[i] === 2) air.push(`${o.name[i]} | ${o.callSign[i]} | pilot=${o.pilot[i]} | ${o.coalition[i]} | ${o.t0[i].toFixed(1)}-${o.t1[i].toFixed(1)} | ${o.sampleCount[i]} samples`);
+  const mid = (rp.tMin + rp.tMax) / 2;
+  let aliveMid = 0; const st = new Float64Array(6); let sample = null;
+  rp.forEachAlive(mid, (i) => { aliveMid++; if (!sample && (o.kind[i] === 1) && rp.stateAt(i, mid, st)) sample = { name: o.name[i], pos: Array.from(st).map((v) => +v.toFixed(2)) }; });
+  // timing of a random-seek loop
+  const tq0 = performance.now(); let n = 0;
+  for (let q = 0; q < 50; q++) { const t = rp.tMin + Math.random() * (rp.tMax - rp.tMin); rp.forEachAlive(t, (i) => { rp.stateAt(i, t, st); n++; }); }
+  const seekMs = (performance.now() - tq0) / 50;
+
+  await report({
+    ok: true, file: path, bytes: result.bytes, lines: result.lines, header: result.header,
+    tMin: result.tMin, tMax: result.tMax, objects: o.count, kinds, samples: result.samples.t.length,
+    channels, locks: result.locks.t.length, events: result.events.length,
+    firstEvents: result.events.slice(0, 3).map((e) => `${e.t.toFixed(1)} ${e.kind} ${e.ids.map((x) => x.toString(16)).join(",")} ${e.text}`),
+    arraysMB: +(bytes / 1048576).toFixed(1), maxAlive: Array.from(rp.maxAlive).map((v, k) => v ? `${KIND_NAMES[k]}:${v}` : "").filter(Boolean),
+    bounds: rp.bounds, air, aliveMid, sample, seekMsPerFrame: +seekMs.toFixed(2), evalsPerSeek: Math.round(n / 50),
+    ms: { fetch: Math.round(t1 - t0), parse: Math.round(t2 - t1), index: Math.round(t3 - t2) },
+  });
+} catch (e) {
+  await report({ ok: false, error: String(e && e.stack || e) });
+}
+</script>
