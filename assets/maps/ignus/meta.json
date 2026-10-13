@@ -1,0 +1,24 @@
+{
+  "key": "ignus",
+  "mapId": "NuclearOption.Terrain_naval",
+  "name": "Ignus Archipelago",
+  "x0": -81920,
+  "x1": 81920,
+  "z0": -40960,
+  "z1": 40960,
+  "height": {
+    "file": "height.i16.gz",
+    "cols": 8193,
+    "rows": 4097,
+    "step": 20,
+    "min": -156,
+    "max": 993,
+    "note": "int16 metres, row 0 = north (z1), col 0 = west (x0)"
+  },
+  "overview": {
+    "file": "overview.jpg",
+    "width": 8192,
+    "height": 4096
+  },
+  "source": "Nuclear Option game data via Tomo's Tacview kit; used with the developers' OK"
+}

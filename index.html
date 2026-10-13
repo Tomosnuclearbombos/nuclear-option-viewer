@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nuclear Option Viewer</title>
+  <link rel="stylesheet" href="src/style.css">
+  <script type="importmap">
+    { "imports": {
+        "three": "./vendor/three/build/three.module.js",
+        "three/addons/": "./vendor/three/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+  <canvas id="view"></canvas>
+
+  <header id="top">
+    <div class="brand">Nuclear Option Viewer</div>
+    <div id="mission" class="mission"></div>
+    <label class="open">Open replay<input id="file" type="file" accept=".acmi,.zip,.gz"></label>
+  </header>
+
+  <div id="start" class="start">
+    <div class="card">
+      <h1>Nuclear Option Viewer</h1>
+      <p>Drop a replay here to watch it on the real map.</p>
+      <p class="hint">Replays are the <code>.zip.acmi</code> files from the Discord #replays posts. They also open in Tacview.</p>
+      <label class="button">Choose a replay<input id="file2" type="file" accept=".acmi,.zip,.gz"></label>
+      <div id="progress" class="progress" hidden><div class="bar"></div><span class="label"></span></div>
+      <p id="error" class="error" hidden></p>
+    </div>
+  </div>
+
+  <footer id="transport" hidden>
+    <button id="play" class="icon" title="Play / pause (Space)">▶</button>
+    <button id="slower" class="icon" title="Slower (-)">−</button>
+    <span id="speed" class="speed">8×</span>
+    <button id="faster" class="icon" title="Faster (+)">+</button>
+    <span id="clock" class="clock"></span>
+    <canvas id="timeline" class="timeline"></canvas>
+    <span id="length" class="clock"></span>
+  </footer>
+
+  <div id="drop" class="drop" hidden><div>Drop the replay to open it</div></div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

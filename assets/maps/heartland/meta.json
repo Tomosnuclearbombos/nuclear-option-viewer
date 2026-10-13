@@ -1,0 +1,24 @@
+{
+  "key": "heartland",
+  "mapId": "NuclearOption.Terrain1",
+  "name": "Heartland",
+  "x0": -40960,
+  "x1": 40960,
+  "z0": -40960,
+  "z1": 40960,
+  "height": {
+    "file": "height.i16.gz",
+    "cols": 4097,
+    "rows": 4097,
+    "step": 20,
+    "min": -200,
+    "max": 1894,
+    "note": "int16 metres, row 0 = north (z1), col 0 = west (x0)"
+  },
+  "overview": {
+    "file": "overview.jpg",
+    "width": 4096,
+    "height": 4096
+  },
+  "source": "Nuclear Option game data via Tomo's Tacview kit; used with the developers' OK"
+}

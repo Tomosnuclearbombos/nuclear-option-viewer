@@ -1,0 +1,61 @@
+:root {
+  --bg: #0b1016;
+  --panel: rgba(12, 18, 26, 0.86);
+  --line: rgba(160, 190, 220, 0.16);
+  --text: #dfe7ef;
+  --dim: #8b9aab;
+  --accent: #6fc3ff;
+  --bdf: #a76bff;
+  --pala: #ffb800;
+  font-family: system-ui, "Segoe UI", Roboto, Ubuntu, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
+#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+header#top {
+  position: fixed; top: 0; left: 0; right: 0; height: 44px; display: flex; align-items: center; gap: 16px;
+  padding: 0 14px; background: linear-gradient(var(--panel), rgba(12, 18, 26, 0)); pointer-events: none;
+}
+header#top > * { pointer-events: auto; }
+.brand { font-weight: 650; letter-spacing: 0.02em; white-space: nowrap; }
+.mission { flex: 1; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mission b { color: var(--text); font-weight: 600; }
+.open, .button {
+  position: relative; display: inline-block; padding: 6px 12px; border-radius: 6px; cursor: pointer;
+  background: rgba(111, 195, 255, 0.14); border: 1px solid rgba(111, 195, 255, 0.4); color: var(--text); font-size: 14px;
+}
+.open:hover, .button:hover { background: rgba(111, 195, 255, 0.24); }
+.open input, .button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+
+.start { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(#142030, #070b10); }
+.start .card { max-width: 480px; padding: 32px; text-align: center; }
+.start h1 { margin: 0 0 12px; font-size: 28px; letter-spacing: 0.01em; }
+.start p { margin: 8px 0; line-height: 1.5; }
+.start .hint { color: var(--dim); font-size: 14px; }
+.start .button { margin-top: 18px; font-size: 16px; padding: 10px 20px; }
+.progress { position: relative; margin: 22px auto 0; height: 8px; width: 320px; background: rgba(255, 255, 255, 0.08); border-radius: 4px; }
+.progress .bar { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); border-radius: 4px; transition: width 0.1s; }
+.progress .label { position: absolute; top: 14px; left: 0; right: 0; font-size: 13px; color: var(--dim); }
+.error { color: #ff8a80; }
+code { background: rgba(255, 255, 255, 0.08); padding: 1px 5px; border-radius: 4px; }
+
+footer#transport {
+  position: fixed; left: 0; right: 0; bottom: 0; height: 54px; display: flex; align-items: center; gap: 10px;
+  padding: 0 14px; background: linear-gradient(rgba(12, 18, 26, 0), var(--panel) 40%);
+}
+footer#transport[hidden] { display: none; }
+.icon {
+  width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.05);
+  color: var(--text); font-size: 16px; cursor: pointer;
+}
+.icon:hover { background: rgba(255, 255, 255, 0.12); }
+.speed { min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; color: var(--dim); }
+.clock { min-width: 72px; font-variant-numeric: tabular-nums; font-size: 14px; }
+.timeline { flex: 1; height: 34px; cursor: pointer; border-radius: 4px; }
+
+.drop { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(8, 14, 22, 0.72);
+  border: 3px dashed var(--accent); font-size: 22px; z-index: 10; }
+.drop[hidden] { display: none; }
