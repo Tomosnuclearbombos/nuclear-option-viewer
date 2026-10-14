@@ -9,7 +9,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
-const SOURCES = ["assets/models-tacview/", "assets/models/"];   // first match wins
+// first match wins; add "assets/models/" (built from the game files, tools/build_models.py) once that set is finished
+const SOURCES = ["assets/models-tacview/"];
 
 export class ModelLibrary {
   constructor() {
