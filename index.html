@@ -41,11 +41,13 @@
         <div class="dim">.ZIP.ACMI OR .ACMI</div>
       </div>
       <label class="key big">CHOOSE REPLAY<input id="file2" type="file" accept=".acmi,.zip,.gz,application/zip"></label>
-      <div class="progress" id="progress" hidden>
-        <div class="progress-label"><span id="progress-label">READING REPLAY</span><span id="progress-pct"></span></div>
-        <div class="bar"><div class="fill" id="progress-fill"></div></div>
+      <div class="status">
+        <div class="progress" id="progress" hidden>
+          <div class="progress-label"><span id="progress-label">READING REPLAY</span><span id="progress-pct"></span></div>
+          <div class="bar"><div class="fill" id="progress-fill"></div></div>
+        </div>
+        <p class="error prose" id="error" role="alert" hidden></p>
       </div>
-      <p class="error" id="error" role="alert" hidden></p>
       <p class="prose hint">Replays are the .zip.acmi files in the Discord #replays posts. They open in Tacview too.</p>
       <p class="prose credit">Inspired by <a href="https://acmi-viewer.github.io" target="_blank" rel="noopener">ACMI Viewer</a> by Aleksi Lassila.</p>
     </section>
@@ -59,7 +61,7 @@
   <footer id="transport" class="plate transport" hidden>
     <button id="play" class="key wide" type="button" title="Play or pause (Space)">PLAY</button>
     <div class="speed">
-      <button id="slower" class="key square" type="button" title="Slower (-)" aria-label="Slower">−</button>
+      <button id="slower" class="key square" type="button" title="Slower (-)" aria-label="Slower">-</button>
       <span class="readout"><span class="lbl">SPEED :</span> <span id="speed">8X</span></span>
       <button id="faster" class="key square" type="button" title="Faster (+)" aria-label="Faster">+</button>
     </div>
@@ -72,9 +74,9 @@
     <h2 class="panel-title">CONTROLS</h2>
     <dl>
       <dt>SPACE</dt><dd>PLAY OR PAUSE</dd>
-      <dt>+ &nbsp;−</dt><dd>FASTER OR SLOWER</dd>
-      <dt>→ &nbsp;←</dt><dd>SKIP 5 S OF PLAYBACK</dd>
-      <dt>SHIFT →</dt><dd>SKIP 60 S OF PLAYBACK</dd>
+      <dt>+ &nbsp;-</dt><dd>FASTER OR SLOWER</dd>
+      <dt>RIGHT &nbsp;LEFT</dt><dd>SKIP 5 S OF PLAYBACK</dd>
+      <dt>SHIFT RIGHT</dt><dd>SKIP 60 S OF PLAYBACK</dd>
       <dt>HOME &nbsp;END</dt><dd>START OR END</dd>
       <dt>LEFT DRAG</dt><dd>MOVE OVER THE MAP</dd>
       <dt>RIGHT DRAG</dt><dd>TURN THE VIEW</dd>
@@ -84,7 +86,7 @@
   </section>
 
   <div id="toast" class="plate toast" role="alert" hidden>
-    <span id="toast-msg"></span>
+    <span id="toast-msg" class="prose"></span>
     <button id="toast-close" class="key" type="button">CLOSE</button>
   </div>
 

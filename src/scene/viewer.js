@@ -30,7 +30,7 @@ export class Viewer {
     this.controls.screenSpacePanning = false;   // pan along the ground
     this.controls.maxPolarAngle = Math.PI * 0.495;
     this.controls.minDistance = 10;
-    this.controls.maxDistance = 400000;
+    this.controls.maxDistance = 300000;   // still frames all of Ignus (164 km across)
     this.controls.zoomSpeed = 1.4;
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.12;
@@ -66,8 +66,16 @@ export class Viewer {
   frame(now) {
     this.controls.update();
     this.keepAboveGround();
+    this.fitFog();
     if (this.onFrame) this.onFrame(now);
     this.renderer.render(this.scene, this.camera);
+  }
+
+  // Haze starts beyond the point you are looking at, so the map never fades out when you zoom right out to see it all.
+  fitFog() {
+    const d = this.camera.position.distanceTo(this.controls.target);
+    this.scene.fog.near = Math.max(120000, d * 1.1);
+    this.scene.fog.far = this.scene.fog.near + 300000;
   }
 
   // The orbit pivot follows the ground under it, so zooming in on a mountain lands on the mountain rather than
@@ -79,7 +87,7 @@ export class Viewer {
     const dy = (gt - tg.y) * 0.25;   // ease, so panning over ridges doesn't jolt
     if (Math.abs(dy) > 0.01) { tg.y += dy; cam.y += dy; }
     const floor = Math.max(0, this.groundAt(cam.x, cam.z)) + CLEARANCE;
-    if (cam.y < floor) cam.y = floor;
+    if (cam.y < floor) { cam.y = floor; this.camera.lookAt(tg); }   // re-aim, or the view drifts off the pivot
   }
 
   // look at a box of the world from a readable angle

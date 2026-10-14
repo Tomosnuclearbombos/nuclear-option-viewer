@@ -9,6 +9,7 @@ export function mapName(mapId) { return MAP_NAMES[mapId] || (mapId ? String(mapI
 
 // 75 -> "1:15", 3725 -> "1:02:05"
 export function duration(seconds) {
+  if (!Number.isFinite(seconds)) return "0:00";
   const s = Math.max(0, Math.floor(seconds));
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
   return (h ? h + ":" + String(m).padStart(2, "0") : String(m)) + ":" + String(x).padStart(2, "0");
@@ -19,7 +20,8 @@ export function duration(seconds) {
 export function missionClock(referenceTime, t) {
   const ref = Date.parse(referenceTime);
   if (!Number.isFinite(ref)) return duration(t);
-  return new Date(ref + t * 1000).toISOString().slice(11, 19);
+  const d = new Date(ref + t * 1000);
+  return isNaN(d) ? "00:00:00" : d.toISOString().slice(11, 19);
 }
 
 // RecordingTime is the real moment the recording started (UTC). Shown in the viewer's own time zone.

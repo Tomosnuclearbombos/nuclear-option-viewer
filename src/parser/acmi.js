@@ -103,6 +103,7 @@ function decode(b, s, e) {
 function unescape(str) { return str.indexOf("\\") < 0 ? str : str.replace(/\\(.)/g, "$1"); }
 
 const DEG = 100; // angles stored as int16 hundredths of a degree
+const MAX_FRAME_JUMP = 6 * 3600; // seconds; a bigger jump between frame times is damage, not a real gap
 function angle16(deg) {
   let a = deg % 360;
   if (a >= 180) a -= 360; else if (a < -180) a += 360;
@@ -197,7 +198,9 @@ export class AcmiParser {
     const c0 = b[s];
     if (c0 === 35) { // '#' frame time
       const t = readNumber(b, s + 1, e);
-      if (t === t) {
+      // A damaged line can read as a huge or endless time; one of those would stretch the replay to years. Real
+      // recordings move a fraction of a second per frame, so a jump of more than 6 hours is treated as damage.
+      if (Number.isFinite(t) && (this.frames === 0 || Math.abs(t - this.time) <= MAX_FRAME_JUMP)) {
         if (t !== this.time) this.justRemoved.clear();
         this.time = t; this.frames++;
         if (t < this.tMin) this.tMin = t; if (t > this.tMax) this.tMax = t;
@@ -312,6 +315,7 @@ export class AcmiParser {
   // An empty field means "same as last time".
   transform(r, b, s, e) {
     const f = this.fieldBuf || (this.fieldBuf = new Float64Array(9));
+    f.fill(NaN);   // the buffer is shared: a field this line leaves out must read as "unchanged", not the last object's
     let n = 0, i = s;
     while (n < 9) {
       let j = i;

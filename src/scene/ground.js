@@ -26,22 +26,36 @@ export class Ground {
     this.loading = 0;
   }
 
-  // Loads the map for a replay. Returns true when it is (or already was) loaded. A newer call cancels an older one,
-  // so two replays opened quickly can never leave the wrong map, or two maps, on screen.
+  // Loads the map for a replay. Returns true when it is (or already was) loaded, false when the map is unknown, the
+  // download failed (the units then play over plain sea), or a newer load or cancel() took over. A superseded load
+  // never touches the screen, so a replay can't end up on the wrong map, or on two maps at once.
   async load(mapId, base = "assets/maps/") {
     const token = ++this.loading;
     const key = mapKeyFor(mapId);
-    if (!key) { this.clear(); return false; }
+    if (!key) { this.reset(); this.drawSea(); return false; }
     if (key === this.key) return true;
     const dir = base + key + "/";
-    const meta = await (await fetch(dir + "meta.json")).json();
-    const [buf, tex] = await Promise.all([
-      fetch(dir + meta.height.file).then((r) => { if (!r.ok) throw new Error("map heights missing"); return r.arrayBuffer(); }),
-      new THREE.TextureLoader().loadAsync(dir + meta.overview.file),
-    ]);
-    if (token !== this.loading) { tex.dispose(); return false; }   // a newer load started meanwhile
-    const raw = gunzipSync(new Uint8Array(buf));
-    this.clear();
+    let meta, raw, tex = null;
+    try {
+      const mr = await fetch(dir + "meta.json");
+      if (!mr.ok) throw new Error("map description missing (HTTP " + mr.status + ")");
+      meta = await mr.json();
+      const [hs, ts] = await Promise.allSettled([
+        fetch(dir + meta.height.file).then((r) => { if (!r.ok) throw new Error("map heights missing (HTTP " + r.status + ")"); return r.arrayBuffer(); }),
+        new THREE.TextureLoader().loadAsync(dir + meta.overview.file),
+      ]);
+      if (ts.status === "fulfilled") tex = ts.value;
+      if (hs.status === "rejected") throw hs.reason;
+      if (ts.status === "rejected") throw new Error("map picture missing");
+      if (token !== this.loading) { tex.dispose(); return false; }   // a newer load or a cancel took over
+      raw = gunzipSync(new Uint8Array(hs.value));
+    } catch (err) {
+      console.warn("map load failed:", err);
+      tex?.dispose();
+      if (token === this.loading) { this.reset(); this.drawSea(); }   // no stale terrain under the new replay
+      return false;
+    }
+    this.reset();
     this.heights = new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength / 2);
     this.meta = meta;
     this.key = key;
@@ -51,8 +65,25 @@ export class Ground {
     return true;
   }
 
+  // Abandons any map load still in flight, without changing what is on screen.
+  cancel() { this.loading++; }
+
+  // Removes the current map, and abandons any load in flight.
+  clear() { this.cancel(); this.reset(); }
+
+  // Plain sea at 0 m, for replays whose map isn't known or didn't load.
+  drawSea() {
+    const sea = new THREE.Mesh(
+      new THREE.PlaneGeometry(1_000_000, 1_000_000).rotateX(-Math.PI / 2),
+      new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(0.16, 0.31, 0.4, THREE.SRGBColorSpace) }),
+    );
+    sea.position.y = -2;
+    sea.name = "sea";
+    this.group.add(sea);
+  }
+
   // removes and frees everything drawn for the current map
-  clear() {
+  reset() {
     for (const child of [...this.group.children]) {
       this.group.remove(child);
       child.geometry?.dispose();

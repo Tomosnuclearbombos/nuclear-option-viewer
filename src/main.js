@@ -34,10 +34,11 @@ const timeline = new Timeline($("timeline"), {
 // that fails to open leaves the replay you were watching exactly as it was.
 let loadId = 0, job = null;
 
-async function open(file) {
+async function open(file, note = "") {
   if (!viewer) { showStartError("This browser can't show 3D graphics. Turn on hardware acceleration in its settings, or try another browser."); return; }
   const id = ++loadId;
   if (job) { job.cancel(); job = null; }
+  ground.cancel();                    // a map still downloading for an earlier open must not land on screen
   hideToast();
   showProgress(0, "READING REPLAY");
   try {
@@ -46,12 +47,13 @@ async function open(file) {
     showProgress(1, "BUILDING SCENE");
     const replay = new Replay(result);
     const known = mapKeyFor(replay.header.mapId) !== null;
-    const loaded = known ? await ground.load(replay.header.mapId) : (ground.clear(), false);
+    const loaded = await ground.load(replay.header.mapId);
     if (id !== loadId) return;
     hideProgress();
     start(replay, file.name);
     if (!known) showToast("This replay's map isn't in the viewer yet, so it plays over open sea.");
     else if (!loaded) showToast("The map didn't load. Units still play, but without terrain.");
+    else if (note) showToast(note);
   } catch (err) {
     if (id !== loadId || err === CANCELLED) return;
     console.error(err);
@@ -139,10 +141,10 @@ window.addEventListener("keydown", (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;              // leave browser shortcuts (zoom etc.) alone
   const tg = e.target;
   if (tg && (tg.tagName === "TEXTAREA" || tg.isContentEditable || (tg.tagName === "INPUT" && tg.type !== "file"))) return;
-  if (e.key === "?") { toggleKeys(); return; }
   if (e.key === "Escape") { toggleKeys(false); hideToast(); return; }
   const rp = state.replay;
-  if (!rp) return;
+  if (!rp) return;                                            // the start screen has no shortcuts
+  if (e.key === "?") { toggleKeys(); return; }
   const skip = 5 * SPEEDS[state.speed] * (e.shiftKey ? 12 : 1);   // 5 s (or 60 s) of watching at any speed
   switch (e.code) {
     case "Space": if (!e.repeat) togglePlay(); break;
@@ -214,8 +216,11 @@ window.addEventListener("drop", (e) => {
   e.preventDefault();
   dragDepth = 0;
   $("drop").hidden = true;
-  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-  if (f) open(f);
+  const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+  if (!files.length) return;
+  // several files dropped at once: open the first one that looks like a replay
+  const replays = files.filter((f) => /\.(acmi|zip|gz)$/i.test(f.name));
+  open(replays[0] || files[0], replays.length > 1 ? "Only the first replay was opened. Drop one at a time to switch." : "");
 });
 
 // for testing: ?replay=<url> opens a file from the site itself

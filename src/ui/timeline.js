@@ -2,7 +2,8 @@
 //
 // Drawn on a canvas that fills its wrapper (the wrapper is sized by the layout, never by the canvas, so the
 // canvas can shrink as well as grow). Aircraft in the air show as a green trace and weapons in flight as amber
-// bars, each on its own scale so neither hides the other.
+// bars, each on its own scale so neither hides the other. The track is inset a few pixels so the playhead marker
+// is whole at the very start and end.
 
 import { KIND } from "../parser/acmi.js";
 import { duration } from "./format.js";
@@ -11,6 +12,8 @@ const GREEN = "#00ff00", DIM = "#00b400", FAINT = "rgba(0, 255, 0, 0.22)", AMBER
 const FONT = '10px "Brass Mono", ui-monospace, monospace';
 const BUCKETS = 800;
 const STEPS = [30, 60, 120, 300, 600, 900, 1800, 3600, 7200];
+const PAD = 6;           // track inset in CSS pixels, room for half the playhead marker
+const LABEL_H = 12;      // height of the tick label row
 
 export class Timeline {
   constructor(canvas, { onSeek, label }) {
@@ -56,10 +59,15 @@ export class Timeline {
     this.activity = { air, wpn, maxA, maxW };
   }
 
-  seekTo(e) {
+  // the track runs from PAD to width - PAD; positions outside it clamp to the ends
+  fracAt(clientX) {
     const r = this.canvas.getBoundingClientRect();
-    const f = clamp((e.clientX - r.left) / r.width, 0, 1);
-    this.onSeek(this.rp.tMin + f * (this.rp.tMax - this.rp.tMin));
+    const w = r.width - 2 * PAD;
+    return w > 0 ? clamp((clientX - r.left - PAD) / w, 0, 1) : 0;
+  }
+
+  seekTo(e) {
+    this.onSeek(this.rp.tMin + this.fracAt(e.clientX) * (this.rp.tMax - this.rp.tMin));
   }
 
   draw(t) {
@@ -72,61 +80,68 @@ export class Timeline {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const W = w / dpr, H = h / dpr;
     g.clearRect(0, 0, W, H);
-    const span = rp.tMax - rp.tMin || 1;
-    const top = 13, base = H - 1, gh = base - top;
+    const span = rp.tMax - rp.tMin;
+    if (!(span > 0) || !Number.isFinite(span)) return;
+    const x0 = PAD, tw = Math.max(1, W - 2 * PAD);             // the track
+    const xAt = (s) => x0 + (s / span) * tw;                    // s = seconds from the start
+    const top = LABEL_H + 1, base = H - 1, gh = base - top;
 
     // frame
     g.strokeStyle = FAINT; g.lineWidth = 1;
-    g.strokeRect(0.5, top - 0.5, W - 1, gh + 1);
+    g.strokeRect(x0 + 0.5, top - 0.5, tw - 1, gh + 1);
 
-    // time ticks every 30 s .. 2 h, whichever leaves room for the labels
-    const step = STEPS.find((s) => (s / span) * W >= 70) || STEPS[STEPS.length - 1];
-    g.font = FONT; g.textBaseline = "top"; g.fillStyle = DIM;
+    // time ticks every 30 s .. 2 h, whichever leaves room for the labels (never more than one per 70 px)
+    let step = STEPS.find((s) => (s / span) * tw >= 70) || STEPS[STEPS.length - 1];
+    const maxTicks = Math.max(1, Math.floor(tw / 70));
+    if (span / step > maxTicks) step = Math.ceil(span / maxTicks);
+    g.font = FONT; g.textBaseline = "top";
     for (let s = 0; s <= span; s += step) {
-      const x = Math.round((s / span) * W) + 0.5;
+      const x = Math.round(xAt(s)) + 0.5;
       g.strokeStyle = s ? "rgba(0, 255, 0, 0.18)" : FAINT;
       g.beginPath(); g.moveTo(x, top); g.lineTo(x, base); g.stroke();
-      if (x < W - 30) g.fillText(duration(s), x + 3, 1);
+      const txt = duration(s);
+      if (x + 3 + g.measureText(txt).width <= W) { g.fillStyle = DIM; g.fillText(txt, x + 3, 1); }
     }
 
     // activity: weapons as amber bars along the bottom, aircraft as a green trace over them
-    const A = this.activity, B = BUCKETS, bw = W / B;
+    const A = this.activity, B = BUCKETS, bw = tw / B;
     if (A) {
       g.fillStyle = AMBER;
       for (let b = 0; b < B; b++) {
         const v = A.wpn[b] / A.maxW;
-        if (v > 0) { const bh = Math.max(1, v * gh * 0.5); g.fillRect(b * bw, base - bh, Math.max(1, bw), bh); }
+        if (v > 0) { const bh = Math.max(1, v * gh * 0.5); g.fillRect(x0 + b * bw, base - bh, Math.max(1, bw), bh); }
       }
       g.beginPath();
-      g.moveTo(0, base);
-      for (let b = 0; b < B; b++) g.lineTo((b + 0.5) * bw, base - (A.air[b] / A.maxA) * gh * 0.92);
-      g.lineTo(W, base);
+      g.moveTo(x0, base);
+      for (let b = 0; b < B; b++) g.lineTo(x0 + (b + 0.5) * bw, base - (A.air[b] / A.maxA) * gh * 0.92);
+      g.lineTo(x0 + tw, base);
       g.closePath();
       g.fillStyle = "rgba(0, 255, 0, 0.14)";
       g.fill();
       g.beginPath();
       for (let b = 0; b < B; b++) {
-        const x = (b + 0.5) * bw, y = base - (A.air[b] / A.maxA) * gh * 0.92;
+        const x = x0 + (b + 0.5) * bw, y = base - (A.air[b] / A.maxA) * gh * 0.92;
         if (b) g.lineTo(x, y); else g.moveTo(x, y);
       }
       g.strokeStyle = "rgba(0, 255, 0, 0.85)"; g.lineWidth = 1.2;
       g.stroke();
     }
 
-    // hover: where a click would land
+    // hover: where a click would land, with its time over a cleared label row
     if (this.hoverX >= 0 && !this.dragging) {
-      const x = Math.round(this.hoverX) + 0.5;
+      const f = clamp((this.hoverX - x0) / tw, 0, 1);
+      const x = Math.round(x0 + f * tw) + 0.5;
       g.strokeStyle = "rgba(255, 255, 255, 0.45)"; g.lineWidth = 1;
       g.beginPath(); g.moveTo(x, top); g.lineTo(x, base); g.stroke();
-      const txt = this.label(rp.tMin + (this.hoverX / W) * span);
-      const tw = g.measureText(txt).width + 8;
-      const tx = clamp(x - tw / 2, 0, W - tw);
-      g.fillStyle = "#000"; g.fillRect(tx, 0, tw, 12);
-      g.fillStyle = "#ffffff"; g.fillText(txt, tx + 4, 1);
+      const txt = this.label(rp.tMin + f * span);
+      const bw2 = g.measureText(txt).width + 8;
+      const bx = clamp(x - bw2 / 2, 0, W - bw2);
+      g.fillStyle = "#000"; g.fillRect(0, 0, W, LABEL_H);
+      g.fillStyle = "#ffffff"; g.fillText(txt, bx + 4, 1);
     }
 
     // playhead
-    const x = Math.round(((t - rp.tMin) / span) * W);
+    const x = Math.round(xAt(clamp(t - rp.tMin, 0, span)));
     g.fillStyle = GREEN;
     g.shadowColor = "rgba(0, 200, 0, 0.9)"; g.shadowBlur = 6;
     g.fillRect(x - 1, top, 2, gh + 1);

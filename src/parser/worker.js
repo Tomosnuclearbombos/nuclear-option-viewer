@@ -3,9 +3,16 @@
 //
 // in:  { file: File }
 // out: { type: "progress", done, total }  then  { type: "done", result }  or  { type: "error", message }
+// Error messages are shown to people as they are, so they are plain sentences that say what to do.
 
 import { Unzip, UnzipInflate, Gunzip } from "../../vendor/fflate/fflate.js";
 import { AcmiParser, transferables } from "./acmi.js";
+
+// a message meant for the person, passed through unchanged
+class ReplayError extends Error {}
+
+const DAMAGED = "That replay file is damaged or only partly downloaded. Download it again.";
+const MAX_SPAN = 48 * 3600;   // seconds; no real recording is longer than this
 
 self.onmessage = async (msg) => {
   const { file } = msg.data;
@@ -13,9 +20,26 @@ self.onmessage = async (msg) => {
     const result = await read(file);
     self.postMessage({ type: "done", result }, transferables(result));
   } catch (err) {
-    self.postMessage({ type: "error", message: String((err && err.message) || err) });
+    self.postMessage({ type: "error", message: plain(err) });
   }
 };
+
+function plain(err) {
+  if (err instanceof ReplayError) return err.message;
+  console.error("replay reader:", err);
+  const name = err && err.name;
+  // the browser couldn't read the file itself (moved, still downloading, permission)
+  if (name === "NotReadableError" || name === "NotFoundError" || name === "AbortError" || name === "SecurityError") {
+    return "That file couldn't be read. If it's still downloading, wait for it to finish and try again.";
+  }
+  // decompression errors (fflate tags them with a number 0..14; browser DOMExceptions also carry numbers, but they
+  // are handled above by name)
+  if (err instanceof Error && !(typeof DOMException !== "undefined" && err instanceof DOMException) && typeof err.code === "number") {
+    if (err.code === 14) return "That zip is packed in a way the viewer can't read. Use the original .zip.acmi file.";
+    return DAMAGED;
+  }
+  return "Something went wrong reading that replay.";
+}
 
 async function read(file) {
   const parser = new AcmiParser();
@@ -59,10 +83,13 @@ async function read(file) {
   }
   close();
   self.postMessage({ type: "progress", done: total, total });
-  if (isZip && !picked) throw new Error("There's no replay inside that zip file.");
+  if (isZip && !picked) throw new ReplayError("There's no replay inside that zip file.");
   const result = parser.finish();
   // Anything that isn't a Tacview recording (a picture, a mission file, random bytes) reads as zero objects.
-  if (!String(result.header.fileType).startsWith("text/acmi")) throw new Error("That file isn't a Tacview replay.");
-  if (result.objects.count === 0 || result.frames === 0) throw new Error("That replay is empty.");
+  if (!String(result.header.fileType).startsWith("text/acmi")) throw new ReplayError("That file isn't a Tacview replay.");
+  if (result.objects.count === 0 || result.frames === 0) throw new ReplayError("That replay is empty.");
+  // corruption that still decompresses cleanly shows up as impossible times
+  const span = result.tMax - result.tMin;
+  if (!Number.isFinite(result.tMin) || !Number.isFinite(result.tMax) || span < 0 || span > MAX_SPAN) throw new ReplayError(DAMAGED);
   return result;
 }

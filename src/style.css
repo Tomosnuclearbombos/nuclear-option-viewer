@@ -86,6 +86,7 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
 .start-plate {
   position: relative; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto;
   padding: 28px 32px 22px; text-align: center; border: 2px solid var(--green);
+  scrollbar-color: var(--green-faint) transparent; scrollbar-width: thin;
 }
 .title { margin: 0; font: 700 26px/1.2 var(--mono); letter-spacing: 0.06em; color: var(--green); text-shadow: var(--glow); }
 .lead { margin: 10px 0 20px; padding-bottom: 14px; border-bottom: 1px solid var(--green); font-size: 13px; color: var(--green-dim); }
@@ -93,10 +94,17 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
   margin: 0 0 18px; padding: 22px 12px; border: 2px dashed var(--green-line); color: var(--green); text-shadow: var(--glow);
 }
 .dropzone .dim { margin-top: 6px; font-size: 12px; text-shadow: none; }
-.start .progress { margin: 20px 0 4px; text-align: left; }
-.error { margin: 16px 0 0; color: var(--alert); font-size: 14px; }
-.hint { margin: 20px 0 0; font-size: 14px; color: var(--green-dim); }
-.credit { margin: 8px 0 0; font-size: 13px; color: var(--green-faint); }
+/* progress and errors share one slot of fixed height, so the card doesn't jump when either appears */
+.status { min-height: 54px; margin-top: 14px; display: grid; align-content: center; }
+.start .progress { margin: 0; text-align: left; }
+.error { margin: 0; color: var(--alert); font-size: 15px; }
+.hint { margin: 10px 0 0; font-size: 14px; color: var(--green-dim); }
+.credit { margin: 8px 0 0; font-size: 13px; color: var(--green-dim); }
+@media (max-height: 520px) {
+  .start-plate { padding: 16px 20px 14px; }
+  .lead { margin: 6px 0 12px; padding-bottom: 8px; }
+  .dropzone { padding: 12px; margin-bottom: 12px; }
+}
 .credit a { color: var(--green-dim); }
 
 /* ---- top: mission info + keys ----------------------------------------------------------------------------- */
@@ -105,10 +113,10 @@ header#top {
   pointer-events: none; z-index: 5;
 }
 header#top > * { pointer-events: auto; }
-.mission { padding: 8px 12px; max-width: min(720px, 60vw); }
+.mission { flex: 0 1 auto; min-width: 0; padding: 8px 12px; max-width: min(720px, 60vw); }
 .mission-name { font: 600 16px/1.25 var(--prose); color: var(--green); text-shadow: var(--glow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mission-facts { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 3px; font-size: 13px; }
-.top-keys { margin-left: auto; display: flex; gap: 8px; }
+.top-keys { flex: none; margin-left: auto; display: flex; gap: 8px; }
 
 /* ---- bottom: transport ------------------------------------------------------------------------------------ */
 .transport {
@@ -118,7 +126,7 @@ header#top > * { pointer-events: auto; }
 .speed { display: flex; align-items: center; gap: 8px; }
 .readout { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--green); text-shadow: var(--glow); }
 .readout .lbl { text-shadow: none; }
-#speed { display: inline-block; min-width: 4ch; }
+#speed { display: inline-block; min-width: 5ch; }
 .clock #clock { display: inline-block; min-width: 8ch; }
 .timeline-wrap { position: relative; flex: 1 1 auto; min-width: 0; height: 40px; }
 #timeline { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; touch-action: none; }
@@ -129,15 +137,19 @@ header#top > * { pointer-events: auto; }
   .clock { display: none; }
   .transport { gap: 8px; }
 }
+/* phones: the controls on one row, the timeline full width under them */
 @media (max-width: 620px) {
-  .speed .readout, .elapsed .lbl, #length { display: none; }
-  .elapsed { min-width: 0; }
-  .mission { max-width: calc(100vw - 200px); }
+  .transport { height: auto; flex-wrap: wrap; row-gap: 8px; padding: 8px 10px; }
+  .timeline-wrap { order: 9; flex: 1 0 100%; }
+  .speed .lbl { display: none; }
+  .elapsed { min-width: 0; margin-left: auto; }
+  .key.wide { min-width: 0; }
   .mission-facts { display: none; }
+  .toast { bottom: 132px; }
 }
 
 /* ---- panels over the view -------------------------------------------------------------------------------- */
-.loader { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); width: min(420px, calc(100vw - 32px)); padding: 12px 14px 14px; z-index: 15; }
+.loader { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); width: min(420px, calc(100vw - 32px)); padding: 12px 14px 14px; z-index: 17; }
 .keys-panel { position: fixed; top: 84px; right: 12px; width: min(380px, calc(100vw - 24px)); padding: 12px 16px 14px; z-index: 15; }
 .panel-title { margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--green); text-align: center; font: 700 15px/1 var(--mono); letter-spacing: 0.06em; color: var(--green); text-shadow: var(--glow); }
 .keys-panel dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: 13px; }
@@ -145,8 +157,8 @@ header#top > * { pointer-events: auto; }
 .keys-panel dd { margin: 0; color: var(--green-dim); }
 .toast {
   position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 16;
-  display: flex; align-items: center; gap: 14px; max-width: calc(100vw - 32px); padding: 10px 12px 10px 16px;
-  border-color: var(--alert); color: var(--alert); font-size: 14px;
+  display: flex; align-items: center; gap: 14px; width: max-content; max-width: calc(100vw - 32px); padding: 10px 12px 10px 16px;
+  border-color: var(--alert); color: var(--alert); font-size: 15px;
 }
 .toast .key { border-color: var(--alert); color: var(--alert); text-shadow: none; }
 
