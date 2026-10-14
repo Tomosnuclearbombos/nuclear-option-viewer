@@ -2,7 +2,8 @@
 //
 // One instanced mesh per model (or per stand-in shape for units without a model), sized once for the busiest moment
 // of the replay and refilled each frame from the replay's evaluated state, so the picture is always a pure function
-// of the playhead. Gun rounds, flares and explosions are point sprites. Every unit keeps a minimum size on screen,
+// of the playhead. Gun rounds are tracer streaks (a bright head and a fading tail along their path); flares and
+// explosions are point sprites. Every unit keeps a minimum size on screen,
 // so a jet 50 km away is still a readable shape rather than a lost pixel.
 //
 // Each frame also leaves a list of what was drawn (this.live) for picking, labels and trails to reuse.
@@ -99,6 +100,7 @@ export class Units {
     this.shapes = [];        // { geometry, len (metres, models only), model: bool, kind, mesh }
     this.points = null;
     this.state = new Float64Array(7);
+    this.tail = new Float64Array(7);
     this.surfaceAt = null;   // (x, sceneZ) -> drawn ground height; ground units are lifted onto it
     this.selected = -1;      // record index drawn in the selected colour
     this.live = null;        // what the last frame drew: { n, idx, x, y, z, size, kind }
@@ -114,6 +116,7 @@ export class Units {
     this.selected = -1;
     this.clearMeshes();
     if (this.points) { this.group.remove(this.points); this.points.geometry.dispose(); this.points.material.dispose(); }
+    if (this.tracers) { this.group.remove(this.tracers); this.tracers.geometry.dispose(); this.tracers.material.dispose(); }
     const o = replay.o, N = replay.count;
     // one stand-in shape per kind
     this.shapes = [];
@@ -133,6 +136,19 @@ export class Units {
     this.points = new THREE.Points(g, new THREE.PointsMaterial({ size: 3, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false }));
     this.points.frustumCulled = false;
     this.group.add(this.points);
+    // gun rounds: one line segment each, from where the round was TRACER_S ago to where it is
+    const tcap = replay.maxAlive[KIND.ROUND] + 8;
+    this.tracerCap = tcap;
+    const tg = new THREE.BufferGeometry();
+    tg.setAttribute("position", new THREE.BufferAttribute(new Float32Array(tcap * 6), 3).setUsage(THREE.DynamicDrawUsage));
+    const tc = new Float32Array(tcap * 8);
+    for (let k = 0; k < tcap; k++) tc.set([TRACER.r, TRACER.g, TRACER.b, 0, TRACER.r, TRACER.g, TRACER.b, 1], k * 8);   // tail clear, head solid
+    tg.setAttribute("color", new THREE.BufferAttribute(tc, 4));
+    tg.setDrawRange(0, 0);
+    this.tracers = new THREE.LineSegments(tg, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false }));
+    this.tracers.frustumCulled = false;
+    this.tracers.renderOrder = 3;
+    this.group.add(this.tracers);
     this.colorOf = new Array(N);
     this.selColorOf = new Array(N);
     for (let i = 0; i < N; i++) {
@@ -209,12 +225,21 @@ export class Units {
     let np = 0;
     const m = this._m, q = this._q, p = this._p, s = this._s;
     const surface = this.surfaceAt, cap = this.pointCap, live = this.live, sel = this.selected;
+    const tr = this.tracers.geometry, tp = tr.attributes.position.array, tcap = this.tracerCap, tail = this.tail;
+    let nt = 0;
     live.n = 0;
 
     rp.forEachAlive(t, (i) => {
       const k = o.kind[i];
       if (!rp.poseAt(i, t, st)) return;
       if ((k === KIND.GROUND || k === KIND.BUILDING || k === KIND.SHIP) && !rp.visibleAt(i, t)) return; // destroyed
+      if (k === KIND.ROUND) {
+        if (nt < tcap && rp.poseAt(i, Math.max(o.t0[i], t - TRACER_S), tail)) {
+          const b = nt * 6;
+          tp[b] = tail[0]; tp[b + 1] = tail[1]; tp[b + 2] = tail[2]; tp[b + 3] = st[0]; tp[b + 4] = st[1]; tp[b + 5] = st[2];
+          nt++;
+        }
+      }
       if (k === KIND.ROUND || k === KIND.FLARE || k === KIND.EXPLOSION) {
         if (np >= cap) return;
         const c = k === KIND.ROUND ? ROUND_COL : k === KIND.FLARE ? FLARE_COL : BOOM_COL;
@@ -262,6 +287,8 @@ export class Units {
       sh.mesh.instanceColor.needsUpdate = true;
     });
     pts.setDrawRange(0, np);
+    tr.setDrawRange(0, nt * 2);
+    tr.attributes.position.needsUpdate = true;
     pts.attributes.position.needsUpdate = true;
     pts.attributes.color.needsUpdate = true;
   }
@@ -281,6 +308,8 @@ function peakByKey(rp, drawKey, nKeys) {
   return max;
 }
 
-const ROUND_COL = new THREE.Color("#ffe08a");
+const ROUND_COL = new THREE.Color("#fff2b0");
+const TRACER = new THREE.Color("#ffc23a");
+const TRACER_S = 0.15;   // seconds of a round's flight shown as its tracer streak (about 100 to 150 m)
 const FLARE_COL = new THREE.Color("#ffffff");
 const BOOM_COL = new THREE.Color("#ff7a3a");
