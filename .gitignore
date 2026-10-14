@@ -1,7 +1,7 @@
 # replays and local test data
 *.acmi
 *.zip.acmi
-data/
+/data/
 
 # python
 __pycache__/
