@@ -50,6 +50,9 @@ export class Scenery {
     this.inFlight = 0;
   }
 
+  // grey like Tacview on the terrain; a dim green on the game's green map, where grey would glow white
+  setLook(style) { this.material.color.setHex(style === "tactical" ? 0x2a7a2a : 0x9b9b9b); }
+
   setShown(on) {
     this.show = on;
     for (const t of this.tiles) if (t.mesh) t.mesh.visible = on;
@@ -62,9 +65,10 @@ export class Scenery {
     t.state = 0;
   }
 
-  // a few times a second while tiles are still to come: start the next downloads, nearest the camera first
+  // a few times a second while tiles are still to come: start the next downloads, nearest the camera first. Nothing
+  // is fetched while the scenery is switched off.
   update(camera, now) {
-    if (!this.tiles.length || this.inFlight >= AT_ONCE || now - this.last < 200) return;
+    if (!this.show || !this.tiles.length || this.inFlight >= AT_ONCE || now - this.last < 200) return;
     this.last = now;
     const c = camera.position;
     const want = [];

@@ -14,6 +14,7 @@ import { KIND } from "./parser/acmi.js";
 import { Timeline } from "./ui/timeline.js";
 import { UnitList } from "./ui/unitlist.js";
 import { Inspector } from "./ui/inspector.js";
+import { loadSettings, SettingsPanel, RESOLUTION, FPS } from "./ui/settings.js";
 import { mapName, duration, missionClock, recorded, speedLabel } from "./ui/format.js";
 
 const $ = (id) => document.getElementById(id);
@@ -22,10 +23,14 @@ const START_SPEED = SPEEDS.indexOf(1);   // every replay opens paused at 1X
 const state = { replay: null, t: 0, playing: false, speed: START_SPEED, lastNow: 0, sel: -1 };
 const NO_WEBGL = "This browser can't show 3D graphics. Turn on hardware acceleration in its settings, or try another browser.";
 
+// the settings saved in this browser (the defaults on a first visit); smooth edges can only be set as the page opens
+const settings = loadSettings();
+const smoothInUse = settings.smooth === "on";
+
 // ---- 3D view (needs WebGL 2) -------------------------------------------------------------------------------
 let viewer = null, ground = null, scenery = null, blasts = null, units = null, trails = null, overlay = null, cameraMan = null;
 try {
-  viewer = new Viewer($("view"));
+  viewer = new Viewer($("view"), { antialias: smoothInUse });
   ground = new Ground(viewer.scene);
   scenery = new Scenery(viewer.scene);
   units = new Units(viewer.scene);
@@ -67,7 +72,7 @@ async function open(file, note = "") {
     showProgress(1, "BUILDING SCENE");
     const replay = new Replay(result);
     const known = mapKeyFor(replay.header.mapId) !== null;
-    const loaded = await ground.load(replay.header.mapId);
+    const loaded = await ground.load(replay.header.mapId, settings.map);
     if (id !== loadId) return;
     hideProgress();
     start(replay, file.name);
@@ -88,8 +93,10 @@ async function open(file, note = "") {
   }
 }
 
-// the real unit models, fetched in the background; units show as simple shapes until theirs arrives
+// the real unit models, fetched in the background; units show as simple shapes until theirs arrives. Not fetched at all
+// while the models setting is on simple.
 async function loadModels(replay, id) {
+  if (settings.models !== "detailed") return;
   const names = new Set();
   const o = replay.o;
   for (let i = 0; i < replay.count; i++) if (isMeshKind(o.kind[i]) && o.name[i]) names.add(o.name[i]);
@@ -241,7 +248,8 @@ if (viewer) viewer.onFrame = (now) => {
   if (cameraMan.follow >= 0 || cameraMan.gyro) viewer.keepAboveGround();   // the camera moved: keep it above the hills
   viewer.camera.updateMatrixWorld();
   units.update(t, viewer.camera, viewer.height);
-  blasts.update(rp, t, units.booms, units.nBooms, viewer.camera, viewer.height);
+  if (settings.effects === "on") blasts.update(rp, t, units.booms, units.nBooms, viewer.camera, viewer.height);
+  else if (blasts.mesh) blasts.mesh.count = 0;
   overlay.project(units.live, viewer.camera);
   trails.update(t, units.live, viewer.groundAt);
   overlay.draw(rp, hoverInfo, rangeInfo, t);
@@ -318,7 +326,7 @@ window.addEventListener("keydown", (e) => {
   if (tg && (tg.tagName === "TEXTAREA" || tg.isContentEditable || (tg.tagName === "INPUT" && tg.type !== "file"))) return;
   const rp = state.replay;
   if (e.key === "Escape") {
-    if (!$("keys").hidden) toggleKeys(false);
+    if (!$("keys").hidden || !$("settings").hidden) { toggleKeys(false); toggleSettings(false); }
     else if (rp) select(-1);
     hideToast();
     return;
@@ -361,9 +369,10 @@ function toggleUnits(show) {
   setKey($("units-btn"), on);
   if (on) unitList.dirty = true;
 }
-function toggleLabels() { overlay.showLabels = !overlay.showLabels; setKey($("labels-btn"), overlay.showLabels); }
-function toggleTrails() { trails.showTrails = !trails.showTrails; setKey($("trails-btn"), trails.showTrails); }
-function toggleCurtains() { trails.showCurtains = !trails.showCurtains; setKey($("curtains-btn"), trails.showCurtains); }
+// labels, trails and curtains are settings too, so they stay the way you left them next time
+function toggleLabels() { settingsPanel.set("labels", overlay.showLabels ? "off" : "on"); }
+function toggleTrails() { settingsPanel.set("trails", trails.showTrails ? "off" : "on"); }
+function toggleCurtains() { settingsPanel.set("curtains", trails.showCurtains ? "off" : "on"); }
 $("units-btn").addEventListener("click", () => toggleUnits());
 $("labels-btn").addEventListener("click", () => toggleLabels());
 $("trails-btn").addEventListener("click", () => toggleTrails());
@@ -384,13 +393,63 @@ $("gyro-btn").addEventListener("click", async () => {
   if (result !== "ok") showToast(GYRO_SAYS[result] || GYRO_SAYS.none);
 });
 
+// the controls list and the settings share a spot on screen, so opening one closes the other
 function toggleKeys(show) {
   const p = $("keys");
   const on = show === undefined ? p.hidden : show;
   p.hidden = !on;
   $("keys-btn").setAttribute("aria-expanded", String(on));
+  if (on) toggleSettings(false);
 }
 $("keys-btn").addEventListener("click", () => toggleKeys());
+function toggleSettings(show) {
+  const p = $("settings");
+  const on = show === undefined ? p.hidden : show;
+  p.hidden = !on;
+  $("settings-btn").setAttribute("aria-expanded", String(on));
+  if (on) toggleKeys(false);
+}
+$("settings-btn").addEventListener("click", () => toggleSettings());
+
+// ---- settings --------------------------------------------------------------------------------------------
+// puts one setting into effect; every one applies straight away except smooth edges (next time the page opens)
+function applySetting(key, value) {
+  if (!viewer) return;
+  const on = value === "on";
+  switch (key) {
+    case "map":
+      viewer.setLook(value);
+      scenery.setLook(value);
+      scenery.setShown(settings.scenery === "on" && value !== "empty");   // no ground for towns to stand on
+      ground.setStyle(value).then((ok) => {
+        if (ok || settings.map !== value) return;
+        // the picture for that look couldn't be downloaded: stay on the one still showing
+        settingsPanel.set("map", ground.style);
+        showToast("That map look couldn't be loaded. Check your connection and try again.");
+      });
+      break;
+    case "units": units.focus = value === "focus"; break;
+    case "resolution": viewer.setRenderScale(RESOLUTION[value]); break;
+    case "fps": viewer.maxFps = FPS[value]; break;
+    case "models":
+      units.setModelsOn(value === "detailed");
+      if (value === "detailed" && state.replay && !units.modelSet) loadModels(state.replay, loadId);
+      break;
+    case "scenery": scenery.setShown(on && settings.map !== "empty"); break;
+    case "effects": units.effects = on; break;
+    case "labels": overlay.showLabels = on; setKey($("labels-btn"), on); break;
+    case "trails": trails.showTrails = on; setKey($("trails-btn"), on); break;
+    case "curtains": trails.showCurtains = on; setKey($("curtains-btn"), on); break;
+  }
+}
+const settingsPanel = new SettingsPanel($("settings"), settings, applySetting, smoothInUse);
+if (viewer) {
+  ground.style = settings.map;   // the first map loads straight in the saved look
+  for (const [k, v] of Object.entries(settings)) if (k !== "map") applySetting(k, v);
+  viewer.setLook(settings.map);
+  scenery.setLook(settings.map);
+  scenery.setShown(settings.scenery === "on" && settings.map !== "empty");
+}
 
 function showProgress(f, label) {
   const first = !state.replay;

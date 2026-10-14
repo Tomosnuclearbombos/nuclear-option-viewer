@@ -1,7 +1,10 @@
-// The map: terrain shaped from the game's height grid, the map picture on top, and the open sea past the edges.
+// The map: terrain shaped from the game's height grid, a picture on top, and the open sea past the edges.
 //
-// First version: one mesh per map with ~160 m between vertices and the overview picture. Detail tiles near the
-// camera come next. Scene axes: x = east (game x), y = up, z = south (game z negated).
+// Three looks (setStyle), picked in the settings:
+//   terrain   the map picture on the real ground (lit)
+//   tactical  the game's own green map screen on black, on the same ground, with its 10 km / 1 km grid
+//   empty     no map at all: a dark plane at sea level with the grid, the way ACMI Viewer shows a replay
+// One mesh per map with ~160 m between vertices. Scene axes: x = east (game x), y = up, z = south (game z negated).
 
 import * as THREE from "three";
 import { gunzipSync } from "../../vendor/fflate/fflate.js";
@@ -10,8 +13,15 @@ const MAPS = {
   "NuclearOption.Terrain1": "heartland",
   "NuclearOption.Terrain_naval": "ignus",
 };
+export const MAP_STYLES = ["terrain", "tactical", "empty"];
 const MESH_STEP = 160; // metres between vertices of the far terrain mesh
 const SEA = 3_000_000;  // open sea plane size (metres): its edge stays inside the fog even zoomed right out
+// The game tints its map picture pure green, drawn over black. 1.35 times brighter to read (as the start screen
+// backdrop is): a gain on the picture's sRGB value is about its 2.2nd power on the linear value the shader works in.
+const GREEN = new THREE.Color().setRGB(0, Math.pow(1.35, 2.2), 0);
+const GRID_MAJOR = new THREE.Color("#007400");   // its 10 km grid
+const GRID_MINOR = new THREE.Color("#004100");   // and 1 km grid
+const EMPTY_GROUND = new THREE.Color("#0b1612");
 
 export function mapKeyFor(mapId) { return MAPS[mapId] || null; }
 
@@ -24,45 +34,76 @@ export class Ground {
     this.meta = null;
     this.heights = null;
     this.mesh = null;      // { x0, z0 (scene, north-west corner), cols, rows, step, h: Float32Array } of the drawn mesh
-    this.loading = 0;
+    this.landGeo = null;   // the ground shape, kept across style changes
+    this.seaGeo = null;    // the open sea frame around it
+    this.texture = null;   // the current style's picture: { style, tex, edge }
+    this.style = "terrain";
+    this.loading = 0;      // bumped by every map load and cancel
+    this.picLoading = 0;   // bumped by every style picture load, so only the newest lands
   }
 
-  // Loads the map for a replay. Returns true when it is (or already was) loaded, false when the map is unknown, the
-  // download failed (the units then play over plain sea), or a newer load or cancel() took over. A superseded load
-  // never touches the screen, so a replay can't end up on the wrong map, or on two maps at once.
-  async load(mapId, base = "assets/maps/") {
+  // Loads the map for a replay, drawn in `style`. Returns true when it is (or already was) loaded, false when the map
+  // is unknown, the download failed (the units then play over plain sea), or a newer load or cancel() took over. A
+  // superseded load never touches the screen, so a replay can't end up on the wrong map, or on two maps at once.
+  async load(mapId, style = this.style, base = "assets/maps/") {
     const token = ++this.loading;
+    this.picLoading++;   // a style picture still coming for the old map must not land on this one
     const key = mapKeyFor(mapId);
-    if (!key) { this.reset(); this.drawSea(); return false; }
-    if (key === this.key) return true;
+    this.style = style;
+    if (!key) { this.reset(); this.drawPlain(); return false; }
+    if (key === this.key) return this.setStyle(style);
     const dir = base + key + "/";
-    let meta, raw, tex = null;
+    let meta, raw, pic = null;
     try {
       const mr = await fetch(dir + "meta.json");
       if (!mr.ok) throw new Error("map description missing (HTTP " + mr.status + ")");
       meta = await mr.json();
-      const [hs, ts] = await Promise.allSettled([
+      const [hs, ps] = await Promise.allSettled([
         fetch(dir + meta.height.file).then((r) => { if (!r.ok) throw new Error("map heights missing (HTTP " + r.status + ")"); return r.arrayBuffer(); }),
-        new THREE.TextureLoader().loadAsync(dir + meta.overview.file),
+        loadPicture(dir, meta, style),
       ]);
-      if (ts.status === "fulfilled") tex = ts.value;
+      if (ps.status === "fulfilled") pic = ps.value;
       if (hs.status === "rejected") throw hs.reason;
-      if (ts.status === "rejected") throw new Error("map picture missing");
-      if (token !== this.loading) { tex.dispose(); return false; }   // a newer load or a cancel took over
+      if (ps.status === "rejected") throw ps.reason;
+      if (token !== this.loading) { pic?.tex.dispose(); return false; }   // a newer load or a cancel took over
       raw = gunzipSync(new Uint8Array(hs.value));
     } catch (err) {
       console.warn("map load failed:", err);
-      tex?.dispose();
-      if (token === this.loading) { this.reset(); this.drawSea(); }   // no stale terrain under the new replay
+      pic?.tex.dispose();
+      if (token === this.loading) { this.reset(); this.drawPlain(); }   // no stale terrain under the new replay
       return false;
     }
     this.reset();
     this.heights = new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength / 2);
     this.meta = meta;
     this.key = key;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = 8;
-    this.build(tex);
+    this.dir = dir;
+    this.texture = pic;
+    this.buildShape();
+    this.draw();
+    return true;
+  }
+
+  // Changes how the map looks, keeping the replay and the camera. Fetches the style's picture when it isn't loaded
+  // yet. Returns true when the new look is on screen, false if its picture couldn't be loaded (the old look stays).
+  async setStyle(style) {
+    if (!MAP_STYLES.includes(style)) return false;
+    const prev = this.style;
+    this.style = style;
+    if (!this.meta) { this.clearDrawn(); this.drawPlain(); return true; }
+    if (style !== "empty" && (!this.texture || this.texture.style !== style)) {
+      const token = ++this.picLoading, key = this.key;
+      let pic;
+      try { pic = await loadPicture(this.dir, this.meta, style); } catch (err) {
+        console.warn("map picture failed:", err);
+        if (token === this.picLoading && this.style === style) this.style = prev;   // the old look is still on screen
+        return false;
+      }
+      if (token !== this.picLoading || key !== this.key || style !== this.style) { pic.tex.dispose(); return false; }
+      this.texture?.tex.dispose();   // only one picture in memory at a time: they are 64 to 128 MB each on the GPU
+      this.texture = pic;
+    }
+    this.draw();
     return true;
   }
 
@@ -72,25 +113,54 @@ export class Ground {
   // Removes the current map, and abandons any load in flight.
   clear() { this.cancel(); this.reset(); }
 
-  // Plain sea at 0 m, for replays whose map isn't known or didn't load.
-  drawSea() {
-    const sea = new THREE.Mesh(
-      new THREE.PlaneGeometry(SEA, SEA).rotateX(-Math.PI / 2),
-      new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(0.16, 0.31, 0.4, THREE.SRGBColorSpace) }),
-    );
-    sea.position.y = -2;
+  // the map's own look, in the current style, from the kept shape and picture
+  draw() {
+    this.clearDrawn();
+    if (this.style === "empty") { this.drawPlain(); return; }
+    const pic = this.texture;
+    const tactical = this.style === "tactical";
+    const landMat = tactical ? gridMaterial({ map: pic.tex, color: GREEN }) : new THREE.MeshLambertMaterial({ map: pic.tex });
+    const land = new THREE.Mesh(this.landGeo, landMat);
+    land.name = "land";
+    this.group.add(land);
+    // open sea past the map edges, in the picture's own deep water colour, wide enough that its edge is always in the
+    // fog. It stops at the map edge. A sea plane under the whole map sat 2 m below the map's own water and the two
+    // fought over the depth buffer, so the sea flickered in patches (worst on Ignus, which is 93% sea).
+    const seaMat = tactical ? gridMaterial({ color: pic.edge.clone().multiply(GREEN) }) : new THREE.MeshLambertMaterial({ color: pic.edge });
+    const sea = new THREE.Mesh(this.seaGeo, seaMat);
     sea.name = "sea";
     this.group.add(sea);
   }
 
-  // removes and frees everything drawn for the current map
-  reset() {
+  // A flat plane at sea level, for replays whose map isn't known or didn't load, and for the "empty" style.
+  drawPlain() {
+    const empty = this.style === "empty";
+    const mat = empty
+      ? gridMaterial({ color: EMPTY_GROUND })
+      : new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(0.16, 0.31, 0.4, THREE.SRGBColorSpace) });
+    const plain = new THREE.Mesh(new THREE.PlaneGeometry(SEA, SEA).rotateX(-Math.PI / 2), mat);
+    plain.position.y = empty ? 0 : -2;
+    plain.name = empty ? "empty" : "sea";
+    plain.userData.ownGeometry = true;
+    this.group.add(plain);
+  }
+
+  // takes the current look off the screen; the shape and the picture stay for the next one
+  clearDrawn() {
     for (const child of [...this.group.children]) {
       this.group.remove(child);
-      child.geometry?.dispose();
-      const mats = Array.isArray(child.material) ? child.material : [child.material];
-      for (const m of mats) { if (!m) continue; m.map?.dispose(); m.dispose(); }
+      if (child.userData.ownGeometry) child.geometry.dispose();
+      child.material?.dispose();
     }
+  }
+
+  // removes and frees everything kept for the current map
+  reset() {
+    this.clearDrawn();
+    this.landGeo?.dispose();
+    this.seaGeo?.dispose();
+    this.texture?.tex.dispose();
+    this.landGeo = null; this.seaGeo = null; this.texture = null;
     this.key = null; this.meta = null; this.heights = null; this.mesh = null;
   }
 
@@ -109,10 +179,11 @@ export class Ground {
   }
 
   // height of the terrain AS DRAWN at x / scene z: the same vertices and the same triangle split as the mesh, so a
-  // unit lifted to this height sits on the visible ground instead of inside a hill. Sea and off map = 0.
+  // unit lifted to this height sits on the visible ground instead of inside a hill. Sea, off map and the empty
+  // style (where everything sits over a flat sea level plane) = 0.
   surfaceAt(x, sz) {
     const g = this.mesh;
-    if (!g) return 0;
+    if (!g || this.style === "empty") return 0;
     const fx = (x - g.x0) / g.step, fy = (sz - g.z0) / g.step;   // fy grows southward, like the mesh rows
     if (!(fx >= 0 && fy >= 0 && fx <= g.cols && fy <= g.rows)) return 0;
     const i = Math.min(g.cols - 1, Math.floor(fx)), j = Math.min(g.rows - 1, Math.floor(fy));
@@ -123,7 +194,8 @@ export class Ground {
     return c + (b - c) * (1 - u) + (d - c) * (1 - v);
   }
 
-  build(tex) {
+  // the ground shape (once per map): the far terrain mesh and the sea frame around it
+  buildShape() {
     const m = this.meta;
     const W = m.x1 - m.x0, D = m.z1 - m.z0;
     const cols = Math.round(W / MESH_STEP), rows = Math.round(D / MESH_STEP);
@@ -141,18 +213,54 @@ export class Ground {
     }
     geo.computeVertexNormals();
     this.mesh = { x0: m.x0, z0: -m.z1, cols, rows, step: W / cols, h: hs };
-    const land = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex }));
-    land.name = "land";
-    this.group.add(land);
-
-    // open sea past the map edges, in the picture's own deep-water colour, wide enough that its edge is always in the
-    // fog. It stops at the map edge. A sea plane under the whole map sat 2 m below the map's own water and the two fought
-    // over the depth buffer, so the sea flickered in patches (worst on Ignus, which is 93% sea).
-    const sea = new THREE.Mesh(seaFrame(m, cols, rows), new THREE.MeshLambertMaterial({ color: edgeColour(tex.image) }));
-    sea.name = "sea";
-    this.group.add(sea);
+    this.landGeo = geo;
+    this.seaGeo = seaFrame(m, cols, rows);
   }
 }
+
+// the picture for a style: the map picture (terrain) or the game's greyscale map screen picture (tactical)
+async function loadPicture(dir, meta, style) {
+  if (style === "empty") return null;
+  const file = style === "tactical" ? (meta.tactical?.file || "tactical.png") : meta.overview.file;
+  let tex;
+  try { tex = await new THREE.TextureLoader().loadAsync(dir + file); } catch { throw new Error("map picture missing"); }
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return { style, tex, edge: edgeColour(tex.image) };
+}
+
+// An unlit material with the game's map grid drawn on it: thin 1 km lines and brighter 10 km lines at whole multiples
+// of the game's own coordinates (the same squares as the in-game map). The lines stay about a pixel wide at any zoom;
+// the 1 km lines fade out before they get so close together that they would turn into a green haze.
+function gridMaterial(params) {
+  const mat = new THREE.MeshBasicMaterial(params);
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.gridMajor = { value: GRID_MAJOR };
+    shader.uniforms.gridMinor = { value: GRID_MINOR };
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec2 vGridXZ;")
+      .replace("#include <project_vertex>", "#include <project_vertex>\n\tvGridXZ = (modelMatrix * vec4(transformed, 1.0)).xz;");
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying vec2 vGridXZ;\nuniform vec3 gridMajor;\nuniform vec3 gridMinor;\n" + GRID_GLSL)
+      .replace("#include <opaque_fragment>", "outgoingLight = mapGrid(outgoingLight, vGridXZ);\n\t#include <opaque_fragment>");
+  };
+  mat.customProgramCacheKey = () => "nov-map-grid";
+  return mat;
+}
+
+const GRID_GLSL = /* glsl */ `
+// 1 where a grid line of this spacing passes through the pixel, fading to 0 a pixel or so away
+float gridLine(vec2 p, float spacing, vec2 fw, float width) {
+  vec2 d = abs(fract(p / spacing - 0.5) - 0.5) * spacing / max(fw, vec2(1e-4));
+  return 1.0 - smoothstep(width * 0.5, width * 0.5 + 1.0, min(d.x, d.y));
+}
+vec3 mapGrid(vec3 col, vec2 p) {
+  vec2 fw = fwidth(p);                                  // metres per pixel, along each axis
+  float mpp = max(fw.x, fw.y);
+  float minor = gridLine(p, 1000.0, fw, 1.0) * (1.0 - smoothstep(30.0, 90.0, mpp));   // only once zoomed in
+  float major = gridLine(p, 10000.0, fw, 1.5);
+  return col + gridMinor * minor + gridMajor * major;   // added on top, the way the game draws its grid
+}`;
 
 // The open sea around a map: flat at 0 m (the height the map holds its own water at), from the map edge out to SEA / 2
 // from the map's middle, with a hole where the map is. Its inner edge uses the land mesh's own edge vertices, worked out

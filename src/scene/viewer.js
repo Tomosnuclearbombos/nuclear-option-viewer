@@ -7,14 +7,17 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const CLEARANCE = 12; // metres the camera keeps above the ground
+// sky and haze for each map style: a daytime sky over the terrain, black like the game's map screen behind the green
+// map, and a dark night blue around the empty grid
+const SKY = { terrain: 0x8fb4d6, tactical: 0x000000, empty: 0x0a1014 };
 
 export class Viewer {
-  // Throws if the browser can't give us WebGL 2.
-  constructor(canvas) {
+  // Throws if the browser can't give us WebGL 2. antialias (smooth edges) can only be chosen here, when the page opens.
+  constructor(canvas, { antialias = true } = {}) {
     this.canvas = canvas;
-    const gl = canvas.getContext("webgl2", { antialias: true, powerPreference: "high-performance" });
+    const gl = canvas.getContext("webgl2", { antialias, powerPreference: "high-performance" });
     if (!gl) throw new Error("no webgl2");
-    this.renderer = new THREE.WebGLRenderer({ canvas, context: gl, antialias: true, logarithmicDepthBuffer: true });
+    this.renderer = new THREE.WebGLRenderer({ canvas, context: gl, antialias, logarithmicDepthBuffer: true });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
@@ -48,6 +51,10 @@ export class Viewer {
     this.controls.addEventListener("end", () => { this.interacting = false; });
     this._d = new THREE.Vector3();
     this.onFrame = null;
+    this.renderScale = 1;   // share of the screen's pixels drawn (the resolution setting)
+    this.maxFps = 0;        // 0 = as fast as the screen refreshes, else a cap (the frame rate setting)
+    this._prev = 0;
+    this._acc = 0;
     this.resize();
     window.addEventListener("resize", () => this.resize());
     this.watchPixelRatio();
@@ -56,7 +63,7 @@ export class Viewer {
 
   resize() {
     const w = this.canvas.clientWidth || window.innerWidth, h = this.canvas.clientHeight || window.innerHeight;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2) * this.renderScale);
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
@@ -69,7 +76,27 @@ export class Viewer {
     mq.addEventListener("change", () => { this.resize(); this.watchPixelRatio(); }, { once: true });
   }
 
+  // draw fewer pixels: 1 = full resolution, 0.5 = half as many across (a quarter of the pixels)
+  setRenderScale(f) { this.renderScale = f; this.resize(); }
+
+  // the sky and haze to suit the map style
+  setLook(style) {
+    const c = SKY[style] ?? SKY.terrain;
+    this.scene.background.setHex(c);
+    this.scene.fog.color.setHex(c);
+  }
+
   frame(now) {
+    // frame rate cap: skip screen refreshes until a frame is due. The leftover carries over, so the average comes out
+    // at the cap on any screen (on a 144 Hz screen a 60 cap draws two or three refreshes apart in turn).
+    const since = this._prev ? now - this._prev : 0;
+    this._prev = now;
+    if (this.maxFps > 0) {
+      const step = 1000 / this.maxFps;
+      this._acc += since;
+      if (this._acc < step - 1) return;
+      this._acc = Math.max(0, Math.min(this._acc - step, step));
+    }
     this.controls.update();
     this.keepAboveGround();
     this.fitFog();

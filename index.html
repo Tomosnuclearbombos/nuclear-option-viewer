@@ -32,6 +32,7 @@
       <button id="trails-btn" class="key" type="button" aria-pressed="true" title="Trails (T)">TRAILS</button>
       <button id="curtains-btn" class="key off" type="button" aria-pressed="false" title="Altitude curtains (C)">CURTAINS</button>
       <button id="gyro-btn" class="key off" type="button" aria-pressed="false" title="Turn the phone to look around" hidden>GYRO</button>
+      <button id="settings-btn" class="key" type="button" aria-expanded="false" aria-controls="settings" title="Settings">SETTINGS</button>
       <button id="keys-btn" class="key" type="button" aria-expanded="false" aria-controls="keys" title="Controls (?)">KEYS</button>
       <label class="key">OPEN REPLAY<input id="file" type="file" accept=".acmi,.zip,.gz,application/zip"></label>
     </nav>
@@ -126,6 +127,81 @@
       <dt>?</dt><dd>SHOW OR HIDE THIS</dd>
       <dt>GYRO</dt><dd>ON A PHONE: TURN AND TILT IT TO LOOK AROUND</dd>
     </dl>
+  </section>
+
+  <section id="settings" class="plate keys-panel settings-panel" hidden aria-label="Settings">
+    <h2 class="panel-title">SETTINGS</h2>
+    <div class="set-group">
+      <div class="set-row" data-set="map" role="group" aria-label="Map">
+        <span class="set-lbl">MAP</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="terrain">TERRAIN</button>
+          <button class="key small" type="button" data-val="tactical">TACTICAL</button>
+          <button class="key small" type="button" data-val="empty">EMPTY</button>
+        </div>
+      </div>
+      <p class="set-note prose" data-note="map"></p>
+    </div>
+    <div class="set-group">
+      <div class="set-row" data-set="units" role="group" aria-label="Units">
+        <span class="set-lbl">UNITS</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="focus">FOCUS</button>
+          <button class="key small" type="button" data-val="real">REAL SIZE</button>
+        </div>
+      </div>
+      <p class="set-note prose" data-note="units"></p>
+    </div>
+    <div class="set-group">
+      <h3 class="set-head">GRAPHICS</h3>
+      <div class="set-row" data-set="resolution" role="group" aria-label="Resolution">
+        <span class="set-lbl">RESOLUTION</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="full">FULL</button>
+          <button class="key small" type="button" data-val="high">HIGH</button>
+          <button class="key small" type="button" data-val="low">LOW</button>
+        </div>
+      </div>
+      <div class="set-row" data-set="fps" role="group" aria-label="Frame rate">
+        <span class="set-lbl">FRAME RATE</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="max">MAX</button>
+          <button class="key small" type="button" data-val="60">60</button>
+          <button class="key small" type="button" data-val="30">30</button>
+        </div>
+      </div>
+      <div class="set-row" data-set="smooth" role="group" aria-label="Smooth edges">
+        <span class="set-lbl">SMOOTH EDGES</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="on">ON</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <div class="set-row" data-set="models" role="group" aria-label="Unit models">
+        <span class="set-lbl">MODELS</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="detailed">DETAILED</button>
+          <button class="key small" type="button" data-val="simple">SIMPLE</button>
+        </div>
+      </div>
+      <div class="set-row" data-set="scenery" role="group" aria-label="Towns, cities and bridges">
+        <span class="set-lbl">SCENERY</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="on">ON</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <div class="set-row" data-set="effects" role="group" aria-label="Explosions, tracers and flares">
+        <span class="set-lbl">EFFECTS</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="on">ON</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <p class="set-note prose" data-note="smooth" hidden></p>
+      <p class="set-note prose">On a slower PC, a lower resolution and a frame rate cap help the most. Scenery is the towns, cities and bridges; effects are the explosions, tracers and flares.</p>
+    </div>
+    <p class="set-foot prose">Your settings are saved in this browser.</p>
   </section>
 
   <div id="toast" class="plate toast" role="alert" hidden>

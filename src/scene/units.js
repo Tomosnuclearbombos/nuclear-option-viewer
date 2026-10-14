@@ -3,8 +3,9 @@
 // One instanced mesh per model (or per stand-in shape for units without a model), sized once for the busiest moment
 // of the replay and refilled each frame from the replay's evaluated state, so the picture is always a pure function
 // of the playhead. Gun rounds are tracer streaks (a bright head and a fading tail along their path); flares are
-// point sprites; explosions are listed for Blasts (this.booms) to draw. Every unit keeps a minimum size on screen,
-// so a jet 50 km away is still a readable shape rather than a lost pixel.
+// point sprites; explosions are listed for Blasts (this.booms) to draw. In "focus" (the default) every unit keeps a
+// minimum size on screen, so a jet 50 km away is still a readable shape rather than a lost pixel; with focus off
+// (the "real size" setting) everything is drawn at its true size, like Tacview.
 //
 // Each frame also leaves a list of what was drawn (this.live) for picking, labels and trails to reuse.
 
@@ -103,6 +104,10 @@ export class Units {
     this.tail = new Float64Array(7);
     this.surfaceAt = null;   // (x, sceneZ) -> drawn ground height; ground units are lifted onto it
     this.selected = -1;      // record index drawn in the selected colour
+    this.focus = true;       // keep a minimum size on screen (false = real size)
+    this.modelsOn = true;    // the detailed models (false = the simple shapes, lighter on a slow PC)
+    this.effects = true;     // gun round tracers and flares (the effects setting)
+    this.modelSet = null;    // the models found for this replay, kept so they can be switched back on
     this.live = null;        // what the last frame drew: { n, idx, x, y, z, size, kind }
     this._m = new THREE.Matrix4(); this._q = new THREE.Quaternion();
     this._p = new THREE.Vector3(); this._s = new THREE.Vector3();
@@ -114,6 +119,7 @@ export class Units {
   setReplay(replay) {
     this.replay = replay;
     this.selected = -1;
+    this.modelSet = null;
     this.clearMeshes();
     if (this.points) { this.group.remove(this.points); this.points.geometry.dispose(); this.points.material.dispose(); }
     if (this.tracers) { this.group.remove(this.tracers); this.tracers.geometry.dispose(); this.tracers.material.dispose(); }
@@ -122,8 +128,9 @@ export class Units {
     this.shapes = [];
     const kindShape = new Map();
     for (const k of MESH_KINDS) { kindShape.set(k, this.shapes.length); this.shapes.push({ geometry: this.standIn.get(k), len: 1, model: false, kind: k, mesh: null }); }
+    this.kindShape = kindShape;
     this.drawKey = new Int32Array(N).fill(-1);
-    for (let i = 0; i < N; i++) { const s = kindShape.get(o.kind[i]); if (s !== undefined) this.drawKey[i] = s; }
+    this.useStandIns();
     this.buildMeshes();
 
     let cap = 8;
@@ -166,9 +173,31 @@ export class Units {
       z: new Float32Array(liveCap), size: new Float32Array(liveCap), kind: new Uint8Array(liveCap) };
   }
 
+  // every unit drawn as its kind's simple shape
+  useStandIns() {
+    const o = this.replay.o, key = this.drawKey, ks = this.kindShape;
+    let changed = false;
+    for (let i = 0; i < this.replay.count; i++) {
+      const s = ks.get(o.kind[i]);
+      const v = s === undefined ? -1 : s;
+      if (key[i] !== v) { key[i] = v; changed = true; }
+    }
+    return changed;
+  }
+
+  // the detailed models on or off; off draws the simple shapes, which is lighter on a slow graphics chip
+  setModelsOn(on) {
+    this.modelsOn = on;
+    if (!this.replay) return;
+    if (on) { if (this.modelSet) this.setModels(this.replay, this.modelSet); return; }
+    if (this.useStandIns()) { this.clearMeshes(); this.buildMeshes(); }
+  }
+
   // Swap in real models: models = Map(recordedName -> { id, geometry, len }). Units whose Name has one use it.
   setModels(replay, models) {
     if (replay !== this.replay || !models.size) return;
+    this.modelSet = models;
+    if (!this.modelsOn) return;
     const o = replay.o;
     const byId = new Map();
     let changed = false;
@@ -238,6 +267,7 @@ export class Units {
       if (!rp.poseAt(i, t, st)) return;
       if ((k === KIND.GROUND || k === KIND.BUILDING || k === KIND.SHIP) && !rp.visibleAt(i, t)) return; // destroyed
       if (k === KIND.EXPLOSION) { if (this.nBooms < booms.length) booms[this.nBooms++] = i; return; }
+      if (!this.effects && (k === KIND.ROUND || k === KIND.FLARE)) return;
       if (k === KIND.ROUND) {
         if (nt < tcap && rp.poseAt(i, Math.max(o.t0[i], t - TRACER_S), tail)) {
           const b = nt * 6;
@@ -264,7 +294,7 @@ export class Units {
       const look = LOOK[k];
       const dx = st[0] - cam.x, dy = y - cam.y, dz = st[2] - cam.z;
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      const minLen = (look.minPx * dist) / pxPerRad;
+      const minLen = this.focus ? (look.minPx * dist) / pxPerRad : 0;
       // stand-ins are 1 m long and scale to their kind's length; models are real size and only grow when far away
       // buildings keep their real size: grown to a minimum, a cluster of oil rig parts became a giant star
       const scale = shape.model ? (k === KIND.BUILDING ? 1 : Math.max(1, minLen / shape.len)) : Math.max(look.len, minLen);

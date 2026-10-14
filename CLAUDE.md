@@ -45,6 +45,11 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
 - Cameras: free orbit, follow, cockpit, and a top-down map view.
 - Labels with pilot names, trails, altitude curtains.
 - Timeline with an activity graph, speeds from 0.1x to 128x, and a URL hash for time and selection.
+- Settings (Tomo 2026-10-15), saved in the browser (localStorage `nov.settings.v1`, src/ui/settings.js):
+  - map: Terrain / Tactical (the game's green map screen with its grid) / Empty (a sea level grid, like ACMI Viewer)
+  - units: Focus (minimum size on screen) / Real Size
+  - graphics: resolution, frame rate cap, smooth edges (on reload), detailed or simple models, scenery, effects
+  - labels, trails and curtains are remembered too
 
 **Phase 2, Tacview analysis tools**
 - Telemetry panel: altitude, AGL, TAS, Mach, AoA, G (computed), throttle, gear, stick inputs, radar mode, locks.
