@@ -244,6 +244,7 @@ if (viewer) viewer.onFrame = (now) => {
   }
   const t = state.t;
   cameraMan.update(dt, rp, t);
+  ground.update(viewer.camera);
   scenery.update(viewer.camera, now);
   if (cameraMan.follow >= 0 || cameraMan.gyro) viewer.keepAboveGround();   // the camera moved: keep it above the hills
   viewer.camera.updateMatrixWorld();

@@ -125,24 +125,38 @@ export class Ground {
     this.group.add(land);
     // open sea past the map edges, in the picture's own deep water colour, wide enough that its edge is always in the
     // fog. It stops at the map edge. A sea plane under the whole map sat 2 m below the map's own water and the two
-    // fought over the depth buffer, so the sea flickered in patches (worst on Ignus, which is 93% sea).
-    const seaMat = tactical ? gridMaterial({ color: pic.edge.clone().multiply(GREEN) }) : new THREE.MeshLambertMaterial({ color: pic.edge });
+    // fought over the depth buffer, so the sea flickered in patches (worst on Ignus, which is 93% sea). No grid out
+    // here: the game's map has none past its edge, and this frame's cells are far too big to draw one steadily.
+    const seaMat = tactical ? new THREE.MeshBasicMaterial({ color: pic.edge.clone().multiply(GREEN) }) : new THREE.MeshLambertMaterial({ color: pic.edge });
     const sea = new THREE.Mesh(this.seaGeo, seaMat);
     sea.name = "sea";
     this.group.add(sea);
   }
 
-  // A flat plane at sea level, for replays whose map isn't known or didn't load, and for the "empty" style.
+  // A flat plane at sea level, for replays whose map isn't known or didn't load, and for the "empty" style. The empty
+  // style's plane carries the grid, so it is the fine one that follows the camera (see followPlane and update).
   drawPlain() {
     const empty = this.style === "empty";
     const mat = empty
       ? gridMaterial({ color: EMPTY_GROUND })
       : new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(0.16, 0.31, 0.4, THREE.SRGBColorSpace) });
-    const plain = new THREE.Mesh(new THREE.PlaneGeometry(SEA, SEA).rotateX(-Math.PI / 2), mat);
+    const plain = new THREE.Mesh(empty ? followPlane() : new THREE.PlaneGeometry(SEA, SEA).rotateX(-Math.PI / 2), mat);
     plain.position.y = empty ? 0 : -2;
     plain.name = empty ? "empty" : "sea";
     plain.userData.ownGeometry = true;
+    plain.userData.follow = empty;
+    plain.frustumCulled = false;   // it moves under the camera; never let a stale bounding box hide it
     this.group.add(plain);
+  }
+
+  // Once a frame: the empty style's plane re-centres under the camera, in whole 10 km steps (so it only moves now and
+  // then, and the grid, worked out from world position, doesn't move at all).
+  update(camera) {
+    for (const child of this.group.children) {
+      if (!child.userData.follow) continue;
+      const x = Math.round(camera.position.x / 10000) * 10000, z = Math.round(camera.position.z / 10000) * 10000;
+      if (child.position.x !== x || child.position.z !== z) child.position.set(x, child.position.y, z);
+    }
   }
 
   // takes the current look off the screen; the shape and the picture stay for the next one
@@ -261,6 +275,30 @@ vec3 mapGrid(vec3 col, vec2 p) {
   float major = gridLine(p, 10000.0, fw, 1.5);
   return col + gridMinor * minor + gridMajor * major;   // added on top, the way the game draws its grid
 }`;
+
+// The empty style's ground: a plane out to SEA / 2 each way whose cells are 500 m across in the middle and 10% bigger
+// with each step out (about 120 x 120 cells). It is kept under the camera. Drawn as two huge triangles it made the grid
+// jitter: the world position the lines come from is interpolated across each triangle, and across 3000 km the
+// graphics card's number precision runs out by metres. Small cells near the camera keep it steady.
+function followPlane() {
+  const half = [0];
+  for (let x = 0, s = 500; x < SEA / 2; s *= 1.1) { x = Math.min(SEA / 2, x + s); half.push(x); }
+  const c = [...half.slice(1).reverse().map((v) => -v), ...half];
+  const n = c.length;
+  const pos = new Float32Array(n * n * 3);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) pos.set([c[i], 0, c[j]], (j * n + i) * 3);
+  const idx = [];
+  for (let j = 0; j < n - 1; j++) {
+    for (let i = 0; i < n - 1; i++) {
+      const a = j * n + i, b = a + n, d = a + 1, e = b + 1;   // a north-west, b south-west, d north-east, e south-east
+      idx.push(a, b, d, b, e, d);                             // both facing up
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  return geo;
+}
 
 // The open sea around a map: flat at 0 m (the height the map holds its own water at), from the map edge out to SEA / 2
 // from the map's middle, with a hole where the map is. Its inner edge uses the land mesh's own edge vertices, worked out
