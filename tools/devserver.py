@@ -42,7 +42,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def log_message(self, fmt, *args):
-        pass
+        # quiet for this PC; with --lan, other devices' requests are printed, so you can see a phone get through
+        if self.client_address[0] != "127.0.0.1":
+            print(f"{self.client_address[0]}  {fmt % args}", flush=True)
 
 
 class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):

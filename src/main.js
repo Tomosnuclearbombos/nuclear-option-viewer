@@ -18,7 +18,8 @@ import { mapName, duration, missionClock, recorded, speedLabel } from "./ui/form
 
 const $ = (id) => document.getElementById(id);
 const SPEEDS = [0.1, 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128];
-const state = { replay: null, t: 0, playing: false, speed: 6, lastNow: 0, sel: -1 };
+const START_SPEED = SPEEDS.indexOf(1);   // every replay opens paused at 1X
+const state = { replay: null, t: 0, playing: false, speed: START_SPEED, lastNow: 0, sel: -1 };
 const NO_WEBGL = "This browser can't show 3D graphics. Turn on hardware acceleration in its settings, or try another browser.";
 
 // ---- 3D view (needs WebGL 2) -------------------------------------------------------------------------------
@@ -121,7 +122,8 @@ function parseInWorker(file, onProgress) {
 function start(replay, fileName) {
   state.replay = replay;
   state.t = replay.tMin;
-  state.playing = true;
+  state.playing = false;
+  state.speed = START_SPEED;
   state.lastNow = 0;
   units.setReplay(replay);
   blasts.setReplay(replay, replay.maxAlive[KIND.EXPLOSION]);
@@ -299,7 +301,7 @@ function togglePlay() {
 function changeSpeed(d) { state.speed = Math.max(0, Math.min(SPEEDS.length - 1, state.speed + d)); updateSpeed(); }
 function updateSpeed() { $("speed").textContent = speedLabel(SPEEDS[state.speed]); }
 function seek(t) { const rp = state.replay; if (rp) state.t = Math.max(rp.tMin, Math.min(rp.tMax, t)); }
-// back or on by 5 s of watching at the current speed (60 s with Shift): 40 s of the mission at 8X
+// back or on by 5 s of watching at the current speed (60 s with Shift): 5 s of the mission at 1X, 40 s at 8X
 function skip(dir, big) { seek(state.t + dir * 5 * SPEEDS[state.speed] * (big ? 12 : 1)); }
 
 $("play").addEventListener("click", togglePlay);
