@@ -4,7 +4,8 @@
 // jump, so a frame costs about the same whether you are playing or scrubbing. Positions are interpolated between
 // samples; angles take the short way round.
 
-import { KIND } from "./parser/acmi.js";
+import { KIND, CHANNELS } from "./parser/acmi.js";
+import { YIELD_KG, SHOCKWAVE_KG, blastRadius } from "./data/warheads.js";
 
 const D2R = Math.PI / 180;
 
@@ -23,10 +24,12 @@ export class Replay {
     this.cursor = new Uint32Array(N);
     this.chCursor = new Map();
 
-    // NOBlackBox removes an explosion about a frame (~24 ms) after writing it, so at normal speeds most would never
-    // be on screen. Give each one a short visible life instead.
+    // An explosion is the game's shockwave: NOBlackBox records its front (Radius) as it grows at the speed of sound
+    // and removes it when it reaches the blast radius. Older recorders stopped sooner, so an explosion lasts at least
+    // as long as its wave takes to reach its largest recorded radius. Each stays on screen at least BLAST_SHOW seconds,
+    // fading at its full size, or a missile's quarter second wave would be gone in a frame at 8X.
     for (let i = 0; i < N; i++) {
-      if (this.o.kind[i] === KIND.EXPLOSION) this.o.t1[i] = Math.max(this.o.t1[i], this.o.t0[i] + EXPLOSION_LIFE);
+      if (this.o.kind[i] === KIND.EXPLOSION) this.o.t1[i] = Math.max(this.o.t1[i], this.o.t0[i] + this.o.radius[i] / WAVE_SPEED, this.o.t0[i] + BLAST_SHOW);
     }
 
     // objects by start time, so the live set can be walked with one pointer
@@ -39,6 +42,9 @@ export class Replay {
 
     // where the action is, for the first camera position
     this.bounds = sampleBounds(this);
+
+    // detonations the recording has no explosion for (see inferDetonations)
+    this.detonations = inferDetonations(this);
 
     // sides that change during the mission (airbases changing hands): record -> { t: [...], side: [...] } in time order
     this.sideLog = new Map();
@@ -148,6 +154,20 @@ export class Replay {
     return c.v[k];
   }
 
+  // An explosion's shockwave radius at t: the recorded front, joined up between records; before the first record and
+  // after the last it grows at the game's wave speed, up to the largest radius recorded.
+  waveRadiusAt(i, t) {
+    const c = this.channels[RADIUS], n = c.count[i], R = this.o.radius[i];
+    const a = c.start[i], b = a + n - 1;
+    // older recorders logged only the final radius: grow it from the blast point at the wave's speed
+    if (!n || c.v[a] >= 0.95 * R) return Math.min(R, Math.max(0, (t - this.o.t0[i]) * WAVE_SPEED));
+    if (t <= c.t[a]) return Math.max(0, c.v[a] - (c.t[a] - t) * WAVE_SPEED);
+    if (t >= c.t[b]) return Math.min(R, c.v[b] + (t - c.t[b]) * WAVE_SPEED);
+    const k = search(c.t, a, b + 1, t);
+    const t0 = c.t[k], t1 = c.t[k + 1];
+    return t1 > t0 ? c.v[k] + ((c.v[k + 1] - c.v[k]) * (t - t0)) / (t1 - t0) : c.v[k];
+  }
+
   // whether the object is drawn (NOBlackBox marks destroyed ground units Visible=0)
   visibleAt(i, t) {
     const v = this.channelAt(VISIBLE, i, t);
@@ -168,7 +188,9 @@ export class Replay {
 }
 
 export const VISIBLE = 9; // index of "Visible" in CHANNELS
-const EXPLOSION_LIFE = 6.0; // seconds an explosion shows: fireball, then smoke (scene/blasts.js BLAST_LIFE)
+export const WAVE_SPEED = 340;   // m/s, how fast the game's shockwave front grows (NOBlackBox ACMIShockwave_mono notes)
+export const BLAST_SHOW = 2;     // seconds an explosion stays on screen at the least
+const RADIUS = CHANNELS.indexOf("Radius");
 
 // ---- orientation maths (no three.js needed here) -------------------------------------------------------------
 // ACMI angles: yaw = heading clockwise from north, pitch = nose up, roll = right wing down. Scene: north is -z,
@@ -226,6 +248,44 @@ function peakAlive(rp) {
   const cur = new Int32Array(kinds), max = new Int32Array(kinds);
   for (const [, d, k] of ev) { cur[k] += d; if (cur[k] > max[k]) max[k] = cur[k]; }
   return max;
+}
+
+// The recording only has the explosions that made a game shockwave: warheads of about 45 kg and up. Every missile,
+// bomb, rocket and shell that ended during the mission without one gets a detonation where it ended:
+//  - a small warhead (air to air missiles, AGM-48, shells...) went off but the game made no shockwave: its blast at
+//    the game's size for its yield, 13 x cbrt(kg);
+//  - a big one with no shockwave was shot down before it went off: a small flash (SHOT_DOWN_R).
+// Weapons whose yield isn't known (or is 0) get nothing. Returns arrays sorted by time.
+const SHOT_DOWN_R = 20;
+function inferDetonations(rp) {
+  const o = rp.o, s = rp.s, N = rp.count;
+  const ex = [];
+  for (let i = 0; i < N; i++) if (o.kind[i] === KIND.EXPLOSION && o.sampleCount[i]) ex.push(i);
+  ex.sort((a, b) => o.t0[a] - o.t0[b]);
+  const et = Float64Array.from(ex, (i) => o.t0[i]);
+  const first = (t) => { let a = 0, b = et.length; while (a < b) { const m = (a + b) >> 1; if (et[m] < t) a = m + 1; else b = m; } return a; };
+  const out = [];
+  for (let i = 0; i < N; i++) {
+    const k = o.kind[i];
+    if ((k !== KIND.MISSILE && k !== KIND.BOMB && k !== KIND.SHELL) || !o.sampleCount[i]) continue;
+    const t1 = o.t1[i];
+    if (!Number.isFinite(t1) || t1 > rp.tMax - 0.5) continue;      // still flying when the recording ended
+    const kg = YIELD_KG[o.name[i]];
+    if (!kg) continue;
+    const last = o.start[i] + o.sampleCount[i] - 1, x = s.x[last], y = s.y[last], z = s.z[last];
+    let recorded = false;
+    for (let j = first(t1 - 1); j < ex.length && et[j] <= t1 + 1; j++) {
+      const a = o.start[ex[j]];
+      if (Math.hypot(s.x[a] - x, s.y[a] - y, s.z[a] - z) < 300) { recorded = true; break; }
+    }
+    if (recorded) continue;
+    out.push([t1, x, y, z, kg >= SHOCKWAVE_KG ? SHOT_DOWN_R : blastRadius(kg), kg >= SHOCKWAVE_KG ? 1 : 0]);
+  }
+  out.sort((a, b) => a[0] - b[0]);
+  const n = out.length, d = { n, t: new Float64Array(n), x: new Float32Array(n), y: new Float32Array(n), z: new Float32Array(n),
+    r: new Float32Array(n), shotDown: new Uint8Array(n) };
+  out.forEach((e, k) => { d.t[k] = e[0]; d.x[k] = e[1]; d.y[k] = e[2]; d.z[k] = e[3]; d.r[k] = e[4]; d.shotDown[k] = e[5]; });
+  return d;
 }
 
 function sampleBounds(rp) {

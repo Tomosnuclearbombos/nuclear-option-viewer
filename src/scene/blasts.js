@@ -1,30 +1,27 @@
-// Explosions: a fireball that pops out and burns down from white through orange to dark red, a faint shock bubble out
-// to the blast radius the recording gives (60 to 180 m for most munitions, kilometres for a nuke), and smoke that
-// swells and fades. Everything is a function of the playhead: an explosion's age is just t minus when it happened.
+// Explosions, drawn the way the recording describes them. NOBlackBox records each explosion as the game's shockwave:
+// its front (Radius) grows at the speed of sound until it reaches the blast radius, and then it ends. So each one is a
+// sphere at exactly the recorded radius as it grows: about a quarter of a second to 90 m for a missile, about 10 s to
+// 3.5 km for a big bomb's wave. It starts white hot and turns to dust as it spreads, then fades at full size so it
+// stays on screen at least BLAST_SHOW seconds. A minimum size on screen keeps a far one visible.
 //
-// Two instances per explosion (fireball and smoke, shock bubble) in one instanced mesh with a small shader; each
-// instance carries its age and which part it is. The fireball keeps a minimum size on screen so a blast 30 km away
-// still shows.
+// Detonations the recording has no explosion for (small warheads, weapons shot down; Replay.detonations) are drawn
+// the same way, growing at the game's wave speed to the game's blast radius for their yield.
 
 import * as THREE from "three";
+import { WAVE_SPEED, BLAST_SHOW } from "../replay.js";
 
-export const BLAST_LIFE = 6.0;    // seconds an explosion shows: fire for the first ~1.5 s, then smoke
-const FIRE_S = 1.5;
-const POP_S = 0.25;               // the fireball reaches full size this fast
-const FIREBALL = 0.35;            // fireball radius as a share of the recorded blast radius
-const MIN_PX = 7;                 // smallest fireball radius on screen, pixels
-const SHOCK_S = 1.0;              // the shock bubble shows this long
+const MIN_PX = 5;   // smallest radius on screen, pixels
 
 const vertex = /* glsl */ `
   #include <common>
   #include <logdepthbuf_pars_vertex>
-  attribute float aAge;      // seconds since the explosion
-  attribute float aPart;     // 0 fireball and smoke, 1 shock bubble
-  varying float vAge;
-  varying float vPart;
+  attribute float aDone;     // how far the wave has got: 0 just exploded .. 1 at the blast radius
+  attribute float aFade;     // 1 .. 0 over the last second on screen
+  varying float vDone;
+  varying float vFade;
   varying float vFacing;     // 1 where the surface faces the camera, 0 at the rim
   void main() {
-    vAge = aAge; vPart = aPart;
+    vDone = aDone; vFade = aFade;
     vec4 mv = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
     vec3 n = normalize(mat3(modelViewMatrix) * mat3(instanceMatrix) * normal);
     vFacing = abs(dot(n, normalize(-mv.xyz)));
@@ -34,31 +31,18 @@ const vertex = /* glsl */ `
 
 const fragment = /* glsl */ `
   #include <logdepthbuf_pars_fragment>
-  uniform float uFire, uShock, uLife;
-  varying float vAge;
-  varying float vPart;
+  varying float vDone;
+  varying float vFade;
   varying float vFacing;
   void main() {
     #include <logdepthbuf_fragment>
-    if (vPart > 0.5) {
-      // shock bubble: a thin bright rim, fading
-      float k = 1.0 - clamp(vAge / uShock, 0.0, 1.0);
-      float rim = pow(1.0 - vFacing, 3.0);
-      gl_FragColor = vec4(1.0, 0.85, 0.6, rim * k * 0.5);
-      return;
-    }
-    if (vAge < uFire) {
-      float f = vAge / uFire;                                        // 0 new .. 1 burnt out
-      vec3 hot = vec3(1.0, 0.98, 0.85), mid = vec3(1.0, 0.55, 0.12), cool = vec3(0.55, 0.12, 0.04);
-      vec3 c = f < 0.35 ? mix(hot, mid, f / 0.35) : mix(mid, cool, (f - 0.35) / 0.65);
-      float body = mix(0.55, 1.0, pow(vFacing, 0.6));               // denser through the middle
-      gl_FragColor = vec4(c * mix(1.0, 0.8, 1.0 - vFacing), body * (1.0 - 0.35 * f));
-      return;
-    }
-    // smoke: dark grey, thinning out
-    float s = clamp((vAge - uFire) / (uLife - uFire), 0.0, 1.0);
-    float body = mix(0.3, 1.0, pow(vFacing, 0.8));
-    gl_FragColor = vec4(vec3(0.16, 0.15, 0.14) + 0.1 * s, body * 0.7 * (1.0 - s) * (1.0 - s));
+    float f = clamp(vDone, 0.0, 1.0);
+    vec3 hot = vec3(1.0, 0.95, 0.75), fire = vec3(1.0, 0.5, 0.12), dust = vec3(0.62, 0.55, 0.47);
+    vec3 c = f < 0.25 ? mix(hot, fire, f / 0.25) : mix(fire, dust, (f - 0.25) / 0.75);
+    // a shell: solid while small and hot, then a thin front with a faint inside, fading out at the blast radius
+    float rim = pow(1.0 - vFacing, 2.0);
+    float a = mix(0.85, 0.12 + 0.6 * rim, smoothstep(0.0, 0.3, f)) * (1.0 - 0.6 * f * f) * vFade;
+    gl_FragColor = vec4(c, a);
   }`;
 
 export class Blasts {
@@ -66,29 +50,31 @@ export class Blasts {
     this.scene = scene;
     this.mesh = null;
     this.geometry = new THREE.IcosahedronGeometry(1, 3);
-    this.material = new THREE.ShaderMaterial({
-      vertexShader: vertex, fragmentShader: fragment,
-      uniforms: { uFire: { value: FIRE_S }, uShock: { value: SHOCK_S }, uLife: { value: BLAST_LIFE } },
-      transparent: true, depthWrite: false,
-    });
+    this.material = new THREE.ShaderMaterial({ vertexShader: vertex, fragmentShader: fragment, transparent: true, depthWrite: false });
     this._m = new THREE.Matrix4(); this._q = new THREE.Quaternion(); this._p = new THREE.Vector3(); this._s = new THREE.Vector3();
     this.pos = new Float64Array(7);
   }
 
   // sized for the replay's busiest moment
   setReplay(rp, peak) {
-    if (this.mesh) { this.scene.remove(this.mesh); this.mesh.dispose(); }
-    const cap = Math.max(8, peak * 2 + 8);
+    if (this.mesh) { this.scene.remove(this.mesh); this.mesh.geometry.dispose(); this.mesh.dispose(); }
+    // room for the inferred detonations too: the most on screen at once (sorted times, a sliding window)
+    const d = rp.detonations;
+    let longest = BLAST_SHOW, most = 0;
+    for (let k = 0; k < d.n; k++) longest = Math.max(longest, d.r[k] / WAVE_SPEED);
+    for (let a = 0, b = 0; b < d.n; b++) { while (d.t[b] - d.t[a] > longest) a++; most = Math.max(most, b - a + 1); }
+    this.dLongest = longest;
+    const cap = Math.max(8, peak + 8) + most;
     this.cap = cap;
     const g = this.geometry.clone();
-    this.age = new THREE.InstancedBufferAttribute(new Float32Array(cap), 1).setUsage(THREE.DynamicDrawUsage);
-    this.part = new THREE.InstancedBufferAttribute(new Float32Array(cap), 1).setUsage(THREE.DynamicDrawUsage);
-    g.setAttribute("aAge", this.age);
-    g.setAttribute("aPart", this.part);
+    this.done = new THREE.InstancedBufferAttribute(new Float32Array(cap), 1).setUsage(THREE.DynamicDrawUsage);
+    this.fade = new THREE.InstancedBufferAttribute(new Float32Array(cap), 1).setUsage(THREE.DynamicDrawUsage);
+    g.setAttribute("aDone", this.done);
+    g.setAttribute("aFade", this.fade);
     this.mesh = new THREE.InstancedMesh(g, this.material, cap);
     this.mesh.count = 0;
     this.mesh.frustumCulled = false;
-    this.mesh.renderOrder = 4;   // after the trails and tracers, so the smoke covers them
+    this.mesh.renderOrder = 4;   // after the trails and tracers
     this.scene.add(this.mesh);
   }
 
@@ -97,36 +83,41 @@ export class Blasts {
     if (!this.mesh) return;
     const o = rp.o, cam = camera.position;
     const pxPerRad = viewportH / (2 * Math.tan((camera.fov * Math.PI) / 360));
-    const m = this._m, q = this._q.identity(), p = this._p, s = this._s;
-    const ages = this.age.array, parts = this.part.array;
+    const m = this._m, q = this._q.identity(), p = this._p, s = this._s, done = this.done.array, fade = this.fade.array;
     let k = 0;
-    for (let j = 0; j < n && k + 2 <= this.cap; j++) {
+    const put = (x, y, z, r, R, end) => {
+      p.set(x, y, z);
+      const minR = (MIN_PX * Math.max(1, p.distanceTo(cam))) / pxPerRad;
+      const shown = Math.max(r, minR);
+      s.set(shown, shown, shown);
+      m.compose(p, q, s);
+      this.mesh.setMatrixAt(k, m);
+      done[k] = R > 0 ? r / R : 1;
+      fade[k] = Math.min(1, Math.max(0, end - t));   // fades over its last second
+      k++;
+    };
+    // recorded explosions
+    for (let j = 0; j < n && k < this.cap; j++) {
       const i = list[j];
       if (!rp.poseAt(i, t, this.pos)) continue;
-      const age = t - o.t0[i];
-      if (age < 0 || age > BLAST_LIFE) continue;
-      const R = o.radius[i] > 0 ? o.radius[i] : 20;
-      p.set(this.pos[0], this.pos[1], this.pos[2]);
-      const dist = Math.max(1, p.distanceTo(cam));
-      const minR = (MIN_PX * dist) / pxPerRad;
-      // fireball, then smoke: pops out fast, smoke keeps swelling a little
-      const grow = Math.min(1, age / POP_S);
-      const swell = age < FIRE_S ? 1 : 1 + 0.4 * ((age - FIRE_S) / (BLAST_LIFE - FIRE_S));
-      const r = Math.max(FIREBALL * R * (1 - (1 - grow) * (1 - grow)) * swell, age < FIRE_S ? minR : 0);
-      if (r > 0) {
-        s.set(r, r, r); m.compose(p, q, s);
-        this.mesh.setMatrixAt(k, m); ages[k] = age; parts[k] = 0; k++;
-      }
-      // the shock bubble out to the blast radius
-      if (age < SHOCK_S) {
-        const rs = R * Math.min(1, 0.3 + age / (SHOCK_S * 0.5));
-        s.set(rs, rs, rs); m.compose(p, q, s);
-        this.mesh.setMatrixAt(k, m); ages[k] = age; parts[k] = 1; k++;
+      put(this.pos[0], this.pos[1], this.pos[2], rp.waveRadiusAt(i, t), o.radius[i], o.t1[i]);
+    }
+    // detonations the recording has no explosion for
+    const d = rp.detonations;
+    if (d.n) {
+      let a = 0, b = d.n;
+      const from = t - this.dLongest;
+      while (a < b) { const mid = (a + b) >> 1; if (d.t[mid] < from) a = mid + 1; else b = mid; }
+      for (let j = a; j < d.n && d.t[j] <= t && k < this.cap; j++) {
+        const age = t - d.t[j], R = d.r[j];
+        const end = d.t[j] + Math.max(BLAST_SHOW, R / WAVE_SPEED);
+        if (t >= end) continue;
+        put(d.x[j], d.y[j], d.z[j], Math.min(R, age * WAVE_SPEED), R, end);
       }
     }
     this.mesh.count = k;
     this.mesh.instanceMatrix.needsUpdate = true;
-    this.age.needsUpdate = true;
-    this.part.needsUpdate = true;
+    this.done.needsUpdate = true;
+    this.fade.needsUpdate = true;
   }
 }

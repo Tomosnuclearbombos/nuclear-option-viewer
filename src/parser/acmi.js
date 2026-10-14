@@ -38,7 +38,9 @@ export function kindOfType(type) {
 export const CHANNELS = [
   "TAS", "Mach", "AOA", "AGL", "Throttle", "PitchControlInput", "RollControlInput", "YawControlInput",
   "LandingGear", "Visible", "RadarMode",
+  "Radius",   // explosions: the shockwave front, recorded as it grows (NOBlackBox ACMIShockwave_mono)
 ];
+const RADIUS_CH = CHANNELS.indexOf("Radius");
 // LockedTarget, LockedTarget1..9 hold object ids; kept as one channel per slot.
 const LOCK_SLOTS = 10;
 
@@ -305,7 +307,15 @@ export class AcmiParser {
       }
       case "Color": this.recColor[r] = decode(b, s, e); return;
       case "EngagementRange": { const v = readNumber(b, s, e); if (v === v) this.recRange[r] = v; return; }
-      case "Radius": { const v = readNumber(b, s, e); if (v === v) this.recRadius[r] = v; return; }
+      case "Radius": {
+        // kept as a series (an explosion's wave growing) and as its largest value (the blast radius)
+        const v = readNumber(b, s, e);
+        if (v === v) {
+          if (v > this.recRadius[r]) this.recRadius[r] = v;
+          const ch = this.ch[RADIUS_CH]; ch.rec.push(r); ch.t.push(this.time); ch.v.push(v);
+        }
+        return;
+      }
     }
     if (k.charCodeAt(0) === 76 && k.startsWith("LockedTarget")) {
       const slot = k.length === 12 ? 0 : (k.charCodeAt(12) - 48);
