@@ -114,6 +114,7 @@ export class AcmiParser {
     this.header = { fileType: "", fileVersion: "", referenceTime: "", recordingTime: "", mapId: "", title: "",
       dataSource: "", dataRecorder: "", author: "" };
     this.time = 0;
+    this.frames = 0;
     this.tMin = Infinity; this.tMax = -Infinity;
     this.lineCount = 0;
     this.bytesRead = 0;
@@ -198,7 +199,8 @@ export class AcmiParser {
       const t = readNumber(b, s + 1, e);
       if (t === t) {
         if (t !== this.time) this.justRemoved.clear();
-        this.time = t; if (t < this.tMin) this.tMin = t; if (t > this.tMax) this.tMax = t;
+        this.time = t; this.frames++;
+        if (t < this.tMin) this.tMin = t; if (t > this.tMax) this.tMax = t;
       }
       return;
     }
@@ -377,8 +379,12 @@ export class AcmiParser {
   // ---- output ---------------------------------------------------------------------------------------------
   build() {
     const N = this.recId.length;
-    const end = this.tMax === -Infinity ? 0 : this.tMax;
-    const t1 = Float32Array.from(this.recT1, (v) => (v === v ? v : end));
+    // Times are stored as float32, so the replay's own start and end must sit on the same grid: a float64 1.016 is
+    // smaller than the float32 1.016 every object starts at, and nothing would be alive on the first frame.
+    const end = Math.fround(this.tMax === -Infinity ? 0 : this.tMax);
+    // Objects never removed stay alive past the last frame (alive means t0 <= t < t1, so t1 = end would blank the
+    // whole scene at the very end).
+    const t1 = Float32Array.from(this.recT1, (v) => (v === v ? v : Infinity));
 
     // counting sort of samples by record (stable, so time order is kept)
     const S = this.sRec.n;
@@ -406,8 +412,9 @@ export class AcmiParser {
 
     return {
       header: this.header,
-      tMin: this.tMin === Infinity ? 0 : this.tMin,
+      tMin: Math.fround(this.tMin === Infinity ? 0 : this.tMin),
       tMax: end,
+      frames: this.frames,
       lines: this.lineCount,
       bytes: this.bytesRead,
       objects: {

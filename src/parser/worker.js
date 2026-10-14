@@ -25,8 +25,8 @@ async function read(file) {
 
   let sink = (chunk) => parser.push(chunk);
   let feed, close;
+  let picked = false;
   if (isZip) {
-    let picked = false;
     const unzip = new Unzip((entry) => {
       // a .zip.acmi holds one .acmi file; take the first one
       if (picked || !/\.acmi$/i.test(entry.name || "")) return;
@@ -59,5 +59,10 @@ async function read(file) {
   }
   close();
   self.postMessage({ type: "progress", done: total, total });
-  return parser.finish();
+  if (isZip && !picked) throw new Error("There's no replay inside that zip file.");
+  const result = parser.finish();
+  // Anything that isn't a Tacview recording (a picture, a mission file, random bytes) reads as zero objects.
+  if (!String(result.header.fileType).startsWith("text/acmi")) throw new Error("That file isn't a Tacview replay.");
+  if (result.objects.count === 0 || result.frames === 0) throw new Error("That replay is empty.");
+  return result;
 }

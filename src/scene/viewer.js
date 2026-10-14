@@ -6,12 +6,15 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
+const CLEARANCE = 12; // metres the camera keeps above the ground
+
 export class Viewer {
-  constructor(canvas, { keepFrame = false } = {}) {
+  // Throws if the browser can't give us WebGL 2.
+  constructor(canvas) {
     this.canvas = canvas;
-    // keepFrame lets a test read the last frame back (screenshots); off normally, it costs a little speed
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true, preserveDrawingBuffer: keepFrame });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    const gl = canvas.getContext("webgl2", { antialias: true, powerPreference: "high-performance" });
+    if (!gl) throw new Error("no webgl2");
+    this.renderer = new THREE.WebGLRenderer({ canvas, context: gl, antialias: true, logarithmicDepthBuffer: true });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
@@ -37,29 +40,52 @@ export class Viewer {
     this.sun.position.set(-0.6, 1, 0.4).multiplyScalar(100000);
     this.scene.add(this.hemi, this.sun);
 
+    this.groundAt = null;   // (x, sceneZ) -> ground height under that point, set once a map is loaded
     this.onFrame = null;
     this.resize();
     window.addEventListener("resize", () => this.resize());
+    this.watchPixelRatio();
     this.renderer.setAnimationLoop((now) => this.frame(now));
   }
 
   resize() {
     const w = this.canvas.clientWidth || window.innerWidth, h = this.canvas.clientHeight || window.innerHeight;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.height = h;
   }
 
+  // browser zoom or a move to another monitor changes devicePixelRatio, often without a resize event
+  watchPixelRatio() {
+    const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+    mq.addEventListener("change", () => { this.resize(); this.watchPixelRatio(); }, { once: true });
+  }
+
   frame(now) {
     this.controls.update();
+    this.keepAboveGround();
     if (this.onFrame) this.onFrame(now);
     this.renderer.render(this.scene, this.camera);
   }
 
+  // The orbit pivot follows the ground under it, so zooming in on a mountain lands on the mountain rather than
+  // sea level inside it; and the camera itself never goes below the ground.
+  keepAboveGround() {
+    if (!this.groundAt) return;
+    const tg = this.controls.target, cam = this.camera.position;
+    const gt = Math.max(0, this.groundAt(tg.x, tg.z));
+    const dy = (gt - tg.y) * 0.25;   // ease, so panning over ridges doesn't jolt
+    if (Math.abs(dy) > 0.01) { tg.y += dy; cam.y += dy; }
+    const floor = Math.max(0, this.groundAt(cam.x, cam.z)) + CLEARANCE;
+    if (cam.y < floor) cam.y = floor;
+  }
+
   // look at a box of the world from a readable angle
-  frameBox(x0, x1, z0, z1, ground = 0) {
+  frameBox(x0, x1, z0, z1) {
     const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    const ground = this.groundAt ? Math.max(0, this.groundAt(cx, cz)) : 0;
     const span = Math.max(x1 - x0, z1 - z0, 4000);
     const dist = span * 0.85;
     this.controls.target.set(cx, ground, cz);

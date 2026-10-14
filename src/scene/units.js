@@ -15,7 +15,7 @@ const D2R = Math.PI / 180;
 export const SIDE = {
   Boscali: new THREE.Color("#a76bff"),   // BDF, lavender
   Primeva: new THREE.Color("#ffb800"),   // PALA, yellow
-  neutral: new THREE.Color("#b8c2cc"),
+  neutral: new THREE.Color("#808080"),   // the game's neutral map icon grey
 };
 
 // real length in metres and minimum on-screen length in pixels, per kind
@@ -91,17 +91,18 @@ export class Units {
     scene.add(this.group);
     this.meshes = new Map();
     this.points = null;
-    this.state = new Float64Array(6);
-    this._m = new THREE.Matrix4(); this._q = new THREE.Quaternion(); this._e = new THREE.Euler(0, 0, 0, "YXZ");
+    this.state = new Float64Array(7);
+    this.surfaceAt = null;   // (x, sceneZ) -> drawn ground height; ground units are lifted onto it
+    this._m = new THREE.Matrix4(); this._q = new THREE.Quaternion();
     this._p = new THREE.Vector3(); this._s = new THREE.Vector3();
   }
 
   // size the buffers for this replay's busiest moment
   setReplay(replay) {
     this.replay = replay;
-    for (const m of this.meshes.values()) { this.group.remove(m); m.geometry.dispose(); m.material.dispose(); }
+    for (const m of this.meshes.values()) { this.group.remove(m); m.geometry.dispose(); m.material.dispose(); m.dispose(); }
     this.meshes.clear();
-    if (this.points) { this.group.remove(this.points); this.points.geometry.dispose(); }
+    if (this.points) { this.group.remove(this.points); this.points.geometry.dispose(); this.points.material.dispose(); }
     for (const k of MESH_KINDS) {
       const cap = Math.max(1, replay.maxAlive[k] + 8);
       const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
@@ -115,6 +116,7 @@ export class Units {
     }
     let cap = 8;
     for (const k of POINT_KINDS) cap += replay.maxAlive[k];
+    this.pointCap = cap;
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(cap * 3), 3).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute("color", new THREE.BufferAttribute(new Float32Array(cap * 3), 3).setUsage(THREE.DynamicDrawUsage));
@@ -137,13 +139,16 @@ export class Units {
     const cam = camera.position;
     const pts = this.points.geometry, pp = pts.attributes.position.array, pc = pts.attributes.color.array;
     let np = 0;
-    const m = this._m, q = this._q, e = this._e, p = this._p, s = this._s;
+    const m = this._m, q = this._q, p = this._p, s = this._s;
 
+    const surface = this.surfaceAt;
+    const cap = this.pointCap;
     rp.forEachAlive(t, (i) => {
       const k = o.kind[i];
-      if (!rp.stateAt(i, t, st)) return;
+      if (!rp.poseAt(i, t, st)) return;
       if ((k === KIND.GROUND || k === KIND.BUILDING || k === KIND.SHIP) && !rp.visibleAt(i, t)) return; // destroyed
       if (k === KIND.ROUND || k === KIND.FLARE || k === KIND.EXPLOSION) {
+        if (np >= cap) return;
         const c = k === KIND.ROUND ? ROUND_COL : k === KIND.FLARE ? FLARE_COL : BOOM_COL;
         pp[np * 3] = st[0]; pp[np * 3 + 1] = st[1]; pp[np * 3 + 2] = st[2];
         pc[np * 3] = c.r; pc[np * 3 + 1] = c.g; pc[np * 3 + 2] = c.b;
@@ -154,13 +159,16 @@ export class Units {
       if (!mesh) return;
       const n = counts.get(k);
       if (n >= mesh.instanceMatrix.count) return;
+      // Until the detailed terrain lands, the far terrain mesh can sit a few metres above a vehicle on a hillside;
+      // lift ground units and buildings onto the ground as drawn so they never vanish inside it.
+      let y = st[1];
+      if (surface && (k === KIND.GROUND || k === KIND.BUILDING)) y = Math.max(y, surface(st[0], st[2]));
       const look = LOOK[k];
-      const dx = st[0] - cam.x, dy = st[1] - cam.y, dz = st[2] - cam.z;
+      const dx = st[0] - cam.x, dy = y - cam.y, dz = st[2] - cam.z;
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
       const len = Math.max(look.len, (look.minPx * dist) / pxPerRad);
-      e.set(st[4] * D2R, -st[5] * D2R, -st[3] * D2R, "YXZ");
-      q.setFromEuler(e);
-      p.set(st[0], st[1], st[2]);
+      q.set(st[3], st[4], st[5], st[6]);
+      p.set(st[0], y, st[2]);
       s.set(len, len, len);
       m.compose(p, q, s);
       mesh.setMatrixAt(n, m);

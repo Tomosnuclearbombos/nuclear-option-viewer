@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nuclear Option Viewer</title>
+  <meta name="description" content="Watch Nuclear Option replays on the real map, in your browser.">
+  <link rel="icon" href="assets/ui/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="src/style.css">
   <script type="importmap">
     { "imports": {
@@ -13,36 +15,80 @@
   </script>
 </head>
 <body>
-  <canvas id="view"></canvas>
+  <canvas id="view" aria-label="3D replay view"></canvas>
 
-  <header id="top">
-    <div class="brand">Nuclear Option Viewer</div>
-    <div id="mission" class="mission"></div>
-    <label class="open">Open replay<input id="file" type="file" accept=".acmi,.zip,.gz"></label>
+  <header id="top" hidden>
+    <section class="plate mission" aria-label="Mission">
+      <div class="mission-name" id="m-title"></div>
+      <div class="mission-facts">
+        <span><span class="lbl">MAP :</span> <span id="m-map"></span></span>
+        <span><span class="lbl">RECORDED :</span> <span id="m-rec"></span></span>
+      </div>
+    </section>
+    <nav class="top-keys">
+      <button id="keys-btn" class="key" type="button" aria-expanded="false" aria-controls="keys">KEYS</button>
+      <label class="key">OPEN REPLAY<input id="file" type="file" accept=".acmi,.zip,.gz,application/zip"></label>
+    </nav>
   </header>
 
-  <div id="start" class="start">
-    <div class="card">
-      <h1>Nuclear Option Viewer</h1>
-      <p>Drop a replay here to watch it on the real map.</p>
-      <p class="hint">Replays are the <code>.zip.acmi</code> files from the Discord #replays posts. They also open in Tacview.</p>
-      <label class="button">Choose a replay<input id="file2" type="file" accept=".acmi,.zip,.gz"></label>
-      <div id="progress" class="progress" hidden><div class="bar"></div><span class="label"></span></div>
-      <p id="error" class="error" hidden></p>
-    </div>
+  <main id="start" class="start">
+    <div class="backdrop" aria-hidden="true"></div>
+    <section class="plate start-plate">
+      <h1 class="title">NUCLEAR OPTION VIEWER</h1>
+      <p class="lead">WATCH NUCLEAR OPTION REPLAYS ON THE REAL MAP</p>
+      <div class="dropzone" id="dropzone">
+        <div>DROP A REPLAY HERE</div>
+        <div class="dim">.ZIP.ACMI OR .ACMI</div>
+      </div>
+      <label class="key big">CHOOSE REPLAY<input id="file2" type="file" accept=".acmi,.zip,.gz,application/zip"></label>
+      <div class="progress" id="progress" hidden>
+        <div class="progress-label"><span id="progress-label">READING REPLAY</span><span id="progress-pct"></span></div>
+        <div class="bar"><div class="fill" id="progress-fill"></div></div>
+      </div>
+      <p class="error" id="error" role="alert" hidden></p>
+      <p class="prose hint">Replays are the .zip.acmi files in the Discord #replays posts. They open in Tacview too.</p>
+      <p class="prose credit">Inspired by <a href="https://acmi-viewer.github.io" target="_blank" rel="noopener">ACMI Viewer</a> by Aleksi Lassila.</p>
+    </section>
+  </main>
+
+  <div id="loader" class="plate loader" hidden>
+    <div class="progress-label"><span id="loader-label">READING REPLAY</span><span id="loader-pct"></span></div>
+    <div class="bar"><div class="fill" id="loader-fill"></div></div>
   </div>
 
-  <footer id="transport" hidden>
-    <button id="play" class="icon" title="Play / pause (Space)">▶</button>
-    <button id="slower" class="icon" title="Slower (-)">−</button>
-    <span id="speed" class="speed">8×</span>
-    <button id="faster" class="icon" title="Faster (+)">+</button>
-    <span id="clock" class="clock"></span>
-    <canvas id="timeline" class="timeline"></canvas>
-    <span id="length" class="clock"></span>
+  <footer id="transport" class="plate transport" hidden>
+    <button id="play" class="key wide" type="button" title="Play or pause (Space)">PLAY</button>
+    <div class="speed">
+      <button id="slower" class="key square" type="button" title="Slower (-)" aria-label="Slower">−</button>
+      <span class="readout"><span class="lbl">SPEED :</span> <span id="speed">8X</span></span>
+      <button id="faster" class="key square" type="button" title="Faster (+)" aria-label="Faster">+</button>
+    </div>
+    <div class="readout clock"><span class="lbl">TIME :</span> <span id="clock">00:00:00</span></div>
+    <div class="timeline-wrap"><canvas id="timeline" aria-label="Timeline"></canvas></div>
+    <div class="readout elapsed"><span id="elapsed">0:00</span> <span class="lbl">/</span> <span id="length">0:00</span></div>
   </footer>
 
-  <div id="drop" class="drop" hidden><div>Drop the replay to open it</div></div>
+  <section id="keys" class="plate keys-panel" hidden aria-label="Controls">
+    <h2 class="panel-title">CONTROLS</h2>
+    <dl>
+      <dt>SPACE</dt><dd>PLAY OR PAUSE</dd>
+      <dt>+ &nbsp;−</dt><dd>FASTER OR SLOWER</dd>
+      <dt>→ &nbsp;←</dt><dd>SKIP 5 S OF PLAYBACK</dd>
+      <dt>SHIFT →</dt><dd>SKIP 60 S OF PLAYBACK</dd>
+      <dt>HOME &nbsp;END</dt><dd>START OR END</dd>
+      <dt>LEFT DRAG</dt><dd>MOVE OVER THE MAP</dd>
+      <dt>RIGHT DRAG</dt><dd>TURN THE VIEW</dd>
+      <dt>WHEEL</dt><dd>ZOOM</dd>
+      <dt>?</dt><dd>SHOW OR HIDE THIS</dd>
+    </dl>
+  </section>
+
+  <div id="toast" class="plate toast" role="alert" hidden>
+    <span id="toast-msg"></span>
+    <button id="toast-close" class="key" type="button">CLOSE</button>
+  </div>
+
+  <div id="drop" class="drop" hidden><div class="drop-frame">DROP TO OPEN THE REPLAY</div></div>
 
   <script type="module" src="src/main.js"></script>
 </body>

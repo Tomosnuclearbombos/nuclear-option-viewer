@@ -1,61 +1,156 @@
+/* Nuclear Option Viewer, styled after the game's own map screen and MFD panels:
+   near black plates, thin green outlines, Brass Mono in capitals, outline only soft keys, Barlow for prose.
+   Colours are the game's (ColorTheme "Vanilla", DynamicMap, Faction) unless noted. */
+
+@font-face { font-family: "Brass Mono"; src: url("../assets/fonts/BrassMono-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Brass Mono"; src: url("../assets/fonts/BrassMono-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("../assets/fonts/Barlow-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("../assets/fonts/Barlow-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("../assets/fonts/Barlow-SemiBold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+
 :root {
-  --bg: #0b1016;
-  --panel: rgba(12, 18, 26, 0.86);
-  --line: rgba(160, 190, 220, 0.16);
-  --text: #dfe7ef;
-  --dim: #8b9aab;
-  --accent: #6fc3ff;
+  --black: #000000;
+  --plate: rgba(0, 0, 0, 0.9);          /* map backing plate and MFD panels */
+  --green: #00ff00;                      /* the game's one UI green */
+  --green-text: #3dff3d;                 /* body text: the same green, a touch softer to read at small sizes */
+  --green-dim: #00b400;                  /* secondary labels */
+  --green-faint: #006500;                /* inactive dials, quiet rules */
+  --green-line: rgba(0, 255, 0, 0.5);    /* group box outlines */
+  --grid-major: #007400;
+  --grid-minor: #004100;
+  --glow: 0 0 6px rgba(0, 146, 0, 0.75); /* Brass Mono glow (#009200) */
+  --off: #808080;                        /* toggle off / disabled */
+  --hover: #80bf80;
+  --key-fill: rgba(15, 28, 31, 0.8);     /* MFD soft key fill #0F1C1F */
+  --alert: #ff4000;
+  --warn: #ff8000;
   --bdf: #a76bff;
   --pala: #ffb800;
-  font-family: system-ui, "Segoe UI", Roboto, Ubuntu, sans-serif;
+  --mono: "Brass Mono", "Share Tech Mono", ui-monospace, monospace;
+  --prose: "Barlow", "Arimo", system-ui, sans-serif;
   color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
-#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+[hidden] { display: none !important; }   /* hidden always wins over any display rule */
 
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--black); color: var(--green-text); }
+body { font: 15px/1.35 var(--mono); letter-spacing: 0; -webkit-font-smoothing: antialiased; }
+#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+
+button { font: inherit; color: inherit; }
+a { color: var(--green); }
+a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(--green); outline-offset: 2px; }
+
+/* ---- shared parts ---------------------------------------------------------------------------------------- */
+.plate {
+  background: var(--plate);
+  border: 1px solid var(--green-line);
+  border-radius: 3px;
+}
+.lbl { color: var(--green-dim); }
+.dim { color: var(--green-dim); }
+.prose { font-family: var(--prose); font-weight: 500; letter-spacing: 0.01em; }
+
+/* soft keys: outline boxes, green when live, grey when off */
+.key {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 32px; padding: 0 12px; border: 2px solid var(--green); border-radius: 2px;
+  background: var(--key-fill); color: var(--green); text-shadow: var(--glow);
+  font: 14px/1 var(--mono); letter-spacing: 0.04em; cursor: pointer; user-select: none; white-space: nowrap;
+}
+.key:hover { color: var(--hover); border-color: var(--hover); }
+.key:active { color: #008000; border-color: #008000; }
+.key.off { color: var(--off); border-color: var(--off); text-shadow: none; }
+.key input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.key.square { width: 32px; padding: 0; font-size: 18px; }
+.key.wide { min-width: 84px; }
+.key.big { min-height: 44px; padding: 0 26px; font-size: 17px; }
+
+.progress-label { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--green); text-shadow: var(--glow); }
+.bar { position: relative; height: 12px; margin-top: 6px; border: 1px solid var(--green-line); padding: 2px; }
+.bar .fill {
+  height: 100%; width: 0;
+  /* segmented like the game's gauges */
+  background: repeating-linear-gradient(90deg, var(--green) 0 8px, transparent 8px 11px);
+  box-shadow: 0 0 6px rgba(0, 146, 0, 0.6);
+  transition: width 0.12s linear;
+}
+
+/* ---- start screen ---------------------------------------------------------------------------------------- */
+.start { position: fixed; inset: 0; display: grid; place-items: center; background: var(--black); z-index: 20; }
+.start .backdrop {
+  position: absolute; inset: 0; opacity: 0.55;
+  background: url("../assets/ui/backdrop.jpg") center / cover no-repeat;
+}
+.start-plate {
+  position: relative; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto;
+  padding: 28px 32px 22px; text-align: center; border: 2px solid var(--green);
+}
+.title { margin: 0; font: 700 26px/1.2 var(--mono); letter-spacing: 0.06em; color: var(--green); text-shadow: var(--glow); }
+.lead { margin: 10px 0 20px; padding-bottom: 14px; border-bottom: 1px solid var(--green); font-size: 13px; color: var(--green-dim); }
+.dropzone {
+  margin: 0 0 18px; padding: 22px 12px; border: 2px dashed var(--green-line); color: var(--green); text-shadow: var(--glow);
+}
+.dropzone .dim { margin-top: 6px; font-size: 12px; text-shadow: none; }
+.start .progress { margin: 20px 0 4px; text-align: left; }
+.error { margin: 16px 0 0; color: var(--alert); font-size: 14px; }
+.hint { margin: 20px 0 0; font-size: 14px; color: var(--green-dim); }
+.credit { margin: 8px 0 0; font-size: 13px; color: var(--green-faint); }
+.credit a { color: var(--green-dim); }
+
+/* ---- top: mission info + keys ----------------------------------------------------------------------------- */
 header#top {
-  position: fixed; top: 0; left: 0; right: 0; height: 44px; display: flex; align-items: center; gap: 16px;
-  padding: 0 14px; background: linear-gradient(var(--panel), rgba(12, 18, 26, 0)); pointer-events: none;
+  position: fixed; top: 12px; left: 12px; right: 12px; display: flex; align-items: flex-start; gap: 12px;
+  pointer-events: none; z-index: 5;
 }
 header#top > * { pointer-events: auto; }
-.brand { font-weight: 650; letter-spacing: 0.02em; white-space: nowrap; }
-.mission { flex: 1; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mission b { color: var(--text); font-weight: 600; }
-.open, .button {
-  position: relative; display: inline-block; padding: 6px 12px; border-radius: 6px; cursor: pointer;
-  background: rgba(111, 195, 255, 0.14); border: 1px solid rgba(111, 195, 255, 0.4); color: var(--text); font-size: 14px;
-}
-.open:hover, .button:hover { background: rgba(111, 195, 255, 0.24); }
-.open input, .button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.mission { padding: 8px 12px; max-width: min(720px, 60vw); }
+.mission-name { font: 600 16px/1.25 var(--prose); color: var(--green); text-shadow: var(--glow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mission-facts { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 3px; font-size: 13px; }
+.top-keys { margin-left: auto; display: flex; gap: 8px; }
 
-.start { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(#142030, #070b10); }
-.start .card { max-width: 480px; padding: 32px; text-align: center; }
-.start h1 { margin: 0 0 12px; font-size: 28px; letter-spacing: 0.01em; }
-.start p { margin: 8px 0; line-height: 1.5; }
-.start .hint { color: var(--dim); font-size: 14px; }
-.start .button { margin-top: 18px; font-size: 16px; padding: 10px 20px; }
-.progress { position: relative; margin: 22px auto 0; height: 8px; width: 320px; background: rgba(255, 255, 255, 0.08); border-radius: 4px; }
-.progress .bar { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); border-radius: 4px; transition: width 0.1s; }
-.progress .label { position: absolute; top: 14px; left: 0; right: 0; font-size: 13px; color: var(--dim); }
-.error { color: #ff8a80; }
-code { background: rgba(255, 255, 255, 0.08); padding: 1px 5px; border-radius: 4px; }
-
-footer#transport {
-  position: fixed; left: 0; right: 0; bottom: 0; height: 54px; display: flex; align-items: center; gap: 10px;
-  padding: 0 14px; background: linear-gradient(rgba(12, 18, 26, 0), var(--panel) 40%);
+/* ---- bottom: transport ------------------------------------------------------------------------------------ */
+.transport {
+  position: fixed; left: 12px; right: 12px; bottom: 12px; height: 56px; z-index: 5;
+  display: flex; align-items: center; gap: 12px; padding: 0 12px;
 }
-footer#transport[hidden] { display: none; }
-.icon {
-  width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.05);
-  color: var(--text); font-size: 16px; cursor: pointer;
-}
-.icon:hover { background: rgba(255, 255, 255, 0.12); }
-.speed { min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; color: var(--dim); }
-.clock { min-width: 72px; font-variant-numeric: tabular-nums; font-size: 14px; }
-.timeline { flex: 1; height: 34px; cursor: pointer; border-radius: 4px; }
+.speed { display: flex; align-items: center; gap: 8px; }
+.readout { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--green); text-shadow: var(--glow); }
+.readout .lbl { text-shadow: none; }
+#speed { display: inline-block; min-width: 4ch; }
+.clock #clock { display: inline-block; min-width: 8ch; }
+.timeline-wrap { position: relative; flex: 1 1 auto; min-width: 0; height: 40px; }
+#timeline { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; touch-action: none; }
+.elapsed { min-width: 13ch; text-align: right; }
 
-.drop { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(8, 14, 22, 0.72);
-  border: 3px dashed var(--accent); font-size: 22px; z-index: 10; }
-.drop[hidden] { display: none; }
+/* narrow screens: keep the timeline usable, drop the less important readouts */
+@media (max-width: 900px) {
+  .clock { display: none; }
+  .transport { gap: 8px; }
+}
+@media (max-width: 620px) {
+  .speed .readout, .elapsed .lbl, #length { display: none; }
+  .elapsed { min-width: 0; }
+  .mission { max-width: calc(100vw - 200px); }
+  .mission-facts { display: none; }
+}
+
+/* ---- panels over the view -------------------------------------------------------------------------------- */
+.loader { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); width: min(420px, calc(100vw - 32px)); padding: 12px 14px 14px; z-index: 15; }
+.keys-panel { position: fixed; top: 84px; right: 12px; width: min(380px, calc(100vw - 24px)); padding: 12px 16px 14px; z-index: 15; }
+.panel-title { margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--green); text-align: center; font: 700 15px/1 var(--mono); letter-spacing: 0.06em; color: var(--green); text-shadow: var(--glow); }
+.keys-panel dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: 13px; }
+.keys-panel dt { color: var(--green); text-shadow: var(--glow); }
+.keys-panel dd { margin: 0; color: var(--green-dim); }
+.toast {
+  position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 16;
+  display: flex; align-items: center; gap: 14px; max-width: calc(100vw - 32px); padding: 10px 12px 10px 16px;
+  border-color: var(--alert); color: var(--alert); font-size: 14px;
+}
+.toast .key { border-color: var(--alert); color: var(--alert); text-shadow: none; }
+
+.drop { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(0, 0, 0, 0.82); pointer-events: none; }
+.drop-frame { padding: 40px 56px; border: 2px dashed var(--green); color: var(--green); font-size: 22px; letter-spacing: 0.05em; text-shadow: var(--glow); }
+
+@media (prefers-reduced-motion: reduce) { .bar .fill { transition: none; } }

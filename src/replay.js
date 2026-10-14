@@ -23,6 +23,12 @@ export class Replay {
     this.cursor = new Uint32Array(N);
     this.chCursor = new Map();
 
+    // NOBlackBox removes an explosion about a frame (~24 ms) after writing it, so at normal speeds most would never
+    // be on screen. Give each one a short visible life instead.
+    for (let i = 0; i < N; i++) {
+      if (this.o.kind[i] === KIND.EXPLOSION) this.o.t1[i] = Math.max(this.o.t1[i], this.o.t0[i] + EXPLOSION_LIFE);
+    }
+
     // objects by start time, so the live set can be walked with one pointer
     const byStart = Array.from({ length: N }, (_, i) => i);
     byStart.sort((a, b) => this.o.t0[a] - this.o.t0[b]);
@@ -86,6 +92,34 @@ export class Replay {
     return true;
   }
 
+  // Position and orientation at t into out = [x, y, z, qx, qy, qz, qw]. Orientation is a quaternion blended
+  // between the two samples (slerp), so a jet rolling through inverted flight turns the short way instead of
+  // spinning through a wrong attitude, which blending roll, pitch and yaw separately would do.
+  poseAt(i, t, out) {
+    const k = this.sampleAt(i, t);
+    if (k < 0) return false;
+    const s = this.s, end = this.o.start[i] + this.o.sampleCount[i];
+    const t0 = s.t[k];
+    let f = 0;
+    if (k + 1 < end && t > t0) {
+      const t1 = s.t[k + 1];
+      f = t1 > t0 ? Math.min(1, (t - t0) / (t1 - t0)) : 0;
+    }
+    if (f > 0) {
+      out[0] = s.x[k] + (s.x[k + 1] - s.x[k]) * f;
+      out[1] = s.y[k] + (s.y[k + 1] - s.y[k]) * f;
+      out[2] = s.z[k] + (s.z[k + 1] - s.z[k]) * f;
+      sampleQuat(s, k, Q0);
+      sampleQuat(s, k + 1, Q1);
+      slerp(Q0, Q1, f, out, 3);
+    } else {
+      out[0] = s.x[k]; out[1] = s.y[k]; out[2] = s.z[k];
+      sampleQuat(s, k, Q0);
+      out[3] = Q0[0]; out[4] = Q0[1]; out[5] = Q0[2]; out[6] = Q0[3];
+    }
+    return true;
+  }
+
   // value of numeric channel ch for object i at time t (step function), or NaN
   channelAt(ch, i, t) {
     const c = this.channels[ch];
@@ -117,6 +151,34 @@ export class Replay {
 }
 
 export const VISIBLE = 9; // index of "Visible" in CHANNELS
+const EXPLOSION_LIFE = 2.0; // seconds an explosion stays on screen
+
+// ---- orientation maths (no three.js needed here) -------------------------------------------------------------
+// ACMI angles: yaw = heading clockwise from north, pitch = nose up, roll = right wing down. Scene: north is -z,
+// east is +x, up is +y, and models face -z. That is three.js Euler order YXZ with (x = pitch, y = -yaw, z = -roll).
+const Q0 = new Float64Array(4), Q1 = new Float64Array(4);
+function sampleQuat(s, k, q) {
+  const x = (s.pitch[k] / 100) * D2R * 0.5, y = (-s.yaw[k] / 100) * D2R * 0.5, z = (-s.roll[k] / 100) * D2R * 0.5;
+  const c1 = Math.cos(x), c2 = Math.cos(y), c3 = Math.cos(z), s1 = Math.sin(x), s2 = Math.sin(y), s3 = Math.sin(z);
+  q[0] = s1 * c2 * c3 + c1 * s2 * s3;
+  q[1] = c1 * s2 * c3 - s1 * c2 * s3;
+  q[2] = c1 * c2 * s3 - s1 * s2 * c3;
+  q[3] = c1 * c2 * c3 + s1 * s2 * s3;
+}
+function slerp(a, b, f, out, o) {
+  let bx = b[0], by = b[1], bz = b[2], bw = b[3];
+  let cos = a[0] * bx + a[1] * by + a[2] * bz + a[3] * bw;
+  if (cos < 0) { cos = -cos; bx = -bx; by = -by; bz = -bz; bw = -bw; }   // the short way round
+  let wa, wb;
+  if (cos > 0.9995) { wa = 1 - f; wb = f; }                              // nearly equal: plain blend
+  else {
+    const th = Math.acos(cos), sn = Math.sin(th);
+    wa = Math.sin((1 - f) * th) / sn; wb = Math.sin(f * th) / sn;
+  }
+  let x = a[0] * wa + bx * wb, y = a[1] * wa + by * wb, z = a[2] * wa + bz * wb, w = a[3] * wa + bw * wb;
+  const n = Math.hypot(x, y, z, w) || 1;
+  out[o] = x / n; out[o + 1] = y / n; out[o + 2] = z / n; out[o + 3] = w / n;
+}
 
 function search(T, lo, hi, t) {
   // last index in [lo, hi) with T <= t, or lo

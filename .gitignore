@@ -3,6 +3,9 @@
 *.zip.acmi
 data/
 
+# python
+__pycache__/
+
 # editors / OS
 .vscode/
 .idea/
