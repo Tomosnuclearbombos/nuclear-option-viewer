@@ -1,0 +1,2772 @@
+{
+ "models": {
+  "6x6_1_AA": {
+   "file": "6x6_1_AA.glb",
+   "kind": "ground",
+   "tris": 1556,
+   "size": {
+    "len": 7.22,
+    "wid": 3.14,
+    "hgt": 3.7
+   },
+   "source": "community",
+   "names": [
+    "6x6_1_AA",
+    "AFV6 AA"
+   ]
+  },
+  "6x6_1_APC": {
+   "file": "6x6_1_APC.glb",
+   "kind": "ground",
+   "tris": 1744,
+   "size": {
+    "len": 7.2,
+    "wid": 3.14,
+    "hgt": 3.7
+   },
+   "source": "community",
+   "names": [
+    "6x6_1_APC",
+    "AFV6 APC"
+   ]
+  },
+  "6x6_1_AT": {
+   "file": "6x6_1_AT.glb",
+   "kind": "ground",
+   "tris": 1505,
+   "size": {
+    "len": 7.21,
+    "wid": 3.14,
+    "hgt": 3.7
+   },
+   "source": "community",
+   "names": [
+    "6x6_1_AT",
+    "AFV6 AT"
+   ]
+  },
+  "6x6_1_IFV": {
+   "file": "6x6_1_IFV.glb",
+   "kind": "ground",
+   "tris": 1597,
+   "size": {
+    "len": 7.2,
+    "wid": 3.14,
+    "hgt": 3.7
+   },
+   "source": "community",
+   "names": [
+    "6x6_1_IFV",
+    "AFV6 IFV"
+   ]
+  },
+  "AAM1": {
+   "file": "AAM1.glb",
+   "kind": "weapon",
+   "tris": 532,
+   "size": {
+    "len": 3.01,
+    "wid": 0.3,
+    "hgt": 0.3
+   },
+   "source": "community",
+   "names": [
+    "AAM1",
+    "MMR-S3"
+   ]
+  },
+  "AAM2": {
+   "file": "AAM2.glb",
+   "kind": "weapon",
+   "tris": 280,
+   "size": {
+    "len": 3.63,
+    "wid": 0.35,
+    "hgt": 0.35
+   },
+   "source": "community",
+   "names": [
+    "AAM-29 Scythe",
+    "AAM2"
+   ]
+  },
+  "AAM3": {
+   "file": "AAM3.glb",
+   "kind": "weapon",
+   "tris": 341,
+   "size": {
+    "len": 2.55,
+    "wid": 0.26,
+    "hgt": 0.26
+   },
+   "source": "community",
+   "names": [
+    "AAM3",
+    "IRM-S2"
+   ]
+  },
+  "AAM4": {
+   "file": "AAM4.glb",
+   "kind": "weapon",
+   "tris": 302,
+   "size": {
+    "len": 3.7,
+    "wid": 0.5,
+    "hgt": 0.5
+   },
+   "source": "community",
+   "names": [
+    "AAM-36 Scimitar",
+    "AAM4"
+   ]
+  },
+  "AFV8_APC": {
+   "file": "AFV8_APC.glb",
+   "kind": "ground",
+   "tris": 1711,
+   "size": {
+    "len": 8.24,
+    "wid": 3.11,
+    "hgt": 4.7
+   },
+   "source": "community",
+   "names": [
+    "AFV8 APC",
+    "AFV8_APC"
+   ]
+  },
+  "AFV8_IFV": {
+   "file": "AFV8_IFV.glb",
+   "kind": "ground",
+   "tris": 1688,
+   "size": {
+    "len": 8.24,
+    "wid": 3.18,
+    "hgt": 4.7
+   },
+   "source": "community",
+   "names": [
+    "AFV8 IFV",
+    "AFV8_IFV",
+    "AFV8_IVF"
+   ]
+  },
+  "AFV8_SAM": {
+   "file": "AFV8_SAM.glb",
+   "kind": "ground",
+   "tris": 1538,
+   "size": {
+    "len": 8.25,
+    "wid": 3.39,
+    "hgt": 5.01
+   },
+   "source": "community",
+   "names": [
+    "AFV8 Mobile Air Defense",
+    "AFV8_SAM"
+   ]
+  },
+  "AGM1": {
+   "file": "AGM1.glb",
+   "kind": "weapon",
+   "tris": 300,
+   "size": {
+    "len": 1.6,
+    "wid": 0.2,
+    "hgt": 0.2
+   },
+   "source": "community",
+   "names": [
+    "AGM-48",
+    "AGM1"
+   ]
+  },
+  "AGM2": {
+   "file": "AGM2.glb",
+   "kind": "weapon",
+   "tris": 320,
+   "size": {
+    "len": 1.6,
+    "wid": 0.37,
+    "hgt": 0.37
+   },
+   "source": "community",
+   "names": [
+    "AGM2",
+    "ATP-1"
+   ]
+  },
+  "AGM_heavy": {
+   "file": "AGM_heavy.glb",
+   "kind": "weapon",
+   "tris": 301,
+   "size": {
+    "len": 2.5,
+    "wid": 0.5,
+    "hgt": 0.5
+   },
+   "source": "community",
+   "names": [
+    "AGM-68",
+    "AGM_heavy"
+   ]
+  },
+  "AIR-2_Genie": {
+   "file": "AIR-2_Genie.glb",
+   "kind": "weapon",
+   "tris": 410,
+   "size": {
+    "len": 2.94,
+    "wid": 0.7,
+    "hgt": 0.7
+   },
+   "source": "community",
+   "names": [
+    "AIR-2 Genie",
+    "AIR-2_Genie"
+   ]
+  },
+  "ammunitionBunker": {
+   "file": "ammunitionBunker.glb",
+   "kind": "building",
+   "tris": 1015,
+   "size": {
+    "len": 43.89,
+    "wid": 37.3,
+    "hgt": 13.58
+   },
+   "source": "community",
+   "names": [
+    "ammunitionBunker",
+    "Munitions Bunker"
+   ]
+  },
+  "ARM1": {
+   "file": "ARM1.glb",
+   "kind": "weapon",
+   "tris": 410,
+   "size": {
+    "len": 4.45,
+    "wid": 0.58,
+    "hgt": 0.58
+   },
+   "source": "community",
+   "names": [
+    "ARAD-116",
+    "ARM1"
+   ]
+  },
+  "AShM1": {
+   "file": "AShM1.glb",
+   "kind": "weapon",
+   "tris": 412,
+   "size": {
+    "len": 3.96,
+    "wid": 1.69,
+    "hgt": 1.14
+   },
+   "source": "community",
+   "names": [
+    "AShM-300",
+    "AShM1"
+   ]
+  },
+  "AShM2": {
+   "file": "AShM2.glb",
+   "kind": "weapon",
+   "tris": 303,
+   "size": {
+    "len": 4.52,
+    "wid": 0.68,
+    "hgt": 0.68
+   },
+   "source": "community",
+   "names": [
+    "AGM-99",
+    "AShM2"
+   ]
+  },
+  "AShM3": {
+   "file": "AShM3.glb",
+   "kind": "weapon",
+   "tris": 389,
+   "size": {
+    "len": 3.86,
+    "wid": 0.53,
+    "hgt": 0.53
+   },
+   "source": "community",
+   "names": [
+    "AShM3",
+    "Tusko-B (HE)"
+   ]
+  },
+  "AssaultCarrier1": {
+   "file": "AssaultCarrier1.glb",
+   "kind": "ship",
+   "tris": 7483,
+   "size": {
+    "len": 246.2,
+    "wid": 63.95,
+    "hgt": 53.07
+   },
+   "source": "community",
+   "names": [
+    "Annex Class Carrier",
+    "AssaultCarrier1"
+   ]
+  },
+  "AttackHelo1": {
+   "file": "AttackHelo1.glb",
+   "kind": "heli",
+   "tris": 7734,
+   "size": {
+    "len": 16.63,
+    "wid": 10.42,
+    "hgt": 4.07
+   },
+   "source": "community",
+   "names": [
+    "AttackHelo1",
+    "SAH-46 Chicane"
+   ]
+  },
+  "ballisticMissile1": {
+   "file": "ballisticMissile1.glb",
+   "kind": "weapon",
+   "tris": 548,
+   "size": {
+    "len": 6.97,
+    "wid": 1.04,
+    "hgt": 1.02
+   },
+   "source": "community",
+   "names": [
+    "ballisticMissile1",
+    "ballisticMissile1_tacNuke",
+    "Piledriver TBM (20kt)",
+    "Piledriver TBM (HE)"
+   ]
+  },
+  "Bend2": {
+   "file": "Bend2.glb",
+   "kind": "building",
+   "tris": 524,
+   "size": {
+    "len": 35.98,
+    "wid": 25.0,
+    "hgt": 44.19
+   },
+   "source": "community",
+   "names": [
+    "Bend D25x45deg 2D",
+    "Bend2"
+   ]
+  },
+  "Bend4": {
+   "file": "Bend4.glb",
+   "kind": "building",
+   "tris": 520,
+   "size": {
+    "len": 50.63,
+    "wid": 25.0,
+    "hgt": 79.55
+   },
+   "source": "community",
+   "names": [
+    "Bend D25x45deg 4D",
+    "Bend4"
+   ]
+  },
+  "bomb500": {
+   "file": "bomb500.glb",
+   "kind": "weapon",
+   "tris": 300,
+   "size": {
+    "len": 2.73,
+    "wid": 0.68,
+    "hgt": 0.68
+   },
+   "source": "community",
+   "names": [
+    "Bomb500",
+    "bomb500",
+    "GPO-500"
+   ]
+  },
+  "bomb_125_1": {
+   "file": "bomb_125_1.glb",
+   "kind": "weapon",
+   "tris": 300,
+   "size": {
+    "len": 1.8,
+    "wid": 0.25,
+    "hgt": 0.25
+   },
+   "source": "community",
+   "names": [
+    "Bomb_125_1",
+    "bomb_125_1",
+    "PAB-125"
+   ]
+  },
+  "bomb_250_1": {
+   "file": "bomb_250_1.glb",
+   "kind": "weapon",
+   "tris": 300,
+   "size": {
+    "len": 2.3,
+    "wid": 0.3,
+    "hgt": 0.3
+   },
+   "source": "community",
+   "names": [
+    "Bomb_250_1",
+    "bomb_250_1",
+    "PAB-250"
+   ]
+  },
+  "bomb_250_glide": {
+   "file": "bomb_250_glide.glb",
+   "kind": "weapon",
+   "tris": 306,
+   "size": {
+    "len": 2.26,
+    "wid": 0.28,
+    "hgt": 0.34
+   },
+   "source": "community",
+   "names": [
+    "Bomb_250_glide",
+    "bomb_250_glide",
+    "PAB-250LR"
+   ]
+  },
+  "bomb_500_glide": {
+   "file": "bomb_500_glide.glb",
+   "kind": "weapon",
+   "tris": 298,
+   "size": {
+    "len": 4.05,
+    "wid": 0.43,
+    "hgt": 0.56
+   },
+   "source": "community",
+   "names": [
+    "Bomb_500_glide",
+    "bomb_500_glide",
+    "GBM-500LR"
+   ]
+  },
+  "bomb_demolition": {
+   "file": "bomb_demolition.glb",
+   "kind": "weapon",
+   "tris": 300,
+   "size": {
+    "len": 8.28,
+    "wid": 1.24,
+    "hgt": 1.24
+   },
+   "source": "community",
+   "names": [
+    "Bomb_demolition",
+    "bomb_demolition",
+    "Demolition Bomb"
+   ]
+  },
+  "bomb_glide1": {
+   "file": "bomb_glide1.glb",
+   "kind": "weapon",
+   "tris": 302,
+   "size": {
+    "len": 2.02,
+    "wid": 1.54,
+    "hgt": 0.35
+   },
+   "source": "community",
+   "names": [
+    "Bomb_glide1",
+    "bomb_glide1",
+    "PAB-80LR"
+   ]
+  },
+  "bomb_penetrator1": {
+   "file": "bomb_penetrator1.glb",
+   "kind": "weapon",
+   "tris": 300,
+   "size": {
+    "len": 4.71,
+    "wid": 1.04,
+    "hgt": 1.04
+   },
+   "source": "community",
+   "names": [
+    "Bomb_penetrator1",
+    "bomb_penetrator1",
+    "GPO-2P Auger"
+   ]
+  },
+  "camoNet1": {
+   "file": "camoNet1.glb",
+   "kind": "building",
+   "tris": 677,
+   "size": {
+    "len": 32.6,
+    "wid": 32.67,
+    "hgt": 8.65
+   },
+   "source": "community",
+   "names": [
+    "Camo Net 1",
+    "camoNet1"
+   ]
+  },
+  "CAS1": {
+   "file": "CAS1.glb",
+   "kind": "plane",
+   "tris": 6011,
+   "size": {
+    "len": 16.1,
+    "wid": 18.16,
+    "hgt": 3.7
+   },
+   "source": "community",
+   "names": [
+    "A-19 Brawler",
+    "CAS1"
+   ]
+  },
+  "COIN": {
+   "file": "COIN.glb",
+   "kind": "plane",
+   "tris": 6718,
+   "size": {
+    "len": 10.43,
+    "wid": 11.61,
+    "hgt": 2.65
+   },
+   "source": "community",
+   "names": [
+    "CI-22",
+    "CI-22 Cricket",
+    "COIN"
+   ]
+  },
+  "Column1": {
+   "file": "Column1.glb",
+   "kind": "building",
+   "tris": 49,
+   "size": {
+    "len": 4.0,
+    "wid": 4.0,
+    "hgt": 50.0
+   },
+   "source": "community",
+   "names": [
+    "Column 50m",
+    "Column1"
+   ]
+  },
+  "ConcreteBarrier1": {
+   "file": "ConcreteBarrier1.glb",
+   "kind": "building",
+   "tris": 51,
+   "size": {
+    "len": 2.74,
+    "wid": 0.54,
+    "hgt": 0.64
+   },
+   "source": "community",
+   "names": [
+    "Concrete barrier",
+    "ConcreteBarrier1"
+   ]
+  },
+  "ConcretePad1": {
+   "file": "ConcretePad1.glb",
+   "kind": "building",
+   "tris": 446,
+   "size": {
+    "len": 71.18,
+    "wid": 72.5,
+    "hgt": 7.18
+   },
+   "source": "community",
+   "names": [
+    "Concrete Pad",
+    "ConcretePad1"
+   ]
+  },
+  "ConcreteWall1": {
+   "file": "ConcreteWall1.glb",
+   "kind": "building",
+   "tris": 110,
+   "size": {
+    "len": 2.0,
+    "wid": 2.0,
+    "hgt": 5.09
+   },
+   "source": "community",
+   "names": [
+    "Concrete Wall",
+    "ConcreteWall1"
+   ]
+  },
+  "ConcreteWall1x5": {
+   "file": "ConcreteWall1x5.glb",
+   "kind": "building",
+   "tris": 565,
+   "size": {
+    "len": 10.0,
+    "wid": 2.0,
+    "hgt": 5.09
+   },
+   "source": "community",
+   "names": [
+    "Concrete Wall 10m",
+    "ConcreteWall1x5"
+   ]
+  },
+  "Cone1": {
+   "file": "Cone1.glb",
+   "kind": "building",
+   "tris": 266,
+   "size": {
+    "len": 40.0,
+    "wid": 40.0,
+    "hgt": 50.0
+   },
+   "source": "community",
+   "names": [
+    "Cone D40x20m",
+    "Cone1"
+   ]
+  },
+  "Cone2": {
+   "file": "Cone2.glb",
+   "kind": "building",
+   "tris": 264,
+   "size": {
+    "len": 25.0,
+    "wid": 25.0,
+    "hgt": 50.0
+   },
+   "source": "community",
+   "names": [
+    "Cone D25x20m",
+    "Cone2"
+   ]
+  },
+  "Cone3": {
+   "file": "Cone3.glb",
+   "kind": "building",
+   "tris": 264,
+   "size": {
+    "len": 40.0,
+    "wid": 40.0,
+    "hgt": 50.0
+   },
+   "source": "community",
+   "names": [
+    "Cone D40x25m",
+    "Cone3"
+   ]
+  },
+  "Container1": {
+   "file": "Container1.glb",
+   "kind": "building",
+   "tris": 21,
+   "size": {
+    "len": 12.19,
+    "wid": 2.44,
+    "hgt": 2.59
+   },
+   "source": "community",
+   "names": [
+    "Container blue",
+    "Container orange",
+    "Container red",
+    "Container white",
+    "Container1",
+    "Container2",
+    "Container3",
+    "Container4"
+   ]
+  },
+  "ContainerStack1": {
+   "file": "ContainerStack1.glb",
+   "kind": "building",
+   "tris": 120,
+   "size": {
+    "len": 12.19,
+    "wid": 7.53,
+    "hgt": 7.77
+   },
+   "source": "community",
+   "names": [
+    "Container stack",
+    "ContainerStack1"
+   ]
+  },
+  "controlTower1": {
+   "file": "controlTower1.glb",
+   "kind": "building",
+   "tris": 1290,
+   "size": {
+    "len": 20.89,
+    "wid": 39.72,
+    "hgt": 70.75
+   },
+   "source": "community",
+   "names": [
+    "Control Tower",
+    "ControlTower1",
+    "controlTower1"
+   ]
+  },
+  "CoolingTower": {
+   "file": "CoolingTower.glb",
+   "kind": "building",
+   "tris": 1170,
+   "size": {
+    "len": 93.02,
+    "wid": 93.03,
+    "hgt": 116.98
+   },
+   "source": "community",
+   "names": [
+    "Cooling Tower",
+    "CoolingTower"
+   ]
+  },
+  "Corvette1": {
+   "file": "Corvette1.glb",
+   "kind": "ship",
+   "tris": 572,
+   "size": {
+    "len": 76.82,
+    "wid": 11.35,
+    "hgt": 16.77
+   },
+   "source": "community",
+   "names": [
+    "Corvette1",
+    "Shard Class Corvette"
+   ]
+  },
+  "CRAMTrailer1": {
+   "file": "CRAMTrailer1.glb",
+   "kind": "ground",
+   "tris": 1601,
+   "size": {
+    "len": 10.02,
+    "wid": 5.33,
+    "hgt": 6.37
+   },
+   "source": "community",
+   "names": [
+    "CRAM Trailer",
+    "CRAMTrailer1",
+    "HLT-CRAM"
+   ]
+  },
+  "CruiseMissile1": {
+   "file": "CruiseMissile1.glb",
+   "kind": "weapon",
+   "tris": 313,
+   "size": {
+    "len": 4.4,
+    "wid": 2.89,
+    "hgt": 0.59
+   },
+   "source": "community",
+   "names": [
+    "ALM-C450",
+    "CruiseMissile1"
+   ]
+  },
+  "CruiseMissile20kt": {
+   "file": "CruiseMissile20kt.glb",
+   "kind": "weapon",
+   "tris": 403,
+   "size": {
+    "len": 6.44,
+    "wid": 2.15,
+    "hgt": 0.94
+   },
+   "source": "community",
+   "names": [
+    "ALND-4 (20kt)",
+    "CruiseMissile20kt"
+   ]
+  },
+  "Cylinder1": {
+   "file": "Cylinder1.glb",
+   "kind": "building",
+   "tris": 264,
+   "size": {
+    "len": 25.0,
+    "wid": 25.0,
+    "hgt": 50.0
+   },
+   "source": "community",
+   "names": [
+    "Cylinder D20x50m",
+    "Cylinder1"
+   ]
+  },
+  "Cylinder2": {
+   "file": "Cylinder2.glb",
+   "kind": "building",
+   "tris": 264,
+   "size": {
+    "len": 25.0,
+    "wid": 25.0,
+    "hgt": 50.0
+   },
+   "source": "community",
+   "names": [
+    "Cylinder D25x50m",
+    "Cylinder2"
+   ]
+  },
+  "Darkreach": {
+   "file": "Darkreach.glb",
+   "kind": "plane",
+   "tris": 7677,
+   "size": {
+    "len": 27.4,
+    "wid": 36.54,
+    "hgt": 3.95
+   },
+   "source": "community",
+   "names": [
+    "Darkreach",
+    "SFB",
+    "SFB-81 Darkreach"
+   ]
+  },
+  "Destroyer1": {
+   "file": "Destroyer1.glb",
+   "kind": "ship",
+   "tris": 6280,
+   "size": {
+    "len": 161.3,
+    "wid": 21.93,
+    "hgt": 28.46
+   },
+   "source": "community",
+   "names": [
+    "Destroyer1",
+    "Dynamo Class Destroyer"
+   ]
+  },
+  "Emplacement1_23mm": {
+   "file": "Emplacement1_23mm.glb",
+   "kind": "building",
+   "tris": 1826,
+   "size": {
+    "len": 10.0,
+    "wid": 9.94,
+    "hgt": 3.34
+   },
+   "source": "community",
+   "names": [
+    "23mm AAA Emplacement",
+    "Emplacement1_23mm"
+   ]
+  },
+  "Emplacement1_MANPADS": {
+   "file": "Emplacement1_MANPADS.glb",
+   "kind": "building",
+   "tris": 1413,
+   "size": {
+    "len": 10.05,
+    "wid": 10.05,
+    "hgt": 3.34
+   },
+   "source": "community",
+   "names": [
+    "Emplacement1_MANPADS",
+    "IRM-S1 Emplacement"
+   ]
+  },
+  "enrichmentPlant1": {
+   "file": "enrichmentPlant1.glb",
+   "kind": "building",
+   "tris": 1530,
+   "size": {
+    "len": 196.71,
+    "wid": 240.34,
+    "hgt": 74.99
+   },
+   "source": "community",
+   "names": [
+    "Enrichment Plant",
+    "EnrichmentPlant1",
+    "enrichmentPlant1"
+   ]
+  },
+  "EW1": {
+   "file": "EW1.glb",
+   "kind": "plane",
+   "tris": 7489,
+   "size": {
+    "len": 19.18,
+    "wid": 18.14,
+    "hgt": 4.49
+   },
+   "source": "community",
+   "names": [
+    "EW-25 Medusa",
+    "EW1"
+   ]
+  },
+  "factory_large": {
+   "file": "factory_large.glb",
+   "kind": "building",
+   "tris": 1029,
+   "size": {
+    "len": 136.89,
+    "wid": 257.1,
+    "hgt": 47.19
+   },
+   "source": "community",
+   "names": [
+    "factory_large",
+    "FactoryLarge",
+    "Large Factory"
+   ]
+  },
+  "factory_tall": {
+   "file": "factory_tall.glb",
+   "kind": "building",
+   "tris": 2063,
+   "size": {
+    "len": 55.35,
+    "wid": 111.45,
+    "hgt": 92.98
+   },
+   "source": "community",
+   "names": [
+    "factory_tall",
+    "FactoryTall",
+    "Vertical Factory"
+   ]
+  },
+  "Fighter1": {
+   "file": "Fighter1.glb",
+   "kind": "plane",
+   "tris": 6815,
+   "size": {
+    "len": 15.89,
+    "wid": 11.0,
+    "hgt": 3.92
+   },
+   "source": "community",
+   "names": [
+    "Fighter1",
+    "FS-12",
+    "FS-12 Revoker"
+   ]
+  },
+  "FleetCarrier1": {
+   "file": "FleetCarrier1.glb",
+   "kind": "ship",
+   "tris": 9879,
+   "size": {
+    "len": 268.63,
+    "wid": 66.12,
+    "hgt": 59.01
+   },
+   "source": "community",
+   "names": [
+    "FleetCarrier1",
+    "Hyperion Class Carrier"
+   ]
+  },
+  "fuelBladder10000": {
+   "file": "fuelBladder10000.glb",
+   "kind": "building",
+   "tris": 906,
+   "size": {
+    "len": 6.02,
+    "wid": 2.6,
+    "hgt": 2.58
+   },
+   "source": "community",
+   "names": [
+    "Fuel Bladder 10,000L",
+    "fuelBladder10000",
+    "FuelBladder3"
+   ]
+  },
+  "fuelBladder1500": {
+   "file": "fuelBladder1500.glb",
+   "kind": "building",
+   "tris": 402,
+   "size": {
+    "len": 2.27,
+    "wid": 1.24,
+    "hgt": 1.24
+   },
+   "source": "community",
+   "names": [
+    "Fuel Bladder 1500L",
+    "FuelBladder1",
+    "fuelBladder1500"
+   ]
+  },
+  "fuelBladder6000": {
+   "file": "fuelBladder6000.glb",
+   "kind": "building",
+   "tris": 499,
+   "size": {
+    "len": 4.83,
+    "wid": 1.56,
+    "hgt": 1.54
+   },
+   "source": "community",
+   "names": [
+    "Fuel Bladder 6000L",
+    "FuelBladder2",
+    "fuelBladder6000"
+   ]
+  },
+  "fuelTank1": {
+   "file": "fuelTank1.glb",
+   "kind": "building",
+   "tris": 1076,
+   "size": {
+    "len": 30.71,
+    "wid": 30.71,
+    "hgt": 19.55
+   },
+   "source": "community",
+   "names": [
+    "Fuel Depot",
+    "fuelTank1"
+   ]
+  },
+  "gabionWall_20x3x3": {
+   "file": "gabionWall_20x3x3.glb",
+   "kind": "building",
+   "tris": 1197,
+   "size": {
+    "len": 20.18,
+    "wid": 3.18,
+    "hgt": 3.23
+   },
+   "source": "community",
+   "names": [
+    "Gabion Wall 20x3x3",
+    "gabionWall_20x3x3"
+   ]
+  },
+  "guardTower1": {
+   "file": "guardTower1.glb",
+   "kind": "building",
+   "tris": 143,
+   "size": {
+    "len": 6.0,
+    "wid": 6.0,
+    "hgt": 23.97
+   },
+   "source": "community",
+   "names": [
+    "Guard Tower",
+    "guardTower1"
+   ]
+  },
+  "hangar_med": {
+   "file": "hangar_med.glb",
+   "kind": "building",
+   "tris": 1653,
+   "size": {
+    "len": 45.12,
+    "wid": 79.87,
+    "hgt": 13.96
+   },
+   "source": "community",
+   "names": [
+    "hangar_med",
+    "Medium Aircraft Hangar"
+   ]
+  },
+  "Helipad": {
+   "file": "Helipad.glb",
+   "kind": "building",
+   "tris": 1086,
+   "size": {
+    "len": 45.47,
+    "wid": 45.47,
+    "hgt": 5.8
+   },
+   "source": "community",
+   "names": [
+    "Helipad",
+    "helipad1"
+   ]
+  },
+  "hesco5": {
+   "file": "hesco5.glb",
+   "kind": "building",
+   "tris": 792,
+   "size": {
+    "len": 10.0,
+    "wid": 1.69,
+    "hgt": 1.75
+   },
+   "source": "community",
+   "names": [
+    "Gabion Wall 10x1.5x1.5",
+    "hesco5"
+   ]
+  },
+  "HLT-FC": {
+   "file": "HLT-FC.glb",
+   "kind": "ground",
+   "tris": 2485,
+   "size": {
+    "len": 10.46,
+    "wid": 5.47,
+    "hgt": 6.01
+   },
+   "source": "community",
+   "names": [
+    "HLT Fire Control",
+    "HLT-FC"
+   ]
+  },
+  "HLT-FT": {
+   "file": "HLT-FT.glb",
+   "kind": "ground",
+   "tris": 1554,
+   "size": {
+    "len": 10.28,
+    "wid": 2.94,
+    "hgt": 3.23
+   },
+   "source": "community",
+   "names": [
+    "HLT Fuel Tanker",
+    "HLT-FT"
+   ]
+  },
+  "HLT-L": {
+   "file": "HLT-L.glb",
+   "kind": "ground",
+   "tris": 1520,
+   "size": {
+    "len": 10.55,
+    "wid": 2.67,
+    "hgt": 5.03
+   },
+   "source": "community",
+   "names": [
+    "HLT Flatbed",
+    "HLT-L"
+   ]
+  },
+  "HLT-M": {
+   "file": "HLT-M.glb",
+   "kind": "ground",
+   "tris": 1564,
+   "size": {
+    "len": 10.08,
+    "wid": 2.76,
+    "hgt": 4.2
+   },
+   "source": "community",
+   "names": [
+    "HLT Munitions Truck",
+    "HLT-M"
+   ]
+  },
+  "HLT-R": {
+   "file": "HLT-R.glb",
+   "kind": "ground",
+   "tris": 2276,
+   "size": {
+    "len": 10.2,
+    "wid": 5.33,
+    "hgt": 3.95
+   },
+   "source": "community",
+   "names": [
+    "HLT Radar Truck",
+    "HLT-R"
+   ]
+  },
+  "HLT-T": {
+   "file": "HLT-T.glb",
+   "kind": "ground",
+   "tris": 1736,
+   "size": {
+    "len": 10.08,
+    "wid": 2.67,
+    "hgt": 2.87
+   },
+   "source": "community",
+   "names": [
+    "HLT Tractor",
+    "HLT-T"
+   ]
+  },
+  "hullDown1": {
+   "file": "hullDown1.glb",
+   "kind": "building",
+   "tris": 1002,
+   "size": {
+    "len": 36.71,
+    "wid": 40.6,
+    "hgt": 5.66
+   },
+   "source": "community",
+   "names": [
+    "Hull down square",
+    "hullDown1"
+   ]
+  },
+  "hullDown2": {
+   "file": "hullDown2.glb",
+   "kind": "building",
+   "tris": 1002,
+   "size": {
+    "len": 38.3,
+    "wid": 39.8,
+    "hgt": 5.69
+   },
+   "source": "community",
+   "names": [
+    "Hull down circular",
+    "hullDown2"
+   ]
+  },
+  "LandingCraft1": {
+   "file": "LandingCraft1.glb",
+   "kind": "ship",
+   "tris": 5181,
+   "size": {
+    "len": 26.16,
+    "wid": 15.36,
+    "hgt": 7.74
+   },
+   "source": "community",
+   "names": [
+    "LandingCraft1",
+    "OTB-31 landing craft"
+   ]
+  },
+  "LaserTrailer1": {
+   "file": "LaserTrailer1.glb",
+   "kind": "ground",
+   "tris": 1755,
+   "size": {
+    "len": 10.02,
+    "wid": 5.33,
+    "hgt": 7.19
+   },
+   "source": "community",
+   "names": [
+    "HLT-HEL",
+    "Laser CIWS Trailer",
+    "LaserTrailer1"
+   ]
+  },
+  "LCV45": {
+   "file": "LCV45.glb",
+   "kind": "ground",
+   "tris": 1493,
+   "size": {
+    "len": 6.56,
+    "wid": 2.56,
+    "hgt": 3.67
+   },
+   "source": "community",
+   "names": [
+    "LCV45",
+    "LCV45 Recon Truck"
+   ]
+  },
+  "LightTruck1_AA": {
+   "file": "LightTruck1_AA.glb",
+   "kind": "ground",
+   "tris": 1509,
+   "size": {
+    "len": 5.45,
+    "wid": 2.41,
+    "hgt": 3.24
+   },
+   "source": "community",
+   "names": [
+    "LCV25 AA",
+    "LightTruck1_AA"
+   ]
+  },
+  "LightTruck1_AT": {
+   "file": "LightTruck1_AT.glb",
+   "kind": "ground",
+   "tris": 1775,
+   "size": {
+    "len": 5.46,
+    "wid": 2.4,
+    "hgt": 3.24
+   },
+   "source": "community",
+   "names": [
+    "LCV25 AT",
+    "LightTruck1_AT"
+   ]
+  },
+  "Linebreaker_APC": {
+   "file": "Linebreaker_APC.glb",
+   "kind": "ground",
+   "tris": 1575,
+   "size": {
+    "len": 7.87,
+    "wid": 3.98,
+    "hgt": 4.14
+   },
+   "source": "community",
+   "names": [
+    "Linebreaker APC",
+    "Linebreaker_APC",
+    "LinebreakerAPC"
+   ]
+  },
+  "Linebreaker_IFV": {
+   "file": "Linebreaker_IFV.glb",
+   "kind": "ground",
+   "tris": 1522,
+   "size": {
+    "len": 7.88,
+    "wid": 3.98,
+    "hgt": 4.28
+   },
+   "source": "community",
+   "names": [
+    "Linebreaker IFV",
+    "Linebreaker_IFV",
+    "LinebreakerIFV"
+   ]
+  },
+  "Linebreaker_SAM": {
+   "file": "Linebreaker_SAM.glb",
+   "kind": "ground",
+   "tris": 2035,
+   "size": {
+    "len": 7.87,
+    "wid": 4.02,
+    "hgt": 4.14
+   },
+   "source": "community",
+   "names": [
+    "Linebreaker SAM",
+    "Linebreaker_SAM",
+    "LinebreakerSAM"
+   ]
+  },
+  "MBT": {
+   "file": "MBT.glb",
+   "kind": "ground",
+   "tris": 1510,
+   "size": {
+    "len": 9.1,
+    "wid": 4.25,
+    "hgt": 3.32
+   },
+   "source": "community",
+   "names": [
+    "MBT",
+    "Type-12 MBT"
+   ]
+  },
+  "MBT1": {
+   "file": "MBT1.glb",
+   "kind": "ground",
+   "tris": 1549,
+   "size": {
+    "len": 9.69,
+    "wid": 4.19,
+    "hgt": 4.27
+   },
+   "source": "community",
+   "names": [
+    "MBT1",
+    "Spearhead MBT"
+   ]
+  },
+  "Multirole1": {
+   "file": "Multirole1.glb",
+   "kind": "plane",
+   "tris": 7946,
+   "size": {
+    "len": 18.81,
+    "wid": 14.23,
+    "hgt": 3.19
+   },
+   "source": "community",
+   "names": [
+    "KR-67 Ifrit",
+    "Multirole1"
+   ]
+  },
+  "MunitionsContainer1": {
+   "file": "MunitionsContainer1.glb",
+   "kind": "building",
+   "tris": 732,
+   "size": {
+    "len": 6.57,
+    "wid": 2.39,
+    "hgt": 2.46
+   },
+   "source": "community",
+   "names": [
+    "Munitions Container",
+    "MunitionsContainer1"
+   ]
+  },
+  "MunitionsPallet1": {
+   "file": "MunitionsPallet1.glb",
+   "kind": "building",
+   "tris": 91,
+   "size": {
+    "len": 4.85,
+    "wid": 1.65,
+    "hgt": 1.64
+   },
+   "source": "community",
+   "names": [
+    "Munitions Pallet",
+    "MunitionsPallet1"
+   ]
+  },
+  "NavalPallet1": {
+   "file": "NavalPallet1.glb",
+   "kind": "building",
+   "tris": 1002,
+   "size": {
+    "len": 4.85,
+    "wid": 1.73,
+    "hgt": 1.64
+   },
+   "source": "community",
+   "names": [
+    "Naval Supply Pallet",
+    "NavalPallet1"
+   ]
+  },
+  "NavalSupplyContainer1": {
+   "file": "NavalSupplyContainer1.glb",
+   "kind": "building",
+   "tris": 1004,
+   "size": {
+    "len": 7.08,
+    "wid": 4.72,
+    "hgt": 2.62
+   },
+   "source": "community",
+   "names": [
+    "Naval Container",
+    "NavalSupplyContainer1"
+   ]
+  },
+  "NOX_AGM_scanner1": {
+   "file": "NOX_AGM_scanner1.glb",
+   "kind": "weapon",
+   "tris": 732,
+   "size": {
+    "len": 1.57,
+    "wid": 0.23,
+    "hgt": 0.22
+   },
+   "source": "kit",
+   "names": [
+    "Eyeball Mk.II"
+   ]
+  },
+  "NOX_Emplacement1_ATGM": {
+   "file": "NOX_Emplacement1_ATGM.glb",
+   "kind": "building",
+   "tris": 2350,
+   "size": {
+    "len": 10.05,
+    "wid": 10.05,
+    "hgt": 3.1
+   },
+   "source": "kit",
+   "names": [
+    "AT-145 Emplacement"
+   ]
+  },
+  "NOX_FastBomber1": {
+   "file": "NOX_FastBomber1.glb",
+   "kind": "plane",
+   "tris": 4374,
+   "size": {
+    "len": 25.42,
+    "wid": 32.25,
+    "hgt": 3.79
+   },
+   "source": "kit",
+   "names": [
+    "Alkyon AB-4"
+   ]
+  },
+  "NOX_Frigate1": {
+   "file": "NOX_Frigate1.glb",
+   "kind": "ship",
+   "tris": 7058,
+   "size": {
+    "len": 120.94,
+    "wid": 15.0,
+    "hgt": 35.35
+   },
+   "source": "kit",
+   "names": [
+    "Argus Class Frigate"
+   ]
+  },
+  "NOX_HLT-MArt": {
+   "file": "NOX_HLT-MArt.glb",
+   "kind": "ground",
+   "tris": 4934,
+   "size": {
+    "len": 10.53,
+    "wid": 2.79,
+    "hgt": 3.58
+   },
+   "source": "kit",
+   "names": [
+    "HLT Mobile Artillery"
+   ]
+  },
+  "NOX_Missile_G2G": {
+   "file": "NOX_Missile_G2G.glb",
+   "kind": "weapon",
+   "tris": 300,
+   "size": {
+    "len": 1.27,
+    "wid": 0.35,
+    "hgt": 0.35
+   },
+   "source": "kit",
+   "names": [
+    "AT-145",
+    "Ground-to-ground missile",
+    "GTG1",
+    "Missile_G2G"
+   ]
+  },
+  "NOX_PatrolBoat1": {
+   "file": "NOX_PatrolBoat1.glb",
+   "kind": "ship",
+   "tris": 5666,
+   "size": {
+    "len": 30.07,
+    "wid": 8.04,
+    "hgt": 10.97
+   },
+   "source": "kit",
+   "names": [
+    "Surf Class Patrol Boat"
+   ]
+  },
+  "NOX_SAMTurret1": {
+   "file": "NOX_SAMTurret1.glb",
+   "kind": "ground",
+   "tris": 3456,
+   "size": {
+    "len": 4.8,
+    "wid": 1.64,
+    "hgt": 1.89
+   },
+   "source": "kit",
+   "names": [
+    "Boltstrike RAM45 Launcher",
+    "SAMTurret1"
+   ]
+  },
+  "NOX_SmallCarrier1": {
+   "file": "NOX_SmallCarrier1.glb",
+   "kind": "ship",
+   "tris": 7626,
+   "size": {
+    "len": 98.39,
+    "wid": 36.73,
+    "hgt": 24.85
+   },
+   "source": "kit",
+   "names": [
+    "Cursor Class LFD"
+   ]
+  },
+  "NOX_Truck2-MLRS": {
+   "file": "NOX_Truck2-MLRS.glb",
+   "kind": "ground",
+   "tris": 4948,
+   "size": {
+    "len": 8.1,
+    "wid": 4.77,
+    "hgt": 3.3
+   },
+   "source": "kit",
+   "names": [
+    "MSV MLRS"
+   ]
+  },
+  "NOX_VTOLTrainer1": {
+   "file": "NOX_VTOLTrainer1.glb",
+   "kind": "plane",
+   "tris": 4394,
+   "size": {
+    "len": 13.74,
+    "wid": 10.19,
+    "hgt": 4.22
+   },
+   "source": "kit",
+   "names": [
+    "VT-7 Vagrant"
+   ]
+  },
+  "nuclearBomb1": {
+   "file": "nuclearBomb1.glb",
+   "kind": "weapon",
+   "tris": 300,
+   "size": {
+    "len": 3.6,
+    "wid": 0.37,
+    "hgt": 0.37
+   },
+   "source": "community",
+   "names": [
+    "GPO-N (1.5kt)",
+    "GPO-N (250kt)",
+    "NuclearBomb1",
+    "nuclearBomb1",
+    "NuclearBomb1_strategic",
+    "nuclearBomb1_strategic"
+   ]
+  },
+  "pillbox": {
+   "file": "pillbox.glb",
+   "kind": "building",
+   "tris": 345,
+   "size": {
+    "len": 13.12,
+    "wid": 15.13,
+    "hgt": 21.04
+   },
+   "source": "community",
+   "names": [
+    "Pillbox",
+    "pillbox"
+   ]
+  },
+  "pilotDismounted": {
+   "file": "pilotDismounted.glb",
+   "kind": "ground",
+   "tris": 101,
+   "size": {
+    "len": 0.81,
+    "wid": 0.58,
+    "hgt": 1.22
+   },
+   "source": "community",
+   "names": [
+    "Pilot",
+    "PilotDismounted",
+    "pilotDismounted"
+   ]
+  },
+  "Pipeline": {
+   "file": "Pipeline.glb",
+   "kind": "building",
+   "tris": 1074,
+   "size": {
+    "len": 204.51,
+    "wid": 36.79,
+    "hgt": 36.74
+   },
+   "source": "community",
+   "names": [
+    "Pipeline"
+   ]
+  },
+  "Platform_flat": {
+   "file": "Platform_flat.glb",
+   "kind": "building",
+   "tris": 25,
+   "size": {
+    "len": 50.0,
+    "wid": 50.0,
+    "hgt": 1.34
+   },
+   "source": "community",
+   "names": [
+    "Flat Platform",
+    "Platform_flat",
+    "PlatformFlat"
+   ]
+  },
+  "Platform_large": {
+   "file": "Platform_large.glb",
+   "kind": "building",
+   "tris": 261,
+   "size": {
+    "len": 200.0,
+    "wid": 200.0,
+    "hgt": 50.91
+   },
+   "source": "community",
+   "names": [
+    "Large Platform",
+    "Platform_large",
+    "PlatformLarge"
+   ]
+  },
+  "Platform_slope": {
+   "file": "Platform_slope.glb",
+   "kind": "building",
+   "tris": 699,
+   "size": {
+    "len": 50.0,
+    "wid": 50.0,
+    "hgt": 55.92
+   },
+   "source": "community",
+   "names": [
+    "Platform_slope",
+    "PlatformSlope",
+    "Sloped Platform"
+   ]
+  },
+  "Platform_small": {
+   "file": "Platform_small.glb",
+   "kind": "building",
+   "tris": 256,
+   "size": {
+    "len": 50.0,
+    "wid": 50.0,
+    "hgt": 50.91
+   },
+   "source": "community",
+   "names": [
+    "Platform_small",
+    "PlatformSmall",
+    "Small Platform"
+   ]
+  },
+  "Platform_small_columns": {
+   "file": "Platform_small_columns.glb",
+   "kind": "building",
+   "tris": 55,
+   "size": {
+    "len": 50.0,
+    "wid": 50.0,
+    "hgt": 51.09
+   },
+   "source": "community",
+   "names": [
+    "Platform_small_columns",
+    "PlatformSmallColumns",
+    "Small Platform Columns"
+   ]
+  },
+  "QuadVTOL1": {
+   "file": "QuadVTOL1.glb",
+   "kind": "heli",
+   "tris": 4647,
+   "size": {
+    "len": 29.34,
+    "wid": 28.98,
+    "hgt": 8.62
+   },
+   "source": "community",
+   "names": [
+    "QuadVTOL1",
+    "VL-49 Tarantula"
+   ]
+  },
+  "RadarContainer1": {
+   "file": "RadarContainer1.glb",
+   "kind": "building",
+   "tris": 841,
+   "size": {
+    "len": 3.8,
+    "wid": 1.58,
+    "hgt": 1.59
+   },
+   "source": "community",
+   "names": [
+    "Radar Container",
+    "RadarContainer1"
+   ]
+  },
+  "RadarSAM1": {
+   "file": "RadarSAM1.glb",
+   "kind": "ground",
+   "tris": 2122,
+   "size": {
+    "len": 8.7,
+    "wid": 3.82,
+    "hgt": 5.15
+   },
+   "source": "community",
+   "names": [
+    "RadarSAM1",
+    "RadarSam1",
+    "T9K41 Boltstrike"
+   ]
+  },
+  "radarStation1": {
+   "file": "radarStation1.glb",
+   "kind": "building",
+   "tris": 1021,
+   "size": {
+    "len": 25.0,
+    "wid": 25.79,
+    "hgt": 47.15
+   },
+   "source": "community",
+   "names": [
+    "Radar Station",
+    "RadarStation1",
+    "radarStation1"
+   ]
+  },
+  "refinery_main": {
+   "file": "refinery_main.glb",
+   "kind": "building",
+   "tris": 2387,
+   "size": {
+    "len": 149.99,
+    "wid": 354.21,
+    "hgt": 165.38
+   },
+   "source": "community",
+   "names": [
+    "Refinery",
+    "Refinery Structure",
+    "refinery_main"
+   ]
+  },
+  "revetment1": {
+   "file": "revetment1.glb",
+   "kind": "building",
+   "tris": 524,
+   "size": {
+    "len": 26.73,
+    "wid": 24.83,
+    "hgt": 4.04
+   },
+   "source": "community",
+   "names": [
+    "Aircraft Revetment",
+    "revetment1"
+   ]
+  },
+  "Ring1": {
+   "file": "Ring1.glb",
+   "kind": "building",
+   "tris": 1152,
+   "size": {
+    "len": 4.0,
+    "wid": 54.0,
+    "hgt": 54.0
+   },
+   "source": "community",
+   "names": [
+    "Ring D50m",
+    "Ring1"
+   ]
+  },
+  "Rocket1": {
+   "file": "Rocket1.glb",
+   "kind": "weapon",
+   "tris": 348,
+   "size": {
+    "len": 1.6,
+    "wid": 0.2,
+    "hgt": 0.2
+   },
+   "source": "community",
+   "names": [
+    "AGR-18 Lynchpin",
+    "Rocket1"
+   ]
+  },
+  "Rocket2": {
+   "file": "Rocket2.glb",
+   "kind": "weapon",
+   "tris": 302,
+   "size": {
+    "len": 1.96,
+    "wid": 0.4,
+    "hgt": 0.4
+   },
+   "source": "community",
+   "names": [
+    "AGR-24 Kingpin",
+    "Rocket2"
+   ]
+  },
+  "Ruin_Building1": {
+   "file": "Ruin_Building1.glb",
+   "kind": "building",
+   "tris": 146,
+   "size": {
+    "len": 63.1,
+    "wid": 42.2,
+    "hgt": 28.53
+   },
+   "source": "community",
+   "names": [
+    "Ruin Building",
+    "Ruin_Building1"
+   ]
+  },
+  "SAM_IR1": {
+   "file": "SAM_IR1.glb",
+   "kind": "weapon",
+   "tris": 300,
+   "size": {
+    "len": 1.46,
+    "wid": 0.13,
+    "hgt": 0.13
+   },
+   "source": "community",
+   "names": [
+    "IRM-S1",
+    "SAM_IR1"
+   ]
+  },
+  "SAM_Radar1": {
+   "file": "SAM_Radar1.glb",
+   "kind": "weapon",
+   "tris": 170,
+   "size": {
+    "len": 2.91,
+    "wid": 0.52,
+    "hgt": 0.52
+   },
+   "source": "community",
+   "names": [
+    "RAM-45",
+    "SAM_Radar1"
+   ]
+  },
+  "SAM_Radar2": {
+   "file": "SAM_Radar2.glb",
+   "kind": "weapon",
+   "tris": 204,
+   "size": {
+    "len": 5.05,
+    "wid": 0.57,
+    "hgt": 0.57
+   },
+   "source": "community",
+   "names": [
+    "SAM_Radar2",
+    "StratoLance R9"
+   ]
+  },
+  "SAMTrailer1": {
+   "file": "SAMTrailer1.glb",
+   "kind": "ground",
+   "tris": 1598,
+   "size": {
+    "len": 10.94,
+    "wid": 5.33,
+    "hgt": 7.92
+   },
+   "source": "community",
+   "names": [
+    "SAMTrailer1",
+    "StratoLance R9 Launcher"
+   ]
+  },
+  "Shell_76mm_guided": {
+   "file": "Shell_76mm_guided.glb",
+   "kind": "weapon",
+   "tris": 348,
+   "size": {
+    "len": 0.44,
+    "wid": 0.06,
+    "hgt": 0.06
+   },
+   "source": "community",
+   "names": [
+    "76mm Guided Shell",
+    "Shell_76mm_guided"
+   ]
+  },
+  "shelter1": {
+   "file": "shelter1.glb",
+   "kind": "building",
+   "tris": 1002,
+   "size": {
+    "len": 34.2,
+    "wid": 33.24,
+    "hgt": 10.51
+   },
+   "source": "community",
+   "names": [
+    "Hardened Aircraft Shelter",
+    "shelter1"
+   ]
+  },
+  "SmallFighter1": {
+   "file": "SmallFighter1.glb",
+   "kind": "plane",
+   "tris": 3951,
+   "size": {
+    "len": 14.19,
+    "wid": 9.32,
+    "hgt": 3.09
+   },
+   "source": "community",
+   "names": [
+    "FS-20 Vortex",
+    "SmallFighter1"
+   ]
+  },
+  "SPAAG1": {
+   "file": "SPAAG1.glb",
+   "kind": "ground",
+   "tris": 1510,
+   "size": {
+    "len": 8.44,
+    "wid": 3.62,
+    "hgt": 3.47
+   },
+   "source": "community",
+   "names": [
+    "AeroSentry SPAAG",
+    "SPAAG1"
+   ]
+  },
+  "SPAAG2": {
+   "file": "SPAAG2.glb",
+   "kind": "ground",
+   "tris": 1673,
+   "size": {
+    "len": 7.94,
+    "wid": 3.95,
+    "hgt": 4.25
+   },
+   "source": "community",
+   "names": [
+    "FGA-57 Anvil",
+    "SPAAG2"
+   ]
+  },
+  "storageTank": {
+   "file": "storageTank.glb",
+   "kind": "building",
+   "tris": 1498,
+   "size": {
+    "len": 168.15,
+    "wid": 141.22,
+    "hgt": 56.59
+   },
+   "source": "community",
+   "names": [
+    "Storage Tank",
+    "StorageTank",
+    "storageTank"
+   ]
+  },
+  "TowerCrane": {
+   "file": "TowerCrane.glb",
+   "kind": "building",
+   "tris": 1187,
+   "size": {
+    "len": 112.66,
+    "wid": 4.21,
+    "hgt": 93.05
+   },
+   "source": "community",
+   "names": [
+    "Tower Crane",
+    "TowerCrane"
+   ]
+  },
+  "trainer": {
+   "file": "trainer.glb",
+   "kind": "plane",
+   "tris": 7743,
+   "size": {
+    "len": 13.22,
+    "wid": 12.16,
+    "hgt": 3.73
+   },
+   "source": "community",
+   "names": [
+    "T/A-30 Compass",
+    "Trainer",
+    "trainer"
+   ]
+  },
+  "Truck2-CRAM": {
+   "file": "Truck2-CRAM.glb",
+   "kind": "ground",
+   "tris": 2519,
+   "size": {
+    "len": 9.51,
+    "wid": 4.76,
+    "hgt": 6.09
+   },
+   "source": "community",
+   "names": [
+    "MSV CRAM",
+    "Truck2-CRAM"
+   ]
+  },
+  "Truck2-FC": {
+   "file": "Truck2-FC.glb",
+   "kind": "ground",
+   "tris": 2510,
+   "size": {
+    "len": 9.52,
+    "wid": 5.51,
+    "hgt": 6.01
+   },
+   "source": "community",
+   "names": [
+    "MSV Fire Control",
+    "Truck2-FC"
+   ]
+  },
+  "Truck2-FT": {
+   "file": "Truck2-FT.glb",
+   "kind": "ground",
+   "tris": 2518,
+   "size": {
+    "len": 9.51,
+    "wid": 2.97,
+    "hgt": 3.69
+   },
+   "source": "community",
+   "names": [
+    "MSV Fuel Tanker",
+    "Truck2-FT"
+   ]
+  },
+  "Truck2-L": {
+   "file": "Truck2-L.glb",
+   "kind": "ground",
+   "tris": 2513,
+   "size": {
+    "len": 9.52,
+    "wid": 2.71,
+    "hgt": 3.69
+   },
+   "source": "community",
+   "names": [
+    "MSV Flatbed",
+    "Truck2-L"
+   ]
+  },
+  "Truck2-LADS": {
+   "file": "Truck2-LADS.glb",
+   "kind": "ground",
+   "tris": 2516,
+   "size": {
+    "len": 9.51,
+    "wid": 4.76,
+    "hgt": 6.09
+   },
+   "source": "community",
+   "names": [
+    "MSV LADS",
+    "Truck2-LADS"
+   ]
+  },
+  "Truck2-M": {
+   "file": "Truck2-M.glb",
+   "kind": "ground",
+   "tris": 2523,
+   "size": {
+    "len": 9.51,
+    "wid": 2.78,
+    "hgt": 4.15
+   },
+   "source": "community",
+   "names": [
+    "MSV Munitions",
+    "Truck2-M"
+   ]
+  },
+  "Truck2-MRAP": {
+   "file": "Truck2-MRAP.glb",
+   "kind": "ground",
+   "tris": 1828,
+   "size": {
+    "len": 6.66,
+    "wid": 2.7,
+    "hgt": 3.4
+   },
+   "source": "community",
+   "names": [
+    "MSV MRAP",
+    "Truck2-MRAP"
+   ]
+  },
+  "Truck2-R": {
+   "file": "Truck2-R.glb",
+   "kind": "ground",
+   "tris": 2510,
+   "size": {
+    "len": 9.51,
+    "wid": 4.76,
+    "hgt": 6.19
+   },
+   "source": "community",
+   "names": [
+    "MSV Radar",
+    "Truck2-R"
+   ]
+  },
+  "Truck2-RSAM": {
+   "file": "Truck2-RSAM.glb",
+   "kind": "ground",
+   "tris": 2516,
+   "size": {
+    "len": 9.95,
+    "wid": 4.76,
+    "hgt": 7.22
+   },
+   "source": "community",
+   "names": [
+    "MSV R9 Stratolance Launcher",
+    "Truck2-RSAM"
+   ]
+  },
+  "Truck2-T": {
+   "file": "Truck2-T.glb",
+   "kind": "ground",
+   "tris": 1992,
+   "size": {
+    "len": 8.11,
+    "wid": 2.7,
+    "hgt": 2.81
+   },
+   "source": "community",
+   "names": [
+    "MSV Tractor",
+    "Truck2-T"
+   ]
+  },
+  "Truck2-TBM": {
+   "file": "Truck2-TBM.glb",
+   "kind": "ground",
+   "tris": 2534,
+   "size": {
+    "len": 9.73,
+    "wid": 4.76,
+    "hgt": 3.69
+   },
+   "source": "community",
+   "names": [
+    "MSV Ballistic Missile Launcher",
+    "MSV Nuclear Ballistic Missile Launcher",
+    "Truck2-TBM",
+    "Truck2-TBM-N"
+   ]
+  },
+  "Truss1": {
+   "file": "Truss1.glb",
+   "kind": "building",
+   "tris": 24,
+   "size": {
+    "len": 4.0,
+    "wid": 4.0,
+    "hgt": 50.0
+   },
+   "source": "community",
+   "names": [
+    "Truss 50m",
+    "Truss1"
+   ]
+  },
+  "UGV1_grenade": {
+   "file": "UGV1_grenade.glb",
+   "kind": "ground",
+   "tris": 2354,
+   "size": {
+    "len": 2.81,
+    "wid": 1.64,
+    "hgt": 1.59
+   },
+   "source": "community",
+   "names": [
+    "Hexhound GMG",
+    "UGV1_grenade"
+   ]
+  },
+  "UGV1_SAM": {
+   "file": "UGV1_SAM.glb",
+   "kind": "ground",
+   "tris": 1959,
+   "size": {
+    "len": 2.81,
+    "wid": 1.64,
+    "hgt": 1.77
+   },
+   "source": "community",
+   "names": [
+    "Hexhound SAM",
+    "UGV1_SAM",
+    "UGV1_sam"
+   ]
+  },
+  "UGVDozer1": {
+   "file": "UGVDozer1.glb",
+   "kind": "ground",
+   "tris": 2658,
+   "size": {
+    "len": 4.41,
+    "wid": 3.21,
+    "hgt": 1.68
+   },
+   "source": "community",
+   "names": [
+    "M12 Jackknife",
+    "UGVDozer1"
+   ]
+  },
+  "UtilityHelo1": {
+   "file": "UtilityHelo1.glb",
+   "kind": "heli",
+   "tris": 6011,
+   "size": {
+    "len": 15.21,
+    "wid": 13.27,
+    "hgt": 4.76
+   },
+   "source": "community",
+   "names": [
+    "UH-90 Ibis",
+    "UtilityHelo1"
+   ]
+  },
+  "VehicleDepot1": {
+   "file": "VehicleDepot1.glb",
+   "kind": "building",
+   "tris": 1259,
+   "size": {
+    "len": 83.86,
+    "wid": 67.34,
+    "hgt": 32.0
+   },
+   "source": "community",
+   "names": [
+    "Vehicle Depot",
+    "VehicleDepot1"
+   ]
+  },
+  "Wreck_HLT": {
+   "file": "Wreck_HLT.glb",
+   "kind": "ground",
+   "tris": 1572,
+   "size": {
+    "len": 10.25,
+    "wid": 3.44,
+    "hgt": 3.0
+   },
+   "source": "community",
+   "names": [
+    "Wreck HLT",
+    "Wreck_HLT"
+   ]
+  },
+  "Wreck_MBT": {
+   "file": "Wreck_MBT.glb",
+   "kind": "ground",
+   "tris": 1277,
+   "size": {
+    "len": 9.03,
+    "wid": 4.24,
+    "hgt": 2.79
+   },
+   "source": "community",
+   "names": [
+    "Wreck MBT",
+    "Wreck_MBT"
+   ]
+  }
+ },
+ "aliases": {
+  "23mm AAA Emplacement": "Emplacement1_23mm",
+  "6x6_1_AA": "6x6_1_AA",
+  "6x6_1_APC": "6x6_1_APC",
+  "6x6_1_AT": "6x6_1_AT",
+  "6x6_1_IFV": "6x6_1_IFV",
+  "76mm Guided Shell": "Shell_76mm_guided",
+  "A-19 Brawler": "CAS1",
+  "AAM-29 Scythe": "AAM2",
+  "AAM-36 Scimitar": "AAM4",
+  "AAM1": "AAM1",
+  "AAM2": "AAM2",
+  "AAM3": "AAM3",
+  "AAM4": "AAM4",
+  "AeroSentry SPAAG": "SPAAG1",
+  "AFV6 AA": "6x6_1_AA",
+  "AFV6 APC": "6x6_1_APC",
+  "AFV6 AT": "6x6_1_AT",
+  "AFV6 IFV": "6x6_1_IFV",
+  "AFV8 APC": "AFV8_APC",
+  "AFV8 IFV": "AFV8_IFV",
+  "AFV8 Mobile Air Defense": "AFV8_SAM",
+  "AFV8_APC": "AFV8_APC",
+  "AFV8_IFV": "AFV8_IFV",
+  "AFV8_IVF": "AFV8_IFV",
+  "AFV8_SAM": "AFV8_SAM",
+  "AGM-48": "AGM1",
+  "AGM-68": "AGM_heavy",
+  "AGM-99": "AShM2",
+  "AGM1": "AGM1",
+  "AGM2": "AGM2",
+  "AGM_heavy": "AGM_heavy",
+  "AGR-18 Lynchpin": "Rocket1",
+  "AGR-24 Kingpin": "Rocket2",
+  "AIR-2 Genie": "AIR-2_Genie",
+  "AIR-2_Genie": "AIR-2_Genie",
+  "Aircraft Revetment": "revetment1",
+  "Alkyon AB-4": "NOX_FastBomber1",
+  "ALM-C450": "CruiseMissile1",
+  "ALND-4 (20kt)": "CruiseMissile20kt",
+  "ammunitionBunker": "ammunitionBunker",
+  "Annex Class Carrier": "AssaultCarrier1",
+  "ARAD-116": "ARM1",
+  "Argus Class Frigate": "NOX_Frigate1",
+  "ARM1": "ARM1",
+  "AShM-300": "AShM1",
+  "AShM1": "AShM1",
+  "AShM2": "AShM2",
+  "AShM3": "AShM3",
+  "AssaultCarrier1": "AssaultCarrier1",
+  "AT-145": "NOX_Missile_G2G",
+  "AT-145 Emplacement": "NOX_Emplacement1_ATGM",
+  "ATP-1": "AGM2",
+  "AttackHelo1": "AttackHelo1",
+  "ballisticMissile1": "ballisticMissile1",
+  "ballisticMissile1_tacNuke": "ballisticMissile1",
+  "Bend D25x45deg 2D": "Bend2",
+  "Bend D25x45deg 4D": "Bend4",
+  "Bend2": "Bend2",
+  "Bend4": "Bend4",
+  "Boltstrike RAM45 Launcher": "NOX_SAMTurret1",
+  "Bomb500": "bomb500",
+  "bomb500": "bomb500",
+  "Bomb_125_1": "bomb_125_1",
+  "bomb_125_1": "bomb_125_1",
+  "Bomb_250_1": "bomb_250_1",
+  "bomb_250_1": "bomb_250_1",
+  "Bomb_250_glide": "bomb_250_glide",
+  "bomb_250_glide": "bomb_250_glide",
+  "Bomb_500_glide": "bomb_500_glide",
+  "bomb_500_glide": "bomb_500_glide",
+  "Bomb_demolition": "bomb_demolition",
+  "bomb_demolition": "bomb_demolition",
+  "Bomb_glide1": "bomb_glide1",
+  "bomb_glide1": "bomb_glide1",
+  "Bomb_penetrator1": "bomb_penetrator1",
+  "bomb_penetrator1": "bomb_penetrator1",
+  "Camo Net 1": "camoNet1",
+  "camoNet1": "camoNet1",
+  "CAS1": "CAS1",
+  "CI-22": "COIN",
+  "CI-22 Cricket": "COIN",
+  "COIN": "COIN",
+  "Column 50m": "Column1",
+  "Column1": "Column1",
+  "Concrete barrier": "ConcreteBarrier1",
+  "Concrete Pad": "ConcretePad1",
+  "Concrete Wall": "ConcreteWall1",
+  "Concrete Wall 10m": "ConcreteWall1x5",
+  "ConcreteBarrier1": "ConcreteBarrier1",
+  "ConcretePad1": "ConcretePad1",
+  "ConcreteWall1": "ConcreteWall1",
+  "ConcreteWall1x5": "ConcreteWall1x5",
+  "Cone D25x20m": "Cone2",
+  "Cone D40x20m": "Cone1",
+  "Cone D40x25m": "Cone3",
+  "Cone1": "Cone1",
+  "Cone2": "Cone2",
+  "Cone3": "Cone3",
+  "Container blue": "Container1",
+  "Container orange": "Container1",
+  "Container red": "Container1",
+  "Container stack": "ContainerStack1",
+  "Container white": "Container1",
+  "Container1": "Container1",
+  "Container2": "Container1",
+  "Container3": "Container1",
+  "Container4": "Container1",
+  "ContainerStack1": "ContainerStack1",
+  "Control Tower": "controlTower1",
+  "ControlTower1": "controlTower1",
+  "controlTower1": "controlTower1",
+  "Cooling Tower": "CoolingTower",
+  "CoolingTower": "CoolingTower",
+  "Corvette1": "Corvette1",
+  "CRAM Trailer": "CRAMTrailer1",
+  "CRAMTrailer1": "CRAMTrailer1",
+  "CruiseMissile1": "CruiseMissile1",
+  "CruiseMissile20kt": "CruiseMissile20kt",
+  "Cursor Class LFD": "NOX_SmallCarrier1",
+  "Cylinder D20x50m": "Cylinder1",
+  "Cylinder D25x50m": "Cylinder2",
+  "Cylinder1": "Cylinder1",
+  "Cylinder2": "Cylinder2",
+  "Darkreach": "Darkreach",
+  "Demolition Bomb": "bomb_demolition",
+  "Destroyer1": "Destroyer1",
+  "Dynamo Class Destroyer": "Destroyer1",
+  "Emplacement1_23mm": "Emplacement1_23mm",
+  "Emplacement1_MANPADS": "Emplacement1_MANPADS",
+  "Enrichment Plant": "enrichmentPlant1",
+  "EnrichmentPlant1": "enrichmentPlant1",
+  "enrichmentPlant1": "enrichmentPlant1",
+  "EW-25 Medusa": "EW1",
+  "EW1": "EW1",
+  "Eyeball Mk.II": "NOX_AGM_scanner1",
+  "factory_large": "factory_large",
+  "factory_tall": "factory_tall",
+  "FactoryLarge": "factory_large",
+  "FactoryTall": "factory_tall",
+  "FGA-57 Anvil": "SPAAG2",
+  "Fighter1": "Fighter1",
+  "Flat Platform": "Platform_flat",
+  "FleetCarrier1": "FleetCarrier1",
+  "FS-12": "Fighter1",
+  "FS-12 Revoker": "Fighter1",
+  "FS-20 Vortex": "SmallFighter1",
+  "Fuel Bladder 10,000L": "fuelBladder10000",
+  "Fuel Bladder 1500L": "fuelBladder1500",
+  "Fuel Bladder 6000L": "fuelBladder6000",
+  "Fuel Depot": "fuelTank1",
+  "FuelBladder1": "fuelBladder1500",
+  "fuelBladder10000": "fuelBladder10000",
+  "fuelBladder1500": "fuelBladder1500",
+  "FuelBladder2": "fuelBladder6000",
+  "FuelBladder3": "fuelBladder10000",
+  "fuelBladder6000": "fuelBladder6000",
+  "fuelTank1": "fuelTank1",
+  "Gabion Wall 10x1.5x1.5": "hesco5",
+  "Gabion Wall 20x3x3": "gabionWall_20x3x3",
+  "gabionWall_20x3x3": "gabionWall_20x3x3",
+  "GBM-500LR": "bomb_500_glide",
+  "GPO-2P Auger": "bomb_penetrator1",
+  "GPO-500": "bomb500",
+  "GPO-N (1.5kt)": "nuclearBomb1",
+  "GPO-N (250kt)": "nuclearBomb1",
+  "Ground-to-ground missile": "NOX_Missile_G2G",
+  "GTG1": "NOX_Missile_G2G",
+  "Guard Tower": "guardTower1",
+  "guardTower1": "guardTower1",
+  "hangar_med": "hangar_med",
+  "Hardened Aircraft Shelter": "shelter1",
+  "Helipad": "Helipad",
+  "helipad1": "Helipad",
+  "hesco5": "hesco5",
+  "Hexhound GMG": "UGV1_grenade",
+  "Hexhound SAM": "UGV1_SAM",
+  "HLT Fire Control": "HLT-FC",
+  "HLT Flatbed": "HLT-L",
+  "HLT Fuel Tanker": "HLT-FT",
+  "HLT Mobile Artillery": "NOX_HLT-MArt",
+  "HLT Munitions Truck": "HLT-M",
+  "HLT Radar Truck": "HLT-R",
+  "HLT Tractor": "HLT-T",
+  "HLT-CRAM": "CRAMTrailer1",
+  "HLT-FC": "HLT-FC",
+  "HLT-FT": "HLT-FT",
+  "HLT-HEL": "LaserTrailer1",
+  "HLT-L": "HLT-L",
+  "HLT-M": "HLT-M",
+  "HLT-R": "HLT-R",
+  "HLT-T": "HLT-T",
+  "Hull down circular": "hullDown2",
+  "Hull down square": "hullDown1",
+  "hullDown1": "hullDown1",
+  "hullDown2": "hullDown2",
+  "Hyperion Class Carrier": "FleetCarrier1",
+  "IRM-S1": "SAM_IR1",
+  "IRM-S1 Emplacement": "Emplacement1_MANPADS",
+  "IRM-S2": "AAM3",
+  "KR-67 Ifrit": "Multirole1",
+  "LandingCraft1": "LandingCraft1",
+  "Large Factory": "factory_large",
+  "Large Platform": "Platform_large",
+  "Laser CIWS Trailer": "LaserTrailer1",
+  "LaserTrailer1": "LaserTrailer1",
+  "LCV25 AA": "LightTruck1_AA",
+  "LCV25 AT": "LightTruck1_AT",
+  "LCV45": "LCV45",
+  "LCV45 Recon Truck": "LCV45",
+  "LightTruck1_AA": "LightTruck1_AA",
+  "LightTruck1_AT": "LightTruck1_AT",
+  "Linebreaker APC": "Linebreaker_APC",
+  "Linebreaker IFV": "Linebreaker_IFV",
+  "Linebreaker SAM": "Linebreaker_SAM",
+  "Linebreaker_APC": "Linebreaker_APC",
+  "Linebreaker_IFV": "Linebreaker_IFV",
+  "Linebreaker_SAM": "Linebreaker_SAM",
+  "LinebreakerAPC": "Linebreaker_APC",
+  "LinebreakerIFV": "Linebreaker_IFV",
+  "LinebreakerSAM": "Linebreaker_SAM",
+  "M12 Jackknife": "UGVDozer1",
+  "MBT": "MBT",
+  "MBT1": "MBT1",
+  "Medium Aircraft Hangar": "hangar_med",
+  "Missile_G2G": "NOX_Missile_G2G",
+  "MMR-S3": "AAM1",
+  "MSV Ballistic Missile Launcher": "Truck2-TBM",
+  "MSV CRAM": "Truck2-CRAM",
+  "MSV Fire Control": "Truck2-FC",
+  "MSV Flatbed": "Truck2-L",
+  "MSV Fuel Tanker": "Truck2-FT",
+  "MSV LADS": "Truck2-LADS",
+  "MSV MLRS": "NOX_Truck2-MLRS",
+  "MSV MRAP": "Truck2-MRAP",
+  "MSV Munitions": "Truck2-M",
+  "MSV Nuclear Ballistic Missile Launcher": "Truck2-TBM",
+  "MSV R9 Stratolance Launcher": "Truck2-RSAM",
+  "MSV Radar": "Truck2-R",
+  "MSV Tractor": "Truck2-T",
+  "Multirole1": "Multirole1",
+  "Munitions Bunker": "ammunitionBunker",
+  "Munitions Container": "MunitionsContainer1",
+  "Munitions Pallet": "MunitionsPallet1",
+  "MunitionsContainer1": "MunitionsContainer1",
+  "MunitionsPallet1": "MunitionsPallet1",
+  "Naval Container": "NavalSupplyContainer1",
+  "Naval Supply Pallet": "NavalPallet1",
+  "NavalPallet1": "NavalPallet1",
+  "NavalSupplyContainer1": "NavalSupplyContainer1",
+  "NuclearBomb1": "nuclearBomb1",
+  "nuclearBomb1": "nuclearBomb1",
+  "NuclearBomb1_strategic": "nuclearBomb1",
+  "nuclearBomb1_strategic": "nuclearBomb1",
+  "OTB-31 landing craft": "LandingCraft1",
+  "PAB-125": "bomb_125_1",
+  "PAB-250": "bomb_250_1",
+  "PAB-250LR": "bomb_250_glide",
+  "PAB-80LR": "bomb_glide1",
+  "Piledriver TBM (20kt)": "ballisticMissile1",
+  "Piledriver TBM (HE)": "ballisticMissile1",
+  "Pillbox": "pillbox",
+  "pillbox": "pillbox",
+  "Pilot": "pilotDismounted",
+  "PilotDismounted": "pilotDismounted",
+  "pilotDismounted": "pilotDismounted",
+  "Pipeline": "Pipeline",
+  "Platform_flat": "Platform_flat",
+  "Platform_large": "Platform_large",
+  "Platform_slope": "Platform_slope",
+  "Platform_small": "Platform_small",
+  "Platform_small_columns": "Platform_small_columns",
+  "PlatformFlat": "Platform_flat",
+  "PlatformLarge": "Platform_large",
+  "PlatformSlope": "Platform_slope",
+  "PlatformSmall": "Platform_small",
+  "PlatformSmallColumns": "Platform_small_columns",
+  "QuadVTOL1": "QuadVTOL1",
+  "Radar Container": "RadarContainer1",
+  "Radar Station": "radarStation1",
+  "RadarContainer1": "RadarContainer1",
+  "RadarSAM1": "RadarSAM1",
+  "RadarSam1": "RadarSAM1",
+  "RadarStation1": "radarStation1",
+  "radarStation1": "radarStation1",
+  "RAM-45": "SAM_Radar1",
+  "Refinery": "refinery_main",
+  "Refinery Structure": "refinery_main",
+  "refinery_main": "refinery_main",
+  "revetment1": "revetment1",
+  "Ring D50m": "Ring1",
+  "Ring1": "Ring1",
+  "Rocket1": "Rocket1",
+  "Rocket2": "Rocket2",
+  "Ruin Building": "Ruin_Building1",
+  "Ruin_Building1": "Ruin_Building1",
+  "SAH-46 Chicane": "AttackHelo1",
+  "SAM_IR1": "SAM_IR1",
+  "SAM_Radar1": "SAM_Radar1",
+  "SAM_Radar2": "SAM_Radar2",
+  "SAMTrailer1": "SAMTrailer1",
+  "SAMTurret1": "NOX_SAMTurret1",
+  "SFB": "Darkreach",
+  "SFB-81 Darkreach": "Darkreach",
+  "Shard Class Corvette": "Corvette1",
+  "Shell_76mm_guided": "Shell_76mm_guided",
+  "shelter1": "shelter1",
+  "Sloped Platform": "Platform_slope",
+  "Small Platform": "Platform_small",
+  "Small Platform Columns": "Platform_small_columns",
+  "SmallFighter1": "SmallFighter1",
+  "SPAAG1": "SPAAG1",
+  "SPAAG2": "SPAAG2",
+  "Spearhead MBT": "MBT1",
+  "Storage Tank": "storageTank",
+  "StorageTank": "storageTank",
+  "storageTank": "storageTank",
+  "StratoLance R9": "SAM_Radar2",
+  "StratoLance R9 Launcher": "SAMTrailer1",
+  "Surf Class Patrol Boat": "NOX_PatrolBoat1",
+  "T/A-30 Compass": "trainer",
+  "T9K41 Boltstrike": "RadarSAM1",
+  "Tower Crane": "TowerCrane",
+  "TowerCrane": "TowerCrane",
+  "Trainer": "trainer",
+  "trainer": "trainer",
+  "Truck2-CRAM": "Truck2-CRAM",
+  "Truck2-FC": "Truck2-FC",
+  "Truck2-FT": "Truck2-FT",
+  "Truck2-L": "Truck2-L",
+  "Truck2-LADS": "Truck2-LADS",
+  "Truck2-M": "Truck2-M",
+  "Truck2-MRAP": "Truck2-MRAP",
+  "Truck2-R": "Truck2-R",
+  "Truck2-RSAM": "Truck2-RSAM",
+  "Truck2-T": "Truck2-T",
+  "Truck2-TBM": "Truck2-TBM",
+  "Truck2-TBM-N": "Truck2-TBM",
+  "Truss 50m": "Truss1",
+  "Truss1": "Truss1",
+  "Tusko-B (HE)": "AShM3",
+  "Type-12 MBT": "MBT",
+  "UGV1_grenade": "UGV1_grenade",
+  "UGV1_SAM": "UGV1_SAM",
+  "UGV1_sam": "UGV1_SAM",
+  "UGVDozer1": "UGVDozer1",
+  "UH-90 Ibis": "UtilityHelo1",
+  "UtilityHelo1": "UtilityHelo1",
+  "Vehicle Depot": "VehicleDepot1",
+  "VehicleDepot1": "VehicleDepot1",
+  "Vertical Factory": "factory_tall",
+  "VL-49 Tarantula": "QuadVTOL1",
+  "VT-7 Vagrant": "NOX_VTOLTrainer1",
+  "Wreck HLT": "Wreck_HLT",
+  "Wreck MBT": "Wreck_MBT",
+  "Wreck_HLT": "Wreck_HLT",
+  "Wreck_MBT": "Wreck_MBT"
+ },
+ "credits": {
+  "community": {
+   "title": "NOBlackBox Tacview Assets",
+   "author": "KopterBuzz",
+   "url": "https://github.com/KopterBuzz/NOBlackBoxTacviewAssets",
+   "text": "This is the Tacview Asset pack for recordings generated with NOBlackBox (https://github.com/KopterBuzz/NOBlackBox)",
+   "note": "Used in Nuclear Option Viewer with KopterBuzz's permission. Thank you!"
+  },
+  "kit": {
+   "title": "Tomo's Tacview kit",
+   "text": "Models built from the Nuclear Option game files, used with the developers' OK."
+  }
+ }
+}
