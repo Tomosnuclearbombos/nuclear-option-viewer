@@ -28,8 +28,9 @@ export class Replay {
     // and removes it when it reaches the blast radius. Older recorders stopped sooner, so an explosion lasts at least
     // as long as its wave takes to reach its largest recorded radius. Each stays on screen at least BLAST_SHOW seconds,
     // fading at its full size, or a missile's quarter second wave would be gone in a frame at 8X.
+    sortDetonations(this);
     for (let i = 0; i < N; i++) {
-      if (this.o.kind[i] === KIND.EXPLOSION) this.o.t1[i] = Math.max(this.o.t1[i], this.o.t0[i] + this.o.radius[i] / WAVE_SPEED, this.o.t0[i] + BLAST_SHOW);
+      if (this.o.kind[i] === KIND.EXPLOSION && this.o.t1[i] >= this.o.t0[i]) this.o.t1[i] = Math.max(this.o.t1[i], this.o.t0[i] + this.o.radius[i] / WAVE_SPEED, this.o.t0[i] + BLAST_SHOW);
     }
 
     // objects by start time, so the live set can be walked with one pointer
@@ -248,6 +249,32 @@ function peakAlive(rp) {
   const cur = new Int32Array(kinds), max = new Int32Array(kinds);
   for (const [, d, k] of ev) { cur[k] += d; if (cur[k] > max[k]) max[k] = cur[k]; }
   return max;
+}
+
+// From 15 Oct 2026 NOBlackBox also records every missile detonation: a Misc+Explosion named after the weapon, with
+// Armed (0 = it fizzled) and Radius = 13 x cbrt(yield kg), removed 0.1 s later. Shown like any explosion, except:
+//  - a fizzle (Armed=0) is the small shot-down flash, not a blast;
+//  - a radius of 0 (no warhead, e.g. Eyeball Mk.II) shows nothing;
+//  - where the game also made its own shockwave (an unnamed explosion within 300 m and 1.5 s), only that shows.
+// Hidden ones end before they start, so they are never alive.
+function sortDetonations(rp) {
+  const o = rp.o, s = rp.s, N = rp.count;
+  const waves = [];
+  for (let i = 0; i < N; i++) if (o.kind[i] === KIND.EXPLOSION && !o.name[i] && o.sampleCount[i]) waves.push(i);
+  waves.sort((a, b) => o.t0[a] - o.t0[b]);
+  const wt = Float64Array.from(waves, (i) => o.t0[i]);
+  const first = (t) => { let a = 0, b = wt.length; while (a < b) { const m = (a + b) >> 1; if (wt[m] < t) a = m + 1; else b = m; } return a; };
+  for (let i = 0; i < N; i++) {
+    if (o.kind[i] !== KIND.EXPLOSION || !o.name[i] || !o.sampleCount[i]) continue;
+    if (o.armed[i] === 0) { o.radius[i] = SHOT_DOWN_R; continue; }
+    let hide = !(o.radius[i] > 0);
+    const a = o.start[i], x = s.x[a], y = s.y[a], z = s.z[a];
+    for (let j = first(o.t0[i] - 1.5); !hide && j < waves.length && wt[j] <= o.t0[i] + 1.5; j++) {
+      const w = o.start[waves[j]];
+      if (Math.hypot(s.x[w] - x, s.y[w] - y, s.z[w] - z) < 300) hide = true;
+    }
+    if (hide) o.t1[i] = o.t0[i] - 0.01;   // ends before it starts: never on screen
+  }
 }
 
 // The recording only has the explosions that made a game shockwave: warheads of about 45 kg and up. Every missile,

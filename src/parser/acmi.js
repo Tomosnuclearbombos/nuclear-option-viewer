@@ -134,6 +134,7 @@ export class AcmiParser {
     this.sideChanges = [];   // flat (record, time, side): airbases and their buildings change hands mid mission
     this.recKind = []; this.recT0 = []; this.recT1 = [];
     this.recRange = []; this.recRadius = [];
+    this.recArmed = [];      // detonations (NOBlackBox from 15 Oct 2026): 1 armed, 0 fizzled, 2 not said
     // last full transform per record, for fields left empty in an update ("unchanged")
     this.last = [];
 
@@ -253,7 +254,7 @@ export class AcmiParser {
     const r = this.recId.length;
     this.recId.push(id); this.recName.push(""); this.recType.push(""); this.recCallSign.push(""); this.recPilot.push("");
     this.recCoalition.push(""); this.recSideNow.push(""); this.recColor.push(""); this.recKind.push(KIND.UNKNOWN);
-    this.recT0.push(this.time); this.recT1.push(NaN); this.recRange.push(0); this.recRadius.push(0);
+    this.recT0.push(this.time); this.recT1.push(NaN); this.recRange.push(0); this.recRadius.push(0); this.recArmed.push(2);
     this.last.push(null);
     this.live.set(id, r);
     return r;
@@ -306,6 +307,7 @@ export class AcmiParser {
         return;
       }
       case "Color": this.recColor[r] = decode(b, s, e); return;
+      case "Armed": { const v = readNumber(b, s, e); if (v === v) this.recArmed[r] = v ? 1 : 0; return; }
       case "EngagementRange": { const v = readNumber(b, s, e); if (v === v) this.recRange[r] = v; return; }
       case "Radius": {
         // kept as a series (an explosion's wave growing) and as its largest value (the blast radius)
@@ -452,6 +454,7 @@ export class AcmiParser {
         t1,
         range: Float32Array.from(this.recRange),
         radius: Float32Array.from(this.recRadius),
+        armed: Uint8Array.from(this.recArmed),
         start, sampleCount,
         name: this.recName, type: this.recType, callSign: this.recCallSign, pilot: this.recPilot,
         coalition: this.recCoalition, color: this.recColor,
