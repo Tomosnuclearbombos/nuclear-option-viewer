@@ -8,6 +8,7 @@ import { Overlay, labelOf } from "./scene/overlay.js";
 import { CameraMan } from "./scene/camera.js";
 import { ModelLibrary } from "./scene/models.js";
 import { Scenery } from "./scene/scenery.js";
+import { Blasts } from "./scene/blasts.js";
 import { Replay } from "./replay.js";
 import { KIND } from "./parser/acmi.js";
 import { Timeline } from "./ui/timeline.js";
@@ -21,12 +22,13 @@ const state = { replay: null, t: 0, playing: false, speed: 6, lastNow: 0, sel: -
 const NO_WEBGL = "This browser can't show 3D graphics. Turn on hardware acceleration in its settings, or try another browser.";
 
 // ---- 3D view (needs WebGL 2) -------------------------------------------------------------------------------
-let viewer = null, ground = null, scenery = null, units = null, trails = null, overlay = null, cameraMan = null;
+let viewer = null, ground = null, scenery = null, blasts = null, units = null, trails = null, overlay = null, cameraMan = null;
 try {
   viewer = new Viewer($("view"));
   ground = new Ground(viewer.scene);
   scenery = new Scenery(viewer.scene);
   units = new Units(viewer.scene);
+  blasts = new Blasts(viewer.scene);
   trails = new Trails(viewer.scene);
   overlay = new Overlay($("overlay"));
   cameraMan = new CameraMan(viewer);
@@ -122,6 +124,7 @@ function start(replay, fileName) {
   state.playing = true;
   state.lastNow = 0;
   units.setReplay(replay);
+  blasts.setReplay(replay, replay.maxAlive[KIND.EXPLOSION]);
   trails.setReplay(replay);
   timeline.setReplay(replay);
   unitList.setReplay(replay);
@@ -236,6 +239,7 @@ if (viewer) viewer.onFrame = (now) => {
   if (cameraMan.follow >= 0) viewer.keepAboveGround();   // the camera moved with the unit: keep it above the hills
   viewer.camera.updateMatrixWorld();
   units.update(t, viewer.camera, viewer.height);
+  blasts.update(rp, t, units.booms, units.nBooms, viewer.camera, viewer.height);
   overlay.project(units.live, viewer.camera);
   trails.update(t, units.live, viewer.groundAt);
   overlay.draw(rp, hoverInfo, rangeInfo, t);
@@ -436,4 +440,4 @@ if (q.get("replay")) {
     .catch((e) => showStartError("Couldn't fetch that replay: " + e.message));
 }
 
-window.nov = { viewer, ground, scenery, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, select, follow };
+window.nov = { viewer, ground, scenery, blasts, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, select, follow };

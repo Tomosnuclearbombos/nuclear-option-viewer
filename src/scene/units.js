@@ -2,8 +2,8 @@
 //
 // One instanced mesh per model (or per stand-in shape for units without a model), sized once for the busiest moment
 // of the replay and refilled each frame from the replay's evaluated state, so the picture is always a pure function
-// of the playhead. Gun rounds are tracer streaks (a bright head and a fading tail along their path); flares and
-// explosions are point sprites. Every unit keeps a minimum size on screen,
+// of the playhead. Gun rounds are tracer streaks (a bright head and a fading tail along their path); flares are
+// point sprites; explosions are listed for Blasts (this.booms) to draw. Every unit keeps a minimum size on screen,
 // so a jet 50 km away is still a readable shape rather than a lost pixel.
 //
 // Each frame also leaves a list of what was drawn (this.live) for picking, labels and trails to reuse.
@@ -37,7 +37,7 @@ const LOOK = {
   [KIND.BUILDING]: { len: 14, minPx: 6 },
 };
 const MESH_KINDS = [KIND.PLANE, KIND.HELI, KIND.MISSILE, KIND.BOMB, KIND.SHELL, KIND.SHIP, KIND.GROUND, KIND.BUILDING];
-const POINT_KINDS = [KIND.ROUND, KIND.FLARE, KIND.EXPLOSION];
+const POINT_KINDS = [KIND.ROUND, KIND.FLARE];
 export const isMeshKind = (k) => LOOK[k] !== undefined;
 
 // ---- stand-in shapes, all 1 m long, nose to -z, right to +x, up +y ----------------------------------------
@@ -129,6 +129,8 @@ export class Units {
     let cap = 8;
     for (const k of POINT_KINDS) cap += replay.maxAlive[k];
     this.pointCap = cap;
+    this.booms = new Int32Array(replay.maxAlive[KIND.EXPLOSION] + 8);   // explosions alive this frame, for Blasts
+    this.nBooms = 0;
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(cap * 3), 3).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute("color", new THREE.BufferAttribute(new Float32Array(cap * 3), 3).setUsage(THREE.DynamicDrawUsage));
@@ -227,12 +229,15 @@ export class Units {
     const surface = this.surfaceAt, cap = this.pointCap, live = this.live, sel = this.selected;
     const tr = this.tracers.geometry, tp = tr.attributes.position.array, tcap = this.tracerCap, tail = this.tail;
     let nt = 0;
+    const booms = this.booms;
+    this.nBooms = 0;
     live.n = 0;
 
     rp.forEachAlive(t, (i) => {
       const k = o.kind[i];
       if (!rp.poseAt(i, t, st)) return;
       if ((k === KIND.GROUND || k === KIND.BUILDING || k === KIND.SHIP) && !rp.visibleAt(i, t)) return; // destroyed
+      if (k === KIND.EXPLOSION) { if (this.nBooms < booms.length) booms[this.nBooms++] = i; return; }
       if (k === KIND.ROUND) {
         if (nt < tcap && rp.poseAt(i, Math.max(o.t0[i], t - TRACER_S), tail)) {
           const b = nt * 6;
@@ -242,7 +247,7 @@ export class Units {
       }
       if (k === KIND.ROUND || k === KIND.FLARE || k === KIND.EXPLOSION) {
         if (np >= cap) return;
-        const c = k === KIND.ROUND ? ROUND_COL : k === KIND.FLARE ? FLARE_COL : BOOM_COL;
+        const c = k === KIND.ROUND ? ROUND_COL : FLARE_COL;
         pp[np * 3] = st[0]; pp[np * 3 + 1] = st[1]; pp[np * 3 + 2] = st[2];
         pc[np * 3] = c.r; pc[np * 3 + 1] = c.g; pc[np * 3 + 2] = c.b;
         np++;
@@ -312,4 +317,3 @@ const ROUND_COL = new THREE.Color("#fff2b0");
 const TRACER = new THREE.Color("#ffc23a");
 const TRACER_S = 0.15;   // seconds of a round's flight shown as its tracer streak (about 100 to 150 m)
 const FLARE_COL = new THREE.Color("#ffffff");
-const BOOM_COL = new THREE.Color("#ff7a3a");

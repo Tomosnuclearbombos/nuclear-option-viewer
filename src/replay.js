@@ -168,7 +168,7 @@ export class Replay {
 }
 
 export const VISIBLE = 9; // index of "Visible" in CHANNELS
-const EXPLOSION_LIFE = 2.0; // seconds an explosion stays on screen
+const EXPLOSION_LIFE = 6.0; // seconds an explosion shows: fireball, then smoke (scene/blasts.js BLAST_LIFE)
 
 // ---- orientation maths (no three.js needed here) -------------------------------------------------------------
 // ACMI angles: yaw = heading clockwise from north, pitch = nose up, roll = right wing down. Scene: north is -z,
