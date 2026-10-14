@@ -238,7 +238,7 @@ if (viewer) viewer.onFrame = (now) => {
   units.update(t, viewer.camera, viewer.height);
   overlay.project(units.live, viewer.camera);
   trails.update(t, units.live, viewer.groundAt);
-  overlay.draw(rp, hoverInfo, rangeInfo);
+  overlay.draw(rp, hoverInfo, rangeInfo, t);
   unitList.update(t, now);
   inspector.update(t, now, viewer.groundAt);
   const b = unitList.hovered >= 0 ? unitList.hovered : state.sel;   // that unit's time in the mission
@@ -256,7 +256,7 @@ const pose = new Float64Array(7);
 function hoverInfo(i) {
   const rp = state.replay, o = rp.o;
   const lines = [labelOf(o, i)];
-  const sub = [o.pilot[i] ? o.name[i] : "", SIDE_NAME[o.coalition[i]] || ""].filter(Boolean).join("  ");
+  const sub = [o.pilot[i] ? o.name[i] : "", SIDE_NAME[rp.sideAt(i, state.t)] || ""].filter(Boolean).join("  ");
   if (sub) lines.push(sub.toUpperCase());
   if (rp.poseAt(i, state.t, pose)) {
     const tas = rp.channelAt(0, i, state.t);   // TAS, m/s

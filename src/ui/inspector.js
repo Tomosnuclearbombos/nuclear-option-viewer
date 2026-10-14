@@ -48,12 +48,20 @@ export class Inspector {
     this.root.hidden = i < 0;
     this.last = 0;
     if (i < 0 || !this.rp) return;
-    const o = this.rp.o;
-    this.root.className = "plate inspector " + (SIDE_CLASS[o.coalition[i]] || "neutral");
-    this.title.textContent = labelOf(o, i);
+    this.title.textContent = labelOf(this.rp.o, i);
+    this.side = undefined;
+    this.paintSide(this.rp.o.coalition[i]);
+  }
+
+  // the side colour and name; a base's buildings can change hands, so update() repaints when it changes
+  paintSide(side) {
+    if (side === this.side) return;
+    this.side = side;
+    const o = this.rp.o, i = this.i;
+    this.root.className = "plate inspector " + (SIDE_CLASS[side] || "neutral");
     const bits = [];
     if (o.pilot[i]) bits.push(o.name[i]);
-    bits.push(SIDE_NAME[o.coalition[i]] || "NEUTRAL");
+    bits.push(SIDE_NAME[side] || "NEUTRAL");
     bits.push(KIND_NAME[o.kind[i]] || "UNIT");
     const cs = callSignOf(o, i);   // AI units only: a player's call sign repeats the type and their name
     if (cs) bits.push(cs);
@@ -68,6 +76,7 @@ export class Inspector {
     if (i < 0 || !rp || now - this.last < 150) return;
     this.last = now;
     const o = rp.o, k = o.kind[i];
+    this.paintSide(rp.sideAt(i, t));
     const here = rp.alive(i, t);
     const dead = this.destroyedAt.get(i);
     if (here && rp.visibleAt(i, t)) this.status.textContent = "";

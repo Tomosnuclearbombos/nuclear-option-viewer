@@ -39,6 +39,23 @@ export class Replay {
 
     // where the action is, for the first camera position
     this.bounds = sampleBounds(this);
+
+    // sides that change during the mission (airbases changing hands): record -> { t: [...], side: [...] } in time order
+    this.sideLog = new Map();
+    const sc = r.sideChanges;
+    if (sc) for (let k = 0; k < sc.rec.length; k++) {
+      let log = this.sideLog.get(sc.rec[k]);
+      if (!log) { log = { t: [], side: [] }; this.sideLog.set(sc.rec[k], log); }
+      log.t.push(sc.t[k]); log.side.push(sc.side[k]);
+    }
+  }
+
+  // the side (Boscali, Primeva, Neutral) unit i is on at time t
+  sideAt(i, t) {
+    const log = this.sideLog.get(i);
+    let side = this.o.coalition[i];
+    if (log) for (let k = 0; k < log.t.length && log.t[k] <= t; k++) side = log.side[k];
+    return side;
   }
 
   // ---- lookups -------------------------------------------------------------------------------------------

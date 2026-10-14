@@ -140,6 +140,8 @@ export class Units {
       this.colorOf[i] = SIDE[side] || SIDE.neutral;
       this.selColorOf[i] = SELECTED[side] || SELECTED.neutral;
     }
+    this.sideMoves = new Uint8Array(N);   // units whose side changes during the mission get coloured per frame
+    for (const i of replay.sideLog.keys()) this.sideMoves[i] = 1;
     let liveCap = 8;
     for (const k of MESH_KINDS) liveCap += replay.maxAlive[k];
     this.live = { n: 0, idx: new Int32Array(liveCap), x: new Float32Array(liveCap), y: new Float32Array(liveCap),
@@ -243,7 +245,10 @@ export class Units {
       m.compose(p, q, s);
       const n = counts[sk]++;
       mesh.setMatrixAt(n, m);
-      mesh.setColorAt(n, i === sel ? this.selColorOf[i] : this.colorOf[i]);
+      if (this.sideMoves[i]) {
+        const side = rp.sideAt(i, t);
+        mesh.setColorAt(n, i === sel ? SELECTED[side] || SELECTED.neutral : SIDE[side] || SIDE.neutral);
+      } else mesh.setColorAt(n, i === sel ? this.selColorOf[i] : this.colorOf[i]);
       if (live.n < live.idx.length) {
         const j = live.n++;
         live.idx[j] = i; live.x[j] = st[0]; live.y[j] = y; live.z[j] = st[2]; live.size[j] = drawnLen; live.kind[j] = k;

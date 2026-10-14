@@ -127,7 +127,10 @@ export class AcmiParser {
     this.live = new Map();    // id -> record index
     this.justRemoved = new Map(); // id -> record index, for ids removed in the current frame
     this.recId = []; this.recName = []; this.recType = []; this.recCallSign = []; this.recPilot = [];
-    this.recCoalition = []; this.recColor = []; this.recKind = []; this.recT0 = []; this.recT1 = [];
+    this.recCoalition = []; this.recColor = [];
+    this.recSideNow = [];    // the side as of the line being read; recCoalition keeps each unit's first side
+    this.sideChanges = [];   // flat (record, time, side): airbases and their buildings change hands mid mission
+    this.recKind = []; this.recT0 = []; this.recT1 = [];
     this.recRange = []; this.recRadius = [];
     // last full transform per record, for fields left empty in an update ("unchanged")
     this.last = [];
@@ -247,7 +250,7 @@ export class AcmiParser {
   newRecord(id) {
     const r = this.recId.length;
     this.recId.push(id); this.recName.push(""); this.recType.push(""); this.recCallSign.push(""); this.recPilot.push("");
-    this.recCoalition.push(""); this.recColor.push(""); this.recKind.push(KIND.UNKNOWN);
+    this.recCoalition.push(""); this.recSideNow.push(""); this.recColor.push(""); this.recKind.push(KIND.UNKNOWN);
     this.recT0.push(this.time); this.recT1.push(NaN); this.recRange.push(0); this.recRadius.push(0);
     this.last.push(null);
     this.live.set(id, r);
@@ -291,7 +294,15 @@ export class AcmiParser {
       }
       case "CallSign": this.recCallSign[r] = unescape(decode(b, s, e)).trim(); return;
       case "Pilot": this.recPilot[r] = unescape(decode(b, s, e)).trim(); return;
-      case "Coalition": this.recCoalition[r] = decode(b, s, e); return;
+      case "Coalition": {
+        const v = decode(b, s, e);
+        if (!v) return;
+        const now = this.recSideNow[r];
+        if (!now) this.recCoalition[r] = v;
+        else if (v !== now) this.sideChanges.push(r, this.time, v);
+        this.recSideNow[r] = v;
+        return;
+      }
       case "Color": this.recColor[r] = decode(b, s, e); return;
       case "EngagementRange": { const v = readNumber(b, s, e); if (v === v) this.recRange[r] = v; return; }
       case "Radius": { const v = readNumber(b, s, e); if (v === v) this.recRadius[r] = v; return; }
@@ -434,6 +445,11 @@ export class AcmiParser {
         start, sampleCount,
         name: this.recName, type: this.recType, callSign: this.recCallSign, pilot: this.recPilot,
         coalition: this.recCoalition, color: this.recColor,
+      },
+      sideChanges: {
+        rec: Int32Array.from(this.sideChanges.filter((_, k) => k % 3 === 0)),
+        t: Float32Array.from(this.sideChanges.filter((_, k) => k % 3 === 1)),
+        side: this.sideChanges.filter((_, k) => k % 3 === 2),
       },
       samples,
       channels,

@@ -93,6 +93,7 @@ export class UnitList {
     if (!this.rp || this.root.hidden) return;
     if (!this.dirty && now - this.lastRefresh < 250) return;
     this.lastRefresh = now;
+    this.t = t;
     const rp = this.rp, o = rp.o;
     if (this.dirty) {
       this.dirty = false;
@@ -150,7 +151,7 @@ export class UnitList {
       if (i === undefined) { row.hidden = true; return; }
       row.hidden = false;
       row.dataset.i = String(i);
-      row.className = "unit-row " + (SIDE_CLASS[o.coalition[i]] || "neutral");
+      row.className = "unit-row " + (SIDE_CLASS[rp.sideAt(i, this.t)] || "neutral");
       const label = labelOf(o, i);
       row.children[1].textContent = label;
       row.children[2].textContent = o.pilot[i] ? o.name[i] : callSignOf(o, i);

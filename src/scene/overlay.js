@@ -90,8 +90,8 @@ export class Overlay {
     return -1;
   }
 
-  // draw everything; info(i) gives the hover box lines, rel(a, b) the range readout text
-  draw(rp, info, rel) {
+  // draw everything at time t; info(i) gives the hover box lines, rel(a, b) the range readout text
+  draw(rp, info, rel, t) {
     const g = this.g, dpr = this.dpr;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, this.W, this.H);
@@ -140,7 +140,8 @@ export class Overlay {
         }
         if (!ok) continue;
         boxes.push(x - 3, y - 8, x + w + 3, y + 8);
-        const col = i === this.selected ? SELECTED[o.coalition[i]] || SELECTED.neutral : SIDE[o.coalition[i]] || SIDE.neutral;
+        const side = rp.sideAt(i, t);
+        const col = i === this.selected ? SELECTED[side] || SELECTED.neutral : SIDE[side] || SIDE.neutral;
         outlined(g, text, x, y, cssColor(col));
         drawn++;
       }
@@ -159,7 +160,7 @@ export class Overlay {
 
     // selected: corner brackets in the game's selected colour
     if (sj >= 0 && this.front[sj]) {
-      const col = cssColor(SELECTED[o.coalition[this.selected]] || SELECTED.neutral);
+      const col = cssColor(SELECTED[rp.sideAt(this.selected, t)] || SELECTED.neutral);
       brackets(g, this.sx[sj], this.sy[sj], Math.max(12, this.sr[sj] + 6), col);
     }
 

@@ -68,7 +68,8 @@ export class Trails {
         const count = end - first + 1;
         if (count < 1) continue;
         const stride = Math.max(1, Math.ceil(count / segShare));
-        const col = sel ? SELECTED[o.coalition[i]] || SELECTED.neutral : SIDE[o.coalition[i]] || SIDE.neutral;
+        const side = rp.sideAt(i, t);
+        const col = sel ? SELECTED[side] || SELECTED.neutral : SIDE[side] || SIDE.neutral;
         const weapon = k === KIND.MISSILE || k === KIND.BOMB;
         const alpha = weapon ? 0.55 : 0.8;
         // walk from the unit's current position backwards
