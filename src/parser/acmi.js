@@ -116,6 +116,7 @@ export class AcmiParser {
       dataSource: "", dataRecorder: "", author: "" };
     this.time = 0;
     this.frames = 0;
+    this.badFrames = 0;   // frame times thrown away as damage
     this.tMin = Infinity; this.tMax = -Infinity;
     this.lineCount = 0;
     this.bytesRead = 0;
@@ -204,7 +205,7 @@ export class AcmiParser {
         if (t !== this.time) this.justRemoved.clear();
         this.time = t; this.frames++;
         if (t < this.tMin) this.tMin = t; if (t > this.tMax) this.tMax = t;
-      }
+      } else this.badFrames++;
       return;
     }
     if (c0 === 45) { // '-' removal
@@ -419,6 +420,7 @@ export class AcmiParser {
       tMin: Math.fround(this.tMin === Infinity ? 0 : this.tMin),
       tMax: end,
       frames: this.frames,
+      badFrames: this.badFrames,
       lines: this.lineCount,
       bytes: this.bytesRead,
       objects: {
