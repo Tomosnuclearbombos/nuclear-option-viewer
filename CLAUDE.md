@@ -18,6 +18,13 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   models and the map data were extracted from the game files. The other 54 entries came from the community NOBlackBox
   Tacview pack: someone else's work, licence unknown. Prefer models rebuilt from the game files (the kit's
   `scripts/no_tacview_mesh.py`) over that pack.
+- **Models, updated 2026-10-14:** use the Tacview models first. Tomo: "the ones we made and the community made for
+  tacview work well! we may as well use those or something similar". The sources:
+  - the community pack github.com/KopterBuzz/NOBlackBoxTacviewAssets (157 meshes plus a Tacview database). Its repo
+    has no licence file, but Tomo has KopterBuzz's permission to use it in the viewer (through the NOBlackBox fork).
+    Credit him in the viewer.
+  - the kit's own NOX_ models.
+  - for any unit neither covers, models built from the game files the same way (tools/build_models.py).
 - **Permission (2026-10-14):** the game's developers told Tomo on Discord that using the game's models and maps is
   fine, as long as they aren't used for a similar purpose (in another game). They had recently given the same OK for
   3D and art competitions. A replay viewer qualifies, so game-derived models and map data may ship with the viewer.
