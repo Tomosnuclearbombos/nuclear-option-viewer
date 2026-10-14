@@ -19,8 +19,10 @@ What it does, in order
 Steps (-s/--step, repeatable; coordinates are CSS pixels from the top left of the viewport)
     wait:S                 wait S seconds
     key:NAME               press a key on whatever has focus: Space, ArrowRight, Shift+ArrowRight, +, -, Home, End
+    hold:NAME,S            hold a key (or chord, Shift+w) down for S seconds, then let go
     click:X,Y              left click at a point
     click:SELECTOR         left click the middle of an element, e.g. click:#play
+    dblclick:X,Y           double click at a point (or the middle of an element)
     drag:X0,Y0,X1,Y1[,B]   drag with mouse button B (0 left = pan, 2 right = orbit; default 0)
     wheel:X,Y,DY           mouse wheel at a point (DY < 0 zooms in)
     timeline:F0[,F1]       press on the timeline at fraction F0 (0..1), drag to F1, release, like scrubbing
@@ -38,7 +40,7 @@ Visibility
     so {"#start": 0.94} means the start card hides 94% of the screen. These hit tests use elementFromPoint with
     pointer-events briefly forced on for every element (within one synchronous call, never painted), so overlays
     that let clicks through, like the top bar, still count where they are drawn. A half transparent overlay counts
-    as on top where it is drawn. Click and drag steps record "hit": the element a real click there reaches.
+    as on top where it is drawn. The one exception is #overlay, the clear label canvas over the 3D view. Click and drag steps record "hit": the element a real click there reaches.
 
 Report and exit status
     The JSON report goes to stdout (and to --report PATH if given); progress goes to stderr.
@@ -107,9 +109,10 @@ VISIBILITY_JS = r"""
 
   // 2. what is painted on top. elementFromPoint skips anything with pointer-events: none (the top bar is like
   // that), so for the rest of this synchronous call every element takes hits. The override is removed before the
-  // browser can paint, so the page never looks or behaves any different.
+  // browser can paint, so the page never looks or behaves any different. #overlay is left out: it is the clear
+  // canvas the labels are drawn on, laid over the whole 3D view, and the map shows through it.
   const force = document.createElement("style");
-  force.textContent = "*, *::before, *::after { pointer-events: auto !important; }";
+  force.textContent = "*:not(#overlay), *::before, *::after { pointer-events: auto !important; }";
   document.head.appendChild(force);
   try {
     for (const sel in boxes) {
@@ -269,6 +272,10 @@ class Run:
         elif name == "key":
             rec["focus"] = ff.eval_json("document.activeElement && (document.activeElement.id ? '#' + document.activeElement.id : document.activeElement.localName)")
             ff.press(arg)
+        elif name == "hold":
+            combo, _, secs = arg.rpartition(",")
+            rec["focus"] = ff.eval_json("document.activeElement && (document.activeElement.id ? '#' + document.activeElement.id : document.activeElement.localName)")
+            ff.hold(combo, float(secs))
         elif name == "click":
             if arg and not arg[0].isdigit() and arg[0] != "-":
                 x, y = self.element_point(arg)
@@ -276,6 +283,13 @@ class Run:
                 x, y = (float(v) for v in arg.split(","))
             rec["at"], rec["hit"] = [round(x), round(y)], ff.call(HIT_JS, x, y)
             ff.click(x, y)
+        elif name == "dblclick":
+            if arg and not arg[0].isdigit() and arg[0] != "-":
+                x, y = self.element_point(arg)
+            else:
+                x, y = (float(v) for v in arg.split(","))
+            rec["at"], rec["hit"] = [round(x), round(y)], ff.call(HIT_JS, x, y)
+            ff.dblclick(x, y)
         elif name == "drag":
             v = [float(s) for s in arg.split(",")]
             rec["hit"] = ff.call(HIT_JS, v[0], v[1])

@@ -16,6 +16,7 @@
 </head>
 <body>
   <canvas id="view" aria-label="3D replay view"></canvas>
+  <canvas id="overlay" aria-hidden="true"></canvas>
 
   <header id="top" hidden>
     <section class="plate mission" aria-label="Mission">
@@ -25,8 +26,12 @@
         <span><span class="lbl">RECORDED :</span> <span id="m-rec"></span></span>
       </div>
     </section>
-    <nav class="top-keys">
-      <button id="keys-btn" class="key" type="button" aria-expanded="false" aria-controls="keys">KEYS</button>
+    <nav class="top-keys" aria-label="View">
+      <button id="units-btn" class="key" type="button" aria-pressed="false" title="Unit list (U)">UNITS</button>
+      <button id="labels-btn" class="key" type="button" aria-pressed="true" title="Labels (L)">LABELS</button>
+      <button id="trails-btn" class="key" type="button" aria-pressed="true" title="Trails (T)">TRAILS</button>
+      <button id="curtains-btn" class="key off" type="button" aria-pressed="false" title="Altitude curtains (C)">CURTAINS</button>
+      <button id="keys-btn" class="key" type="button" aria-expanded="false" aria-controls="keys" title="Controls (?)">KEYS</button>
       <label class="key">OPEN REPLAY<input id="file" type="file" accept=".acmi,.zip,.gz,application/zip"></label>
     </nav>
   </header>
@@ -49,9 +54,34 @@
         <p class="error prose" id="error" role="alert" hidden></p>
       </div>
       <p class="prose hint">Replays are the .zip.acmi files in the Discord #replays posts. They open in Tacview too.</p>
-      <p class="prose credit">Inspired by <a href="https://acmi-viewer.github.io" target="_blank" rel="noopener">ACMI Viewer</a> by Aleksi Lassila.</p>
+      <p class="prose credit">Inspired by <a href="https://acmi-viewer.github.io" target="_blank" rel="noopener">ACMI Viewer</a> by Aleksi Lassila. Unit models from the <a href="https://github.com/KopterBuzz/NOBlackBoxTacviewAssets" target="_blank" rel="noopener">NOBlackBox Tacview assets</a> by KopterBuzz.</p>
     </section>
   </main>
+
+  <section id="units" class="plate units-panel" hidden aria-label="Units">
+    <div class="panel-head"><span class="panel-title">UNITS</span><span class="dim" id="units-count"></span></div>
+    <input id="units-search" class="search" type="search" placeholder="SEARCH PILOT OR UNIT" autocomplete="off" spellcheck="false">
+    <div class="toggles">
+      <button class="key small" type="button" data-group="air" aria-pressed="true">AIR</button>
+      <button class="key small" type="button" data-group="sea" aria-pressed="true">SEA</button>
+      <button class="key small off" type="button" data-group="ground" aria-pressed="false">GROUND</button>
+      <button class="key small off" type="button" data-group="weapons" aria-pressed="false">WEAPONS</button>
+      <button id="units-present" class="key small" type="button" aria-pressed="true" title="Only units present right now">NOW</button>
+    </div>
+    <div id="units-rows" class="unit-rows" role="list"></div>
+  </section>
+
+  <section id="inspector" class="plate inspector" hidden aria-label="Selected unit">
+    <div class="insp-title" id="insp-title"></div>
+    <div class="insp-sub" id="insp-sub"></div>
+    <div class="insp-status" id="insp-status"></div>
+    <div class="insp-rows" id="insp-rows"></div>
+    <div class="insp-keys">
+      <button id="insp-follow" class="key small off" type="button" aria-pressed="false" title="Follow (F)">FOLLOW</button>
+      <button id="insp-close" class="key small" type="button" title="Close in (Z)">CLOSE IN</button>
+      <button id="insp-clear" class="key small" type="button" title="Clear (Esc)">CLEAR</button>
+    </div>
+  </section>
 
   <div id="loader" class="plate loader" hidden>
     <div class="progress-label"><span id="loader-label">READING REPLAY</span><span id="loader-pct"></span></div>
@@ -73,14 +103,25 @@
   <section id="keys" class="plate keys-panel" hidden aria-label="Controls">
     <h2 class="panel-title">CONTROLS</h2>
     <dl>
+      <dt>W A S D</dt><dd>MOVE (OR THE ARROW KEYS)</dd>
+      <dt>Q &nbsp;E</dt><dd>TURN LEFT OR RIGHT</dd>
+      <dt>PAGE UP DOWN</dt><dd>ZOOM IN OR OUT</dd>
+      <dt>SHIFT</dt><dd>MOVE, TURN AND ZOOM FASTER</dd>
+      <dt>CLICK</dt><dd>SELECT A UNIT</dd>
+      <dt>DOUBLE CLICK</dt><dd>SELECT AND FOLLOW</dd>
+      <dt>F</dt><dd>FOLLOW THE SELECTED UNIT</dd>
+      <dt>Z</dt><dd>CLOSE IN ON IT</dd>
+      <dt>SHIFT HOVER</dt><dd>RANGE TO ANOTHER UNIT</dd>
+      <dt>H</dt><dd>SHOW EVERYTHING</dd>
+      <dt>ESC</dt><dd>CLEAR THE SELECTION</dd>
       <dt>SPACE</dt><dd>PLAY OR PAUSE</dd>
       <dt>+ &nbsp;-</dt><dd>FASTER OR SLOWER</dd>
-      <dt>RIGHT &nbsp;LEFT</dt><dd>SKIP 5 S OF PLAYBACK</dd>
-      <dt>SHIFT RIGHT</dt><dd>SKIP 60 S OF PLAYBACK</dd>
+      <dt>, &nbsp;.</dt><dd>BACK OR ON 5 S OF PLAYBACK</dd>
+      <dt>SHIFT , &nbsp;.</dt><dd>BACK OR ON 60 S OF PLAYBACK</dd>
       <dt>HOME &nbsp;END</dt><dd>START OR END</dd>
-      <dt>LEFT DRAG</dt><dd>MOVE OVER THE MAP</dd>
-      <dt>RIGHT DRAG</dt><dd>TURN THE VIEW</dd>
-      <dt>WHEEL</dt><dd>ZOOM</dd>
+      <dt>U L T C</dt><dd>UNITS, LABELS, TRAILS, CURTAINS</dd>
+      <dt>MOUSE</dt><dd>LEFT DRAG MOVE, RIGHT DRAG TURN, WHEEL ZOOM</dd>
+      <dt>TIMELINE</dt><dd>CLICK OR DRAG TO JUMP, WHEEL TO NUDGE</dd>
       <dt>?</dt><dd>SHOW OR HIDE THIS</dd>
     </dl>
   </section>

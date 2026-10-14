@@ -3,7 +3,8 @@
 // Drawn on a canvas that fills its wrapper (the wrapper is sized by the layout, never by the canvas, so the
 // canvas can shrink as well as grow). Aircraft in the air show as a green trace and weapons in flight as amber
 // bars, each on its own scale so neither hides the other. The track is inset a few pixels so the playhead marker
-// is whole at the very start and end.
+// is whole at the very start and end. A white band marks one unit's time in the mission: the one under the mouse in
+// the unit list, else the selected one. The wheel over the timeline nudges time.
 
 import { KIND } from "../parser/acmi.js";
 import { duration } from "./format.js";
@@ -16,13 +17,27 @@ const PAD = 6;           // track inset in CSS pixels, room for half the playhea
 const LABEL_H = 12;      // height of the tick label row
 
 export class Timeline {
-  constructor(canvas, { onSeek, label }) {
+  constructor(canvas, { onSeek, onNudge, label }) {
     this.canvas = canvas;
     this.onSeek = onSeek;
+    this.onNudge = onNudge;    // (+1 or -1, shift held) for each notch of the wheel
     this.label = label;        // t -> text for the hover readout
     this.rp = null;
+    this.band = null;          // [t0, t1] to mark, or null
     this.hoverX = -1;
     this.dragging = false;
+    let wheel = 0, lastWheel = 0;
+    canvas.addEventListener("wheel", (e) => {
+      if (!this.rp || !this.onNudge) return;
+      e.preventDefault();
+      // a mouse notch (40 px or more) is one nudge; a touchpad's many small steps add up to one per 100 px
+      const px = (e.deltaY || e.deltaX) * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
+      if (e.timeStamp - lastWheel > 300) wheel = 0;
+      lastWheel = e.timeStamp;
+      if (Math.abs(px) >= 40) { wheel = 0; this.onNudge(Math.sign(px), e.shiftKey); return; }
+      wheel += px;
+      if (Math.abs(wheel) >= 100) { this.onNudge(Math.sign(wheel), e.shiftKey); wheel = 0; }
+    }, { passive: false });
     canvas.addEventListener("pointerdown", (e) => {
       if (!this.rp || e.button !== 0) return;
       this.dragging = true;
@@ -90,10 +105,19 @@ export class Timeline {
     g.strokeStyle = FAINT; g.lineWidth = 1;
     g.strokeRect(x0 + 0.5, top - 0.5, tw - 1, gh + 1);
 
-    // time ticks every 30 s .. 2 h, whichever leaves room for the labels (never more than one per 70 px)
-    let step = STEPS.find((s) => (s / span) * tw >= 70) || STEPS[STEPS.length - 1];
-    const maxTicks = Math.max(1, Math.floor(tw / 70));
-    if (span / step > maxTicks) step = Math.ceil(span / maxTicks);
+    // one unit's time in the mission
+    if (this.band) {
+      const a = clamp(this.band[0] - rp.tMin, 0, span), b = clamp(Math.min(this.band[1], rp.tMax) - rp.tMin, a, span);
+      const xa = Math.round(xAt(a)), xb = Math.max(xa + 2, Math.round(xAt(b)));
+      g.fillStyle = "rgba(255, 255, 255, 0.13)";
+      g.fillRect(xa, top, xb - xa, gh);
+      g.fillStyle = "rgba(255, 255, 255, 0.7)";
+      g.fillRect(xa, top, 1, gh); g.fillRect(xb - 1, top, 1, gh);
+    }
+
+    // time ticks every 30 s .. 2 h, the first that leaves 70 px for each label; past that, whole hours
+    let step = STEPS.find((s) => (s / span) * tw >= 70);
+    if (!step) step = Math.ceil((span * 70) / tw / 3600) * 3600;
     g.font = FONT; g.textBaseline = "top";
     for (let s = 0; s <= span; s += step) {
       const x = Math.round(xAt(s)) + 0.5;

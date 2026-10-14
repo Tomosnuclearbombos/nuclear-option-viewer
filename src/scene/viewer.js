@@ -41,6 +41,12 @@ export class Viewer {
     this.scene.add(this.hemi, this.sun);
 
     this.groundAt = null;   // (x, sceneZ) -> ground height under that point, set once a map is loaded
+    this.following = false; // set while the camera follows a unit
+    this.airPivot = false;  // the pivot is up where a followed unit was let go; it lands with dropPivot
+    this.interacting = false;   // a mouse drag or wheel turn is in progress
+    this.controls.addEventListener("start", () => { this.interacting = true; });
+    this.controls.addEventListener("end", () => { this.interacting = false; });
+    this._d = new THREE.Vector3();
     this.onFrame = null;
     this.resize();
     window.addEventListener("resize", () => this.resize());
@@ -83,11 +89,49 @@ export class Viewer {
   keepAboveGround() {
     if (!this.groundAt) return;
     const tg = this.controls.target, cam = this.camera.position;
-    const gt = Math.max(0, this.groundAt(tg.x, tg.z));
-    const dy = (gt - tg.y) * 0.25;   // ease, so panning over ridges doesn't jolt
-    if (Math.abs(dy) > 0.01) { tg.y += dy; cam.y += dy; }
+    if (!this.following && !this.airPivot) {   // the pivot of a followed unit is the unit itself, maybe flying
+      const gt = Math.max(0, this.groundAt(tg.x, tg.z));
+      const dy = (gt - tg.y) * 0.25;   // ease, so panning over ridges doesn't jolt
+      if (Math.abs(dy) > 0.01) { tg.y += dy; cam.y += dy; }
+    }
     const floor = Math.max(0, this.groundAt(cam.x, cam.z)) + CLEARANCE;
     if (cam.y < floor) { cam.y = floor; this.camera.lookAt(tg); }   // re-aim, or the view drifts off the pivot
+  }
+
+  // After letting go of a followed unit the pivot is wherever the unit was, maybe high in the sky. Slide it along the
+  // line of sight down to the ground: the picture doesn't move at all, but orbiting and zooming work around the
+  // map again. Looking level or up there is no ground ahead, so the pivot stays in the air. True if it landed.
+  dropPivot() {
+    const tg = this.controls.target, cam = this.camera.position;
+    const d = this._d.subVectors(tg, cam);
+    const len = d.length();
+    if (!this.groundAt || len < 1e-3) return false;
+    d.divideScalar(len);
+    const s = this.groundAlong(cam, d, this.controls.maxDistance);
+    if (s === null) return false;
+    tg.copy(cam).addScaledVector(d, Math.max(s, this.controls.minDistance));
+    this.airPivot = false;
+    return true;
+  }
+
+  // distance along a ray (unit direction d) from o to where it meets the ground or the sea, or null
+  groundAlong(o, d, maxD) {
+    if (d.y > -1e-3) return null;
+    const gap = (s) => o.y + d.y * s - Math.max(0, this.groundAt(o.x + d.x * s, o.z + d.z * s));
+    let s0 = 0, h = gap(0);
+    if (h <= 0) return 0;
+    // half the height above the ground is a safe step on any slope up to 45 degrees; then halve in on the crossing
+    for (let n = 0; n < 20000 && s0 < maxD; n++) {
+      const s1 = s0 + Math.max(0.5, h * 0.5);
+      const h1 = gap(s1);
+      if (h1 <= 0) {
+        let a = s0, b = s1;
+        for (let k = 0; k < 24; k++) { const m = (a + b) / 2; if (gap(m) > 0) a = m; else b = m; }
+        return (a + b) / 2;
+      }
+      s0 = s1; h = h1;
+    }
+    return null;
   }
 
   // look at a box of the world from a readable angle
@@ -96,6 +140,7 @@ export class Viewer {
     const ground = this.groundAt ? Math.max(0, this.groundAt(cx, cz)) : 0;
     const span = Math.max(x1 - x0, z1 - z0, 4000);
     const dist = span * 0.85;
+    this.airPivot = false;
     this.controls.target.set(cx, ground, cz);
     this.camera.position.set(cx, ground + dist * 0.75, cz + dist * 0.65);
     this.controls.update();

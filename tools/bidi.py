@@ -493,6 +493,12 @@ class Firefox:
             {"type": "pointerDown", "button": button}, {"type": "pause", "duration": 50},
             {"type": "pointerUp", "button": button}]}])
 
+    def dblclick(self, x: float, y: float) -> None:
+        click = [{"type": "pointerDown", "button": 0}, {"type": "pause", "duration": 40}, {"type": "pointerUp", "button": 0}]
+        self.perform_actions([{"type": "pointer", "id": "mouse", "parameters": {"pointerType": "mouse"}, "actions": [
+            {"type": "pointerMove", "x": int(x), "y": int(y), "origin": "viewport"}, *click,
+            {"type": "pause", "duration": 80}, *click]}])
+
     def drag(self, x0: float, y0: float, x1: float, y1: float, button: int = 0, duration_ms: int = 600,
              steps: int = 12) -> None:
         moves = [{"type": "pointerMove", "x": int(x0 + (x1 - x0) * i / steps), "y": int(y0 + (y1 - y0) * i / steps),
@@ -518,6 +524,16 @@ class Firefox:
         down = [{"type": "keyDown", "value": v} for v in vals]
         up = [{"type": "keyUp", "value": v} for v in reversed(vals)]
         self.perform_actions([{"type": "key", "id": "keyboard", "actions": down + up}])
+
+    def hold(self, combo: str, seconds: float) -> None:
+        """Hold a key or chord down for a while, then let go: 'w', 'Shift+ArrowUp', 'PageUp'."""
+        vals = [key_value(n) for n in combo.split("+")]
+        down = [{"type": "keyDown", "value": v} for v in vals]
+        up = [{"type": "keyUp", "value": v} for v in reversed(vals)]
+        pause = [{"type": "pause", "duration": int(seconds * 1000)}]
+        self.send("input.performActions", {"context": self.context, "actions": [
+            {"type": "key", "id": "keyboard", "actions": down + pause + up}]}, timeout=seconds + 30)
+        self.send("input.releaseActions", {"context": self.context})
 
     # -- output --
     def screenshot(self, path: str | None = None, origin: str = "viewport") -> bytes:

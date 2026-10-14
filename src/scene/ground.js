@@ -11,6 +11,7 @@ const MAPS = {
   "NuclearOption.Terrain_naval": "ignus",
 };
 const MESH_STEP = 160; // metres between vertices of the far terrain mesh
+const SEA = 3_000_000;  // open sea plane size (metres): its edge stays inside the fog even zoomed right out
 
 export function mapKeyFor(mapId) { return MAPS[mapId] || null; }
 
@@ -74,7 +75,7 @@ export class Ground {
   // Plain sea at 0 m, for replays whose map isn't known or didn't load.
   drawSea() {
     const sea = new THREE.Mesh(
-      new THREE.PlaneGeometry(1_000_000, 1_000_000).rotateX(-Math.PI / 2),
+      new THREE.PlaneGeometry(SEA, SEA).rotateX(-Math.PI / 2),
       new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(0.16, 0.31, 0.4, THREE.SRGBColorSpace) }),
     );
     sea.position.y = -2;
@@ -143,9 +144,9 @@ export class Ground {
     land.name = "land";
     this.group.add(land);
 
-    // open sea past the map edges, in the picture's own deep-water colour
+    // open sea past the map edges, in the picture's own deep-water colour, wide enough that its edge is always in the fog
     const sea = new THREE.Mesh(
-      new THREE.PlaneGeometry(W * 8, D * 8).rotateX(-Math.PI / 2),
+      new THREE.PlaneGeometry(SEA, SEA).rotateX(-Math.PI / 2),
       new THREE.MeshLambertMaterial({ color: edgeColour(tex.image) }),
     );
     sea.position.set((m.x0 + m.x1) / 2, -2, -(m.z0 + m.z1) / 2);
