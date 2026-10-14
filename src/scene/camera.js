@@ -1,4 +1,5 @@
-// Camera moves on top of the mouse controls: keyboard movement, following a unit, closing in, framing everything.
+// Camera moves on top of the mouse controls: keyboard movement, following a unit, closing in, framing everything,
+// and on phones the gyro: turning and tilting the phone turns the view around the point you're looking at.
 //
 // The camera belongs to the person watching. Following carries the camera along with the unit by the unit's own
 // movement each frame, so the distance and angle they chose are kept and the wheel and orbit still work; panning
@@ -22,6 +23,17 @@ export class CameraMan {
     this._v = new THREE.Vector3(); this._f = new THREE.Vector3(); this._r = new THREE.Vector3();
     this.pos = new Float64Array(7);
     this.tried = { ok: false, cam: new THREE.Vector3(), tg: new THREE.Vector3() };   // the last view dropPivot ran on
+    this.gyro = false;
+    this.gyroRef = null;            // { view: camera quaternion, dev: device quaternion } when the gyro took over
+    this.gyroNow = null;            // latest device quaternion
+    this._gq = new THREE.Quaternion(); this._ge = new THREE.Euler(); this._e2 = new THREE.Euler();
+    this.onOrientation = (e) => {
+      if (e.alpha === null || e.beta === null || e.gamma === null) return;
+      const angle = ((screen.orientation && screen.orientation.angle) || window.orientation || 0) * D2R;
+      this.gyroNow = deviceQuaternion(this.gyroNow || new THREE.Quaternion(), e.alpha * D2R, e.beta * D2R, e.gamma * D2R, angle);
+    };
+    // turning the phone between upright and sideways changes which way is "forward": start again from the view
+    window.addEventListener("orientationchange", () => { this.gyroRef = null; });
 
     // a mouse pan (left drag) lets go of the followed unit; a click doesn't
     const canvas = viewer.canvas;
@@ -97,23 +109,79 @@ export class CameraMan {
       }
     }
     // following: carry the camera with the unit
-    if (this.follow >= 0 && rp) {
-      const i = this.follow;
-      if (!rp.alive(i, t) || !rp.poseAt(i, t, this.pos)) { this.setFollow(-1); return; }
-      const p = this._v.set(this.pos[0], this.pos[1], this.pos[2]);
-      if (this.hasLast) {
-        const dx = p.x - this.last.x, dy = p.y - this.last.y, dz = p.z - this.last.z;
-        cam.position.x += dx; cam.position.y += dy; cam.position.z += dz;
-      } else {
-        // first frame: slide the view over to the unit, keeping the distance and angle
-        const off = cam.position.clone().sub(tg);
-        cam.position.copy(p).add(off);
-      }
-      tg.copy(p);
-      this.last.copy(p);
-      this.hasLast = true;
-    }
+    if (this.follow >= 0 && rp) this.carry(rp, t);
+    if (this.gyro) this.applyGyro();
   }
+
+  // following: carry the camera along with the unit by the unit's own movement
+  carry(rp, t) {
+    const v = this.viewer, cam = v.camera, tg = v.controls.target;
+    const i = this.follow;
+    if (!rp.alive(i, t) || !rp.poseAt(i, t, this.pos)) { this.setFollow(-1); return; }
+    const p = this._v.set(this.pos[0], this.pos[1], this.pos[2]);
+    if (this.hasLast) {
+      const dx = p.x - this.last.x, dy = p.y - this.last.y, dz = p.z - this.last.z;
+      cam.position.x += dx; cam.position.y += dy; cam.position.z += dz;
+    } else {
+      // first frame: slide the view over to the unit, keeping the distance and angle
+      const off = cam.position.clone().sub(tg);
+      cam.position.copy(p).add(off);
+    }
+    tg.copy(p);
+    this.last.copy(p);
+    this.hasLast = true;
+  }
+
+  // ---- gyro ------------------------------------------------------------------------------------------------
+  // Turn it on: resolves to "ok", or why not: "insecure" (phones only give motion readings to https sites),
+  // "denied" (the person said no), "none" (no readings came: no sensor).
+  async setGyro(on) {
+    const v = this.viewer;
+    if (!on) {
+      window.removeEventListener("deviceorientation", this.onOrientation);
+      this.gyro = false; this.gyroRef = null; this.gyroNow = null;
+      v.controls.enableRotate = true;
+      return "ok";
+    }
+    if (typeof DeviceOrientationEvent === "undefined") return "none";
+    if (!window.isSecureContext) return "insecure";
+    if (typeof DeviceOrientationEvent.requestPermission === "function") {   // iPhone: must ask, on a tap
+      try { if ((await DeviceOrientationEvent.requestPermission()) !== "granted") return "denied"; } catch (e) { return "denied"; }
+    }
+    this.gyroNow = null;
+    window.addEventListener("deviceorientation", this.onOrientation);
+    for (let k = 0; k < 15 && !this.gyroNow; k++) await new Promise((r) => setTimeout(r, 100));
+    if (!this.gyroNow) { window.removeEventListener("deviceorientation", this.onOrientation); return "none"; }
+    this.gyro = true; this.gyroRef = null;
+    v.controls.enableRotate = false;   // the phone turns the view now; dragging still pans, pinching still zooms
+    return "ok";
+  }
+
+  // The view turns and tilts by however much the phone has turned and tilted since the gyro took over. Turn and tilt
+  // are taken apart (no roll: the horizon stays level), so turning the phone never tips the view and the other way
+  // round, however the phone is held.
+  applyGyro() {
+    const v = this.viewer, cam = v.camera, tg = v.controls.target, now = this.gyroNow;
+    if (!now) return;
+    const dev = this._ge.setFromQuaternion(now, "YXZ");
+    if (!this.gyroRef) {   // the view as it is now goes with the phone as it is held now
+      cam.lookAt(tg);
+      const view = new THREE.Euler().setFromQuaternion(cam.quaternion, "YXZ");
+      this.gyroRef = { yaw: view.y, pitch: view.x, devYaw: dev.y, devPitch: dev.x };
+      return;
+    }
+    const r = this.gyroRef;
+    let dYaw = dev.y - r.devYaw;
+    dYaw = Math.atan2(Math.sin(dYaw), Math.cos(dYaw));   // the short way round
+    // looking down at most straight down, and never up from under the ground side of the pivot
+    const lowest = -(Math.PI / 2 - 0.01), highest = -(Math.PI / 2 - v.controls.maxPolarAngle);
+    const pitch = Math.min(highest, Math.max(lowest, r.pitch + (dev.x - r.devPitch)));
+    const q = this._gq.setFromEuler(this._e2.set(pitch, r.yaw + dYaw, 0, "YXZ"));
+    const d = cam.position.distanceTo(tg);
+    cam.position.copy(tg).addScaledVector(this._v.set(0, 0, 1).applyQuaternion(q), d);
+    cam.lookAt(tg);
+  }
+
 
   // move in to a readable distance from unit i (keeping the viewing angle) and follow it
   closeIn(rp, i, t) {
@@ -149,3 +217,16 @@ export class CameraMan {
 }
 
 const UP = new THREE.Vector3(0, 1, 0);
+const D2R = Math.PI / 180;
+
+// The phone's attitude as a camera looking out of its back, in a y up world (as three.js's DeviceOrientationControls
+// did): W3C alpha, beta, gamma and the screen's rotation, all radians.
+const _e = new THREE.Euler(), _z = new THREE.Vector3(0, 0, 1), _qs = new THREE.Quaternion();
+const _back = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));   // -90 degrees about x
+function deviceQuaternion(out, alpha, beta, gamma, screenAngle) {
+  _e.set(beta, alpha, -gamma, "YXZ");
+  out.setFromEuler(_e);
+  out.multiply(_back);
+  out.multiply(_qs.setFromAxisAngle(_z, -screenAngle));
+  return out;
+}

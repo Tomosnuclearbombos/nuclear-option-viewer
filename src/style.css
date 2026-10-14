@@ -231,3 +231,55 @@ header#top > * { pointer-events: auto; }
   .units-panel, .inspector { bottom: 132px; }
   .top-keys { max-width: none; }
 }
+
+/* ---- phones ------------------------------------------------------------------------------------------------
+   Held sideways a phone is only about 330 px tall, and upright about 390 px wide: everything gets smaller and
+   tighter so the map keeps most of the screen. These come last so they win over the sizes above. */
+@media (max-height: 520px) {
+  header#top { top: 6px; left: 8px; right: 8px; gap: 8px; }
+  .mission { padding: 4px 8px; }
+  .mission-name { font-size: 13px; }
+  .mission-facts { font-size: 11px; gap: 2px 12px; margin-top: 1px; }
+  .top-keys { gap: 5px; }
+  #top .key { min-height: 26px; padding: 0 8px; font-size: 11px; border-width: 1px; }
+
+  .transport { left: 8px; right: 8px; bottom: 6px; height: 40px; gap: 8px; padding: 0 8px; }
+  .transport .key.wide { min-width: 0; width: 64px; min-height: 28px; font-size: 12px; }
+  .transport .key.square { width: 28px; min-height: 28px; font-size: 15px; }
+  .transport .readout { font-size: 12px; }
+  .speed { gap: 6px; }
+  .timeline-wrap { height: 32px; }
+
+  .inspector { right: 8px; bottom: 52px; width: 230px; padding: 6px 9px; border-width: 1px; max-height: calc(100vh - 100px); overflow-y: auto; }
+  .insp-title { font-size: 14px; }
+  .insp-sub { font-size: 10px; }
+  .insp-status { font-size: 11px; margin-top: 2px; }
+  .insp-rows { font-size: 11px; gap: 1px 10px; margin: 5px 0 6px; padding-top: 5px; }
+  .insp-keys .key.small, .units-panel .key.small { min-height: 22px; padding: 0 6px; font-size: 10px; }
+
+  .units-panel { top: 54px; bottom: 52px; height: auto; left: 8px; width: 240px; padding: 6px 8px 6px; gap: 5px; }
+  .panel-head .panel-title { font-size: 13px; }
+  .search { padding: 4px 6px; font-size: 12px; }
+  .unit-row { padding: 2px 5px; font-size: 12px; }
+  .keys-panel { top: 44px; max-height: calc(100vh - 100px); padding: 8px 12px; }
+  .keys-panel dl { font-size: 11px; gap: 3px 10px; }
+  .toast { bottom: 54px; font-size: 13px; padding: 6px 8px 6px 12px; }
+  .loader { top: 44px; }
+}
+@media (max-width: 620px) {
+  /* upright: the buttons scroll sideways in one row rather than running off the edge; no room for the title */
+  .mission { display: none; }
+  .top-keys {
+    margin-left: 0; width: 100%; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto;
+    scrollbar-width: none; padding-bottom: 2px;
+  }
+  .top-keys::-webkit-scrollbar { display: none; }
+  #top .key { flex: none; min-height: 30px; padding: 0 10px; font-size: 12px; }
+  .inspector { left: 8px; right: 8px; width: auto; padding: 8px 10px; }
+  .insp-title { font-size: 15px; }
+  .insp-sub { font-size: 10px; }
+  .insp-rows { font-size: 12px; margin: 6px 0 8px; padding-top: 6px; }
+  .units-panel { left: 8px; right: 8px; width: auto; }
+  /* with the unit list open at the bottom, the selected unit's panel goes to the top, under the buttons */
+  body:has(#units:not([hidden])) .inspector { top: 54px; bottom: auto; }
+}

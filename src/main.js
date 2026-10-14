@@ -238,7 +238,7 @@ if (viewer) viewer.onFrame = (now) => {
   const t = state.t;
   cameraMan.update(dt, rp, t);
   scenery.update(viewer.camera, now);
-  if (cameraMan.follow >= 0) viewer.keepAboveGround();   // the camera moved with the unit: keep it above the hills
+  if (cameraMan.follow >= 0 || cameraMan.gyro) viewer.keepAboveGround();   // the camera moved: keep it above the hills
   viewer.camera.updateMatrixWorld();
   units.update(t, viewer.camera, viewer.height);
   blasts.update(rp, t, units.booms, units.nBooms, viewer.camera, viewer.height);
@@ -369,6 +369,20 @@ $("labels-btn").addEventListener("click", () => toggleLabels());
 $("trails-btn").addEventListener("click", () => toggleTrails());
 $("curtains-btn").addEventListener("click", () => toggleCurtains());
 setKey($("units-btn"), false);
+
+// the gyro, on touch screens only: turning and tilting the phone turns the view
+const GYRO_SAYS = {
+  insecure: "The gyro only works on the secure (https) site, like the GitHub one.",
+  denied: "The phone didn't let the viewer read its motion sensor.",
+  none: "This device didn't send any motion sensor readings.",
+};
+if (viewer && window.matchMedia("(pointer: coarse)").matches && "DeviceOrientationEvent" in window) $("gyro-btn").hidden = false;
+$("gyro-btn").addEventListener("click", async () => {
+  const on = !cameraMan.gyro;
+  const result = await cameraMan.setGyro(on);
+  setKey($("gyro-btn"), cameraMan.gyro);
+  if (result !== "ok") showToast(GYRO_SAYS[result] || GYRO_SAYS.none);
+});
 
 function toggleKeys(show) {
   const p = $("keys");
