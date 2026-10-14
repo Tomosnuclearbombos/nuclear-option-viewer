@@ -130,7 +130,8 @@ export class Ground {
     const geo = new THREE.PlaneGeometry(W, D, cols, rows);
     geo.rotateX(-Math.PI / 2);                          // plane in x/z, its top edge to -z (north)
     geo.translate((m.x0 + m.x1) / 2, 0, -(m.z0 + m.z1) / 2);
-    // The map picture already paints the water (shallows included), so the sea is the terrain held at 0 m.
+    // The map picture already paints the water (shallows included), so the sea is the terrain held at 0 m. Past the
+    // edges, seaFrame continues it at the same 0 m.
     const pos = geo.attributes.position;
     const hs = new Float32Array(pos.count);
     for (let k = 0; k < pos.count; k++) {
@@ -144,15 +145,43 @@ export class Ground {
     land.name = "land";
     this.group.add(land);
 
-    // open sea past the map edges, in the picture's own deep-water colour, wide enough that its edge is always in the fog
-    const sea = new THREE.Mesh(
-      new THREE.PlaneGeometry(SEA, SEA).rotateX(-Math.PI / 2),
-      new THREE.MeshLambertMaterial({ color: edgeColour(tex.image) }),
-    );
-    sea.position.set((m.x0 + m.x1) / 2, -2, -(m.z0 + m.z1) / 2);
+    // open sea past the map edges, in the picture's own deep-water colour, wide enough that its edge is always in the
+    // fog. It stops at the map edge. A sea plane under the whole map sat 2 m below the map's own water and the two fought
+    // over the depth buffer, so the sea flickered in patches (worst on Ignus, which is 93% sea).
+    const sea = new THREE.Mesh(seaFrame(m, cols, rows), new THREE.MeshLambertMaterial({ color: edgeColour(tex.image) }));
     sea.name = "sea";
     this.group.add(sea);
   }
+}
+
+// The open sea around a map: flat at 0 m (the height the map holds its own water at), from the map edge out to SEA / 2
+// from the map's middle, with a hole where the map is. Its inner edge uses the land mesh's own edge vertices, worked out
+// the way PlaneGeometry + translate work them out, so the two meet without cracks or T-junctions.
+function seaFrame(m, cols, rows) {
+  const W = m.x1 - m.x0, D = m.z1 - m.z0;
+  const cx = (m.x0 + m.x1) / 2, cz = -(m.z0 + m.z1) / 2;           // map middle in scene x / z
+  const f = Math.fround;
+  const xs = [cx - SEA / 2], zs = [cz - SEA / 2];
+  for (let i = 0; i <= cols; i++) xs.push(f(f(i * (W / cols) - W / 2) + cx));
+  for (let j = 0; j <= rows; j++) zs.push(f(f(j * (D / rows) - D / 2) + cz));
+  xs.push(cx + SEA / 2);
+  zs.push(cz + SEA / 2);
+  const nx = xs.length - 1, nz = zs.length - 1;
+  const pos = [], nor = [], idx = [];
+  for (let j = 0; j < nz; j++) {
+    for (let i = 0; i < nx; i++) {
+      if (i > 0 && i < nx - 1 && j > 0 && j < nz - 1) continue;      // inside the map: the land mesh draws it
+      const k = pos.length / 3;
+      pos.push(xs[i], 0, zs[j], xs[i], 0, zs[j + 1], xs[i + 1], 0, zs[j + 1], xs[i + 1], 0, zs[j]);
+      nor.push(0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0);
+      idx.push(k, k + 1, k + 3, k + 1, k + 2, k + 3);                 // both triangles face up
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
+  geo.setIndex(idx);
+  return geo;
 }
 
 // average colour of a picture's outermost pixels (the open sea on both maps)
