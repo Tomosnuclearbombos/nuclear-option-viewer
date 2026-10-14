@@ -28,6 +28,9 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
 - **Permission (2026-10-14):** the game's developers told Tomo on Discord that using the game's models and maps is
   fine, as long as they aren't used for a similar purpose (in another game). They had recently given the same OK for
   3D and art competitions. A replay viewer qualifies, so game-derived models and map data may ship with the viewer.
+- **Start page credit, Tomo's exact words (2026-10-15):** "Inspired by ACMI Viewer by Aleksi Lassila. Unit models from
+  the NOBlackBox Tacview assets by KopterBuzz, forked by Tomo." Not "Tomo's own models". The changelog and the
+  #how-to-replay post use the same words.
 - **Credit:** acmi-viewer.github.io (author Aleksi Lassila) for the inspiration and idea. Tomo will contact him. That
   repo has **no licence**, so learn from its design but never copy its code. three.js and fflate are MIT and fine to
   use.
