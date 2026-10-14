@@ -7,6 +7,7 @@ import { Trails } from "./scene/trails.js";
 import { Overlay, labelOf } from "./scene/overlay.js";
 import { CameraMan } from "./scene/camera.js";
 import { ModelLibrary } from "./scene/models.js";
+import { Scenery } from "./scene/scenery.js";
 import { Replay } from "./replay.js";
 import { KIND } from "./parser/acmi.js";
 import { Timeline } from "./ui/timeline.js";
@@ -20,10 +21,11 @@ const state = { replay: null, t: 0, playing: false, speed: 6, lastNow: 0, sel: -
 const NO_WEBGL = "This browser can't show 3D graphics. Turn on hardware acceleration in its settings, or try another browser.";
 
 // ---- 3D view (needs WebGL 2) -------------------------------------------------------------------------------
-let viewer = null, ground = null, units = null, trails = null, overlay = null, cameraMan = null;
+let viewer = null, ground = null, scenery = null, units = null, trails = null, overlay = null, cameraMan = null;
 try {
   viewer = new Viewer($("view"));
   ground = new Ground(viewer.scene);
+  scenery = new Scenery(viewer.scene);
   units = new Units(viewer.scene);
   trails = new Trails(viewer.scene);
   overlay = new Overlay($("overlay"));
@@ -66,6 +68,7 @@ async function open(file, note = "") {
     if (id !== loadId) return;
     hideProgress();
     start(replay, file.name);
+    scenery.setMap(loaded ? mapKeyFor(replay.header.mapId) : null);   // towns and bridges, fetched as you get near
     const notes = [];
     if (!known) notes.push("This replay's map isn't in the viewer yet, so it plays over open sea.");
     else if (!loaded) notes.push("The map didn't load. Units still play, but without terrain.");
@@ -229,6 +232,7 @@ if (viewer) viewer.onFrame = (now) => {
   }
   const t = state.t;
   cameraMan.update(dt, rp, t);
+  scenery.update(viewer.camera, now);
   if (cameraMan.follow >= 0) viewer.keepAboveGround();   // the camera moved with the unit: keep it above the hills
   viewer.camera.updateMatrixWorld();
   units.update(t, viewer.camera, viewer.height);
@@ -432,4 +436,4 @@ if (q.get("replay")) {
     .catch((e) => showStartError("Couldn't fetch that replay: " + e.message));
 }
 
-window.nov = { viewer, ground, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, select, follow };
+window.nov = { viewer, ground, scenery, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, select, follow };
