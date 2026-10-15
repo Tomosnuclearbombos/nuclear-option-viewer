@@ -1,83 +1,72 @@
-# Live viewer: plan
+# Live viewer
 
-Status: planned 2026-10-14. To be set up when the servers move to the new server PC (Tomo: "we'll need it running on the
-new server PC, so plan it out and then when we migrate to that we can set it up"). Nothing is deployed yet.
+Status: live for S2 (PvE) since 2026-10-15. Tomo's decisions are in CLAUDE.md ("Live mode").
 
 ## What people get
 
-- A "Watch live" link (in the Discord post when a match starts) opens the viewer on the match as it happens, about a
-  minute behind.
-- Everything the replay viewer does works the same: map, models, buildings, labels, following, tracers, explosions.
-- A LIVE button: lit while you're at the live moment, "GO LIVE" when you've paused or rewound, to jump back.
-- Joining late works: you start at the live moment straight away, and can rewind through the last 15 minutes (older
-  parts of the match can come later if wanted).
-- When the match ends the page says so; the full replay then goes to the GitHub release as now.
+- A link in the S2 new mission Discord alert, and the start page's LIVE MATCH: PVE SERVER key (lit while a match is on,
+  grey when not), open the viewer on the match being played, about a minute behind.
+- Everything the replay viewer does works the same: map, models, labels, following, tracers, explosions.
+- The LIVE key: lit at the live moment, GO LIVE when paused, rewound or sped up. It also carries the feed's state, since
+  phones hide the mission panel: RECONNECTING, FEED PAUSED (nothing new is arriving) or MATCH OVER.
+- Rewind through the last 15 minutes (5 minutes on phones and tablets, to keep the download and memory down).
+- When the match ends it plays out to its last piece, says the match is over, and when the next S2 match is on air the
+  viewer opens it freshly (its own map, title and lighting).
 
 ## How it works
 
 ```
-game server ── NOBlackBox writes the match's .acmi as it goes (flushed every few seconds)
-     │
-live publisher (tools/live_publish.py, on the same machine, reads the growing file)
-     │  every 10 s of match time: one piece, published only once it is 45 s old
-     ▼
-web folder  live/<server>/current.json, <match>/manifest.json, <match>/c000123.acmi.gz
-     │  served over https by a small web server (Caddy) with CORS, so the GitHub site can read it
-     ▼
-viewer  https://<github pages site>/?live=https://<server host>/live/s1/current.json
+S2 game host: NOBlackBox writes the match's .acmi as it goes
+     |  read only over SFTP, every second
+     v
+server PC: TacviewReplay\live\live_s2.py (outside this repo) runs tools/live_publish.py
+     |  every 10 s of match time one piece, published only once it is 45 s old
+     v  uploaded over SFTP
+OVH VPS: Caddy serves /srv/nov-live/s2 over https
+     v
+viewer: ?live=<the VPS>/s2/current.json (or ?live=pve)
 ```
 
-- **The delay is enforced on the server**: a piece only exists once it is 45 s old, so nobody can use the viewer to see
-  enemies in real time, whatever they do in the browser. The viewer plays about 15 s behind the newest piece so a new
-  one always arrives in time: about a minute in total.
-- **Each piece stands alone**: it starts with a snapshot of every unit on the map, so a late joiner (or a dropped
-  connection) picks up from any piece. Pieces after the first are read from after their snapshot, so the viewer joins
-  them into one continuous recording.
-- **Cost**: the publisher reads only new bytes every second and keeps the map state in memory (see the test numbers
-  below). Each viewer downloads roughly 10 to 20 KB per second during a busy match. The web server only serves static
-  files.
+- **The delay is enforced by the publisher**: a piece only exists once it is 45 s old, also at a match end (the last
+  pieces go out on the wall clock as if the match had kept running). The viewer plays 15 s behind the newest piece.
+- **Each piece stands alone**: header, a snapshot of every unit at its start, `// nov-keyframe-end`, then the recording's
+  own lines for that stretch. The viewer joins the newest contiguous run of pieces (the first whole, the rest after the
+  marker) and reads it with the same reader a dropped file goes through, rebuilding as pieces arrive and keeping the
+  time, camera, selection, follow and hover. After a feed outage it jumps back to the live moment if you were on it.
+- **PvP never goes out live**: the runner asks the S2 bot's own is_pvp() about every match title and the publisher
+  writes nothing for a PvP match. The runner refuses any server folder but S2.
+- **Restarts are safe**: piece names come from their place in the match, so a restarted publisher rebuilds the same
+  bytes under the same names. Catching up on a long match skips pieces that can't be shown (a 3 h, 610 MB recording
+  catches up in about 20 s).
+- **Cleanup**: a match's folder is deleted about 10 minutes after its last piece; the publisher also sweeps folders left
+  behind by an earlier run.
+- **Known gap**: the recorder zips the file away the moment a match ends, so up to about a second of the very end can
+  miss the live feed. The full replay has it.
 
 ## The format (nov-live-1)
 
-- `current.json`: `{format, match, manifest, title, mapId, updated, ended}`: the newest match on that server.
-- `<match>/manifest.json`: `{format, match, title, mapId, referenceTime, recordingTime, chunkSeconds, delaySeconds,
-  ended, updated, chunks: [{seq, file, t0, t1, bytes}]}`.
-- `<match>/c<seq>.acmi.gz`: gzipped ACMI covering frame times (t0, t1]: the header and global properties, `#t0`, one
-  keyframe line per unit alive at t0 (merged full transform and every latest property), the line
-  `// nov-keyframe-end`, then the original lines for (t0, t1] verbatim.
-- Files are written to a temporary name and renamed into place, manifest last, so a browser never gets half a file.
+- `current.json`: `{format, match, manifest, title, mapId, ended, updated}` for the one match on air, or
+  `{format, match: null, manifest: null, ended: true, updated}` when none is.
+- `<match>/manifest.json`: `{format, match, title, mapId, referenceTime, recordingTime, pieceSeconds, delaySeconds,
+  ended, updated, start, pieces: [{seq, file, t0, t1, bytes, final?}]}`. `start` is the recording's first frame time
+  (the viewer counts elapsed time from it). `ended` means every piece is out.
+- `<match>/c<seq>.acmi.gz` covers frame times (t0, t1]. The match's last piece, cut short, is `c<seq>e.acmi.gz` with
+  `final: true`.
+- Files are written to a temporary name and renamed into place, the manifest last.
 
-## Viewer work (this repo)
+## Web server (Caddy on the VPS)
 
-- `?live=<url>` opens live mode: fetch current.json, then the manifest; poll every 5 s.
-- Keep the newest 15 minutes of pieces; rebuild the replay in the reader thread when new pieces arrive (at most every
-  20 s; about half a second of background work for a busy 15 minutes), and swap it in keeping the time, play state,
-  speed, camera, selection (matched by unit id) and following.
-- Play at 1X at the live moment by default; never stop at the end of the data (wait for the next piece).
-- LIVE / GO LIVE button, a "LIVE" line in the mission panel, "MATCH OVER" when the manifest says ended.
+- `Access-Control-Allow-Origin: *` on everything, errors included.
+- `Cache-Control: no-store` on the json files and on errors; `public, max-age=86400, immutable` on pieces that exist.
+- `*.tmp` (files being uploaded) answer 404.
 
-## Server setup (on migration day, done with the ops session)
+## Test results (2026-10-15)
 
-1. Python 3.9 or newer on the server (standard library only, nothing to install).
-2. One publisher per game server, run as a service that restarts on failure:
-   `python3 tools/live_publish.py --watch <that server's NOBlackBox output folder> --out <web folder>/live/s1`
-3. Caddy (automatic https certificates) serving `<web folder>` with:
-   - `Access-Control-Allow-Origin: *`
-   - `Cache-Control: no-cache` on `current.json` and `manifest.json`; the `.acmi.gz` pieces never change, so they can be
-     cached.
-4. A hostname for https (OVH gives each server one; a domain of Tomo's also works). The live URL is configured on the
-   server and in the Discord poster, never committed to the repo (house rule: no server hostnames in git).
-5. The Discord poster posts the "Watch live" link when a match starts (`current.json` changes to a new match).
-6. Test with `tools/live_simulate.py` replaying a recorded match into a folder the publisher watches, before a real
-   match.
-
-## Decisions for Tomo
-
-- The hostname to use (OVH's or a domain).
-- The delay: 45 s on the server plus about 15 s in the viewer. Longer is safer against live spotting.
-- Whether to keep a match's live pieces after it ends (the release zip covers replays; the default keeps the last 3
-  matches per server).
-
-## Test results
-
-(Filled in from the publisher's test runs.)
+- Join check: pieces cut from a recorded match and joined the viewer's way read back with the same unit states as the
+  original, in 6 windows (7,000 to 8,000 states each, 0 mismatches).
+- Delay check: all 451 piece versions written in an end to end run (two matches, a mission change and publisher
+  restarts) held nothing newer than the recording minus 45 s.
+- A restarted publisher rewrote 105 pieces byte for byte the same.
+- Viewer: first picture from the newest 3 minutes (about 4 MB) in 2 to 5 s; a mission change opens the next match on
+  its own map with the selection cleared; a dropped piece, a hung request, a dead feed and a missing feed all show the
+  right state; phones keep 5 minutes and show the state on the key.

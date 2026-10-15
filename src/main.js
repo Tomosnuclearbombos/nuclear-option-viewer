@@ -522,7 +522,7 @@ window.addEventListener("drop", (e) => {
 let live = null;
 // the live match on screen: its id, what the feed last said about it, whether playback is at its end once it is over,
 // and whether the end of it has been told
-const onAir = { match: null, status: "", end: false, told: false };
+const onAir = { match: null, status: "", end: false, told: false, stuck: 0 };
 const liveOver = () => !!live && onAir.status === "MATCH OVER";
 const OVER_SAYS = "The match is over. Its full replay goes up in the Discord #replays channel shortly.";
 
@@ -541,7 +541,7 @@ function startLive(url) {
 function stopLive() {
   live.stop();
   live = null;
-  Object.assign(onAir, { match: null, status: "", end: false, told: false });
+  Object.assign(onAir, { match: null, status: "", end: false, told: false, stuck: 0 });
   $("live").hidden = true;
   $("m-live").hidden = true;
 }
@@ -554,16 +554,21 @@ async function liveBuild(file, info, feed) {
   try {
     if (!state.replay || info.match !== onAir.match) {
       const before = state.replay;
-      await open(file, before ? "Next match: " + (info.title || "Live match") : "", { live: true, base: info.start });
+      const over = before && onAir.told ? "That match is over, its replay goes up in #replays shortly. " : "";
+      await open(file, before ? over + "Next match: " + (info.title || "Live match") : "", { live: true, base: info.start });
       if (feed !== live || state.replay === before) return;   // left live mode, or it didn't open
-      Object.assign(onAir, { match: info.match, status: "", end: false, told: false });
+      Object.assign(onAir, { match: info.match, status: "", end: false, told: false, stuck: 0 });
       $("live").hidden = false;
       return;
     }
     const result = await parseInWorker(file, () => {});
     if (feed !== live) return;
     state.base = info.start;
+    const riding = atLive(state.replay);
     swapReplay(new Replay(result));
+    // watching live when a backlog arrives at once (after the feed was down): back to the live moment, not left behind
+    const rp = state.replay;
+    if (riding && rp.tMax - state.t > LIVE_BUFFER_S + 10) state.t = Math.max(rp.tMin, rp.tMax - LIVE_BUFFER_S);
   } catch (err) {
     if (err !== CANCELLED) console.warn("live build:", err);
   }
@@ -572,7 +577,13 @@ async function liveBuild(file, info, feed) {
 function liveStatus(text, final, feed) {
   if (feed !== live) return;
   if (!state.replay) {   // nothing on screen yet: say it on the start screen
-    if (final) { hideProgress(); showStartError(text === "MATCH OVER" ? "That match is over. Its full replay goes up in the Discord #replays channel shortly." : "There's no live match on right now. Try again when one starts."); }
+    if (final) {   // nothing to show: say so and leave live mode, so the start page works as usual
+      hideProgress();
+      stopLive();
+      history.replaceState(null, "", location.pathname);
+      showStartError(text === "MATCH OVER" ? "That match is over. Its full replay goes up in the Discord #replays channel shortly." : "There's no live match on right now. Try again when one starts.");
+      checkLivePve();
+    }
     else if (text !== "LIVE") showProgress(0, text);
     return;
   }
@@ -621,7 +632,9 @@ function swapReplay(replay) {
 
 // LIVE while you are watching the live moment at normal speed; GO LIVE when you have paused, rewound or sped up. When
 // the feed has trouble or the match is over, the key says that instead (phones have no room for the status line).
-const KEY_SAYS = { "RECONNECTING": "RECONNECTING", "LIVE FEED PAUSED": "PAUSED", "MATCH OVER": "MATCH OVER" };
+const KEY_SAYS = { "RECONNECTING": "RECONNECTING", "LIVE FEED PAUSED": "FEED PAUSED", "MATCH OVER": "MATCH OVER" };
+// at the live moment: playing at normal speed within reach of the newest data (two pieces can land in one rebuild)
+const atLive = (rp) => state.playing && SPEEDS[state.speed] === 1 && rp.tMax - state.t <= LIVE_BUFFER_S + 25;
 function updateLiveKey(rp) {
   // a match that is over ends like a replay: that is told once playback gets to its end, and the next match is looked
   // for straight away
@@ -631,8 +644,12 @@ function updateLiveKey(rp) {
     live.pollNow();
   }
   onAir.end = end;
-  const at = state.playing && SPEEDS[state.speed] === 1 && rp.tMax - state.t <= LIVE_BUFFER_S + 5;
-  const label = KEY_SAYS[onAir.status] || (at ? "LIVE" : "GO LIVE"), lit = label === "LIVE";
+  // stuck at the end of the data for a while (nothing new has come): don't claim LIVE over a still picture
+  const now = performance.now();
+  if (state.t < rp.tMax || liveOver()) onAir.stuck = 0;
+  else if (!onAir.stuck) onAir.stuck = now;
+  const stuck = onAir.stuck && now - onAir.stuck > 10000;
+  const label = KEY_SAYS[onAir.status] || (stuck ? "FEED PAUSED" : atLive(rp) ? "LIVE" : "GO LIVE"), lit = label === "LIVE";
   const b = $("live");
   if (b.textContent !== label) { b.textContent = label; b.classList.toggle("off", !lit); b.setAttribute("aria-pressed", String(lit)); }
 }

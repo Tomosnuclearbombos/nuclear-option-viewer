@@ -137,7 +137,8 @@ export class LiveFeed {
       if (!man || !man.pieces) {
         man = null;
         // gone or out of reach after the server has moved on, or has said it is over: it ended with what there is
-        if (this.next || (air && air.ended)) this.man = { ...this.man, ended: true, pieces: [...this.pieces.values()].map((h) => h.p) };
+        // (a manifest that is really missing, 404, while current.json names no match counts as gone too)
+        if (this.next || (air && air.ended) || (!failed && !air && this.shown)) this.man = { ...this.man, ended: true, pieces: [...this.pieces.values()].map((h) => h.p) };
         else if (!failed && !this.shown) { this.onStatus("NO LIVE MATCH RIGHT NOW", true, this); return; }
         else throw failed || new Error("no manifest");
         this.ended = true;

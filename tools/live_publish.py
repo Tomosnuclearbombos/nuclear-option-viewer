@@ -297,6 +297,7 @@ class Match:
         self.end_wall = None          # when the match ended (wall clock), and its newest frame then
         self.end_newest = None
         self.ended = False            # its last piece is out
+        self.dirty = False            # pieces written that the manifest doesn't list yet
 
     # match id from the recording's real start time (header RecordingTime), else the file name. The globals come
     # before the first frame, so the title is known here too, and allow() is asked about it.
@@ -448,8 +449,11 @@ class Match:
         if not self.made:
             self.out.makedirs(self.dir)
             self.made = True
-        if self.release() or force or (on_air and not self.aired):
+        if self.release():
+            self.dirty = True              # until the manifest saying so is written (an upload can fail in between)
+        if self.dirty or force or (on_air and not self.aired):
             self.write_manifest(on_air)
+            self.dirty = False
 
     def write_manifest(self, on_air):
         g = self.state.globals
@@ -486,6 +490,7 @@ class Feed:
         self.finished = {}             # recording -> its size when its match ended: a quiet file left behind (a killed
                                        # server's) is not followed again unless it grows
         self.swept = None              # when the output was last swept for folders left behind
+        self.started = False           # a first pass has been made
 
 
 def run(a, src=None, out=None, allow=None, scrub=()):
@@ -563,7 +568,7 @@ def step(a, src, out, st):
             on_air.aired = False
     for m in list(st.closing):
         m.publish(m is on_air)
-        if m.ended:
+        if m.ended and not m.dirty:
             log("match %s finished: %d pieces published" % (m.match_id, m.seq))
             st.closing.remove(m)
             st.ended_at[m.dir] = time.time()
@@ -601,7 +606,11 @@ def cleanup(a, out, st):
             log("deleted %s" % d)
         except Exception as e:             # noqa: BLE001 - its folder is swept again later
             log("could not delete %s: %s" % (d, type(e).__name__))
-    if deleted and not st.closing and not (st.cur and st.cur.aired):     # nothing on the air
+    # nothing on the air: say so after a deletion, and on the first pass (a current.json left by an earlier run may
+    # still name a match that is long gone)
+    first = not st.started
+    st.started = True
+    if (deleted or first) and not st.closing and not (st.cur and (st.cur.aired or st.cur.dir)):
         write_no_match(out)
 
 
