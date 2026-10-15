@@ -108,7 +108,7 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
 .dropzone {
   margin: 0 0 18px; padding: 22px 12px; border: 2px dashed var(--green-line); color: var(--green); text-shadow: var(--glow);
 }
-.dropzone .dim { margin-top: 6px; font-size: 12px; text-shadow: none; }
+.dropzone .dim { margin-top: 6px; font-size: 12px; color: var(--green); }
 /* progress and errors share one slot of fixed height, so the card doesn't jump when either appears */
 .status { min-height: 54px; margin-top: 14px; display: grid; align-content: center; }
 .start .progress { margin: 0; text-align: left; }
@@ -117,14 +117,16 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
 .live-head { margin: 0 0 10px; font: 400 14px/1.3 var(--mono); letter-spacing: 0.04em; color: var(--green); text-shadow: var(--glow); }
 /* a narrow plate (a big UI size on a phone): the big keys wrap rather than stick out of it */
 @container start (max-width: 240px) { .key.big { max-width: 100%; white-space: normal; } }
-.hint { margin: 10px 0 0; font-size: 14px; color: var(--green-dim); }
-.credit { margin: 8px 0 0; font-size: 13px; color: var(--green-dim); }
+/* the start page's lines all in the same green mono as its headings */
+.hint, .credit { font-family: var(--mono); letter-spacing: 0.02em; color: var(--green); text-shadow: var(--glow); }
+.hint { margin: 10px 0 0; font-size: 13px; line-height: 1.45; }
+.credit { margin: 8px 0 0; font-size: 12px; line-height: 1.45; }
 @media (max-height: 520px) {
   .start-plate { padding: 16px 20px 14px; }
   .title { margin-bottom: 12px; padding-bottom: 8px; }
   .dropzone { padding: 12px; margin-bottom: 12px; }
 }
-.credit a { color: var(--green-dim); }
+.credit a { color: var(--green); }
 
 /* ---- top: mission info + keys ----------------------------------------------------------------------------- */
 header#top {
