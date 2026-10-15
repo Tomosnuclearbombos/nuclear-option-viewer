@@ -45,7 +45,7 @@ export class Timeline {
       this.seekTo(e);
     });
     canvas.addEventListener("pointermove", (e) => {
-      this.hoverX = e.offsetX;
+      this.hoverX = this.xAt(e.clientX);
       if (this.dragging) this.seekTo(e);
     });
     const end = (e) => { this.dragging = false; if (canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId); };
@@ -76,11 +76,24 @@ export class Timeline {
     this.activity = { air, wpn, maxA, maxW };
   }
 
+  // the canvas's box on the screen, in screen pixels. The UI size setting zooms the canvas; older Safari measures a
+  // zoomed element unzoomed, in its own CSS pixels, so its box is scaled back up there.
+  box() {
+    const r = this.canvas.getBoundingClientRect(), k = RECTS_ZOOMED ? 1 : zoomOf(this.canvas);
+    return { left: r.left * k, width: r.width * k, height: r.height * k };
+  }
+
+  // a point on the screen as x across the canvas, in the canvas's own CSS pixels (the UI size setting zooms the
+  // canvas, so those and the screen's differ)
+  xAt(clientX) {
+    const b = this.box();
+    return b.width > 0 ? ((clientX - b.left) * this.canvas.clientWidth) / b.width : 0;
+  }
+
   // the track runs from PAD to width - PAD; positions outside it clamp to the ends
   fracAt(clientX) {
-    const r = this.canvas.getBoundingClientRect();
-    const w = r.width - 2 * PAD;
-    return w > 0 ? clamp((clientX - r.left - PAD) / w, 0, 1) : 0;
+    const w = this.canvas.clientWidth - 2 * PAD;
+    return w > 0 ? clamp((this.xAt(clientX) - PAD) / w, 0, 1) : 0;
   }
 
   seekTo(e) {
@@ -90,8 +103,12 @@ export class Timeline {
   draw(t) {
     const c = this.canvas, rp = this.rp;
     if (!rp) return;
-    const dpr = window.devicePixelRatio || 1;
-    const w = Math.max(1, Math.round(c.clientWidth * dpr)), h = Math.max(1, Math.round(c.clientHeight * dpr));
+    // one canvas pixel per screen pixel, drawn in the canvas's own CSS pixels: the UI size setting zooms the canvas,
+    // so those are the device's pixel ratio times the zoom
+    const r = this.box(), sp = window.devicePixelRatio || 1;
+    const zoom = c.clientWidth ? r.width / c.clientWidth : 1;
+    const dpr = sp * zoom;
+    const w = Math.max(1, Math.round(r.width * sp)), h = Math.max(1, Math.round(r.height * sp));
     if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
     const g = c.getContext("2d");
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -179,3 +196,22 @@ export class Timeline {
 }
 
 function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+// whether this browser measures an element under CSS zoom on the screen (as the standard says) or unzoomed (older
+// Safari): a test box 10 px wide at double zoom is 20 px on the screen
+const RECTS_ZOOMED = (() => {
+  const probe = document.createElement("div");
+  probe.style.cssText = "position: fixed; left: 0; top: 0; width: 10px; height: 1px; zoom: 2; visibility: hidden";
+  document.body.append(probe);
+  const w = probe.getBoundingClientRect().width;
+  probe.remove();
+  return w > 15;
+})();
+
+// how much an element is zoomed, its own zoom and its parents' together
+function zoomOf(el) {
+  if (el.currentCSSZoom) return el.currentCSSZoom;
+  let z = 1;
+  for (let e = el; e; e = e.parentElement) z *= parseFloat(getComputedStyle(e).zoom) || 1;
+  return z;
+}

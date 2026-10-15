@@ -7,6 +7,17 @@
   <meta name="description" content="Watch Nuclear Option replays on the real map, in your browser.">
   <link rel="icon" href="assets/ui/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="src/style.css">
+  <script>
+    // the saved UI size, before anything is drawn, so the start page doesn't jump when the viewer starts (the setting
+    // itself lives in src/ui/settings.js)
+    try {
+      const ui = JSON.parse(localStorage.getItem("nov.settings.v1") || "{}").ui;
+      if (["80", "90", "120", "140"].includes(ui)) {
+        document.documentElement.style.setProperty("--ui", ui / 100);
+        document.documentElement.dataset.ui = ui;
+      }
+    } catch { /* storage blocked: 100% */ }
+  </script>
   <script type="importmap">
     { "imports": {
         "three": "./vendor/three/build/three.module.js",
@@ -105,6 +116,12 @@
     <div class="readout elapsed"><span id="elapsed">0:00</span> <span class="lbl">/</span> <span id="length">0:00</span></div>
   </footer>
 
+  <section id="cam" class="plate cam" hidden aria-label="Camera sliders">
+    <label class="cam-slider" title="Zoom in or out"><span class="lbl">ZOOM</span><input id="cam-zoom" type="range" min="0" max="1000" step="1"></label>
+    <label class="cam-slider" title="Turn the view all the way round"><span class="lbl">TURN</span><input id="cam-turn" type="range" min="0" max="360" step="1"></label>
+    <label class="cam-slider" title="Tilt the view, from straight down to level"><span class="lbl">TILT</span><input id="cam-tilt" type="range" min="0" max="89" step="1"></label>
+  </section>
+
   <section id="keys" class="plate keys-panel" hidden aria-label="Controls">
     <h2 class="panel-title">CONTROLS</h2>
     <dl>
@@ -126,6 +143,7 @@
       <dt>HOME &nbsp;END</dt><dd>START OR END</dd>
       <dt>U L T C</dt><dd>UNITS, LABELS, TRAILS, CURTAINS</dd>
       <dt>MOUSE</dt><dd>LEFT DRAG MOVE, RIGHT DRAG TURN, WHEEL ZOOM</dd>
+      <dt>FOLLOWING</dt><dd>DRAG TO TURN THE VIEW AROUND THE UNIT</dd>
       <dt>TIMELINE</dt><dd>CLICK OR DRAG TO JUMP, WHEEL TO NUDGE</dd>
       <dt>?</dt><dd>SHOW OR HIDE THIS</dd>
       <dt>GYRO</dt><dd>ON A PHONE: TURN AND TILT IT TO LOOK AROUND</dd>
@@ -154,6 +172,29 @@
         </div>
       </div>
       <p class="set-note prose" data-note="units"></p>
+    </div>
+    <div class="set-group">
+      <div class="set-row sizes" data-set="ui" role="group" aria-label="UI size">
+        <span class="set-lbl">UI SIZE</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="80">80%</button>
+          <button class="key small" type="button" data-val="90">90%</button>
+          <button class="key small" type="button" data-val="100">100%</button>
+          <button class="key small" type="button" data-val="120">120%</button>
+          <button class="key small" type="button" data-val="140">140%</button>
+        </div>
+      </div>
+      <p class="set-note prose">Makes the panels and keys bigger or smaller. Handy on a phone.</p>
+    </div>
+    <div class="set-group">
+      <div class="set-row" data-set="sliders" role="group" aria-label="Camera sliders">
+        <span class="set-lbl">CAMERA SLIDERS</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="on">ON</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <p class="set-note prose">Sliders on screen to zoom, turn and tilt the view. Handy on a phone. With the gyro on, the phone does the turning and tilting.</p>
     </div>
     <div class="set-group">
       <h3 class="set-head">GRAPHICS</h3>

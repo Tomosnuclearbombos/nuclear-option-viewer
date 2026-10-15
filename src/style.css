@@ -28,6 +28,7 @@
   --pala: #ffb800;
   --mono: "Brass Mono", "Share Tech Mono", ui-monospace, monospace;
   --prose: "Barlow", "Arimo", system-ui, sans-serif;
+  --ui: 1;                               /* the UI size setting: 0.8 .. 1.4, set by src/main.js */
   color-scheme: dark;
 }
 
@@ -38,6 +39,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--black)
 body { font: 15px/1.35 var(--mono); letter-spacing: 0; -webkit-font-smoothing: antialiased; }
 #view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
 #overlay { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 1; }
+/* The UI size setting zooms every panel and key, but not the 3D view and its labels under them. Sizes taken from the
+   screen are percentages of it, which every browser fits to the screen however much a panel is zoomed. (Some browsers
+   zoom vw and vh too and some don't: the top bar's two widths divide vw by --ui, and fit the bar either way.) */
+header#top, .start-plate, .units-panel, .inspector, .loader, .transport, .cam, .keys-panel, .toast, .drop-frame { zoom: var(--ui); }
 
 button { font: inherit; color: inherit; }
 a { color: var(--green); }
@@ -91,7 +96,8 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
   background: url("../assets/ui/backdrop.jpg") center / cover no-repeat;
 }
 .start-plate {
-  position: relative; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto;
+  position: relative; width: min(560px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow: auto;
+  container: start / inline-size;
   padding: 28px 32px 22px; text-align: center; border: 2px solid var(--green);
   scrollbar-color: var(--green-faint) transparent; scrollbar-width: thin;
 }
@@ -106,6 +112,8 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
 .start .progress { margin: 0; text-align: left; }
 .error { margin: 0; color: var(--alert); font-size: 15px; }
 .live-row { margin-top: 10px; }
+/* a narrow plate (a big UI size on a phone): the big keys wrap rather than stick out of it */
+@container start (max-width: 240px) { .key.big { max-width: 100%; white-space: normal; } }
 .hint { margin: 10px 0 0; font-size: 14px; color: var(--green-dim); }
 .credit { margin: 8px 0 0; font-size: 13px; color: var(--green-dim); }
 @media (max-height: 520px) {
@@ -121,10 +129,10 @@ header#top {
   pointer-events: none; z-index: 5;
 }
 header#top > * { pointer-events: auto; }
-.mission { flex: 0 1 auto; min-width: 0; padding: 8px 12px; max-width: min(720px, 60vw); }
+.mission { flex: 0 1 auto; min-width: 0; padding: 8px 12px; max-width: min(720px, 60vw / var(--ui)); }
 .mission-name { font: 600 16px/1.25 var(--prose); color: var(--green); text-shadow: var(--glow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mission-facts { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 3px; font-size: 13px; }
-.top-keys { flex: none; margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; max-width: 70vw; }
+.top-keys { flex: none; margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; max-width: calc(70vw / var(--ui)); }
 
 /* ---- bottom: transport ------------------------------------------------------------------------------------ */
 .transport {
@@ -157,19 +165,22 @@ header#top > * { pointer-events: auto; }
 }
 
 /* ---- panels over the view -------------------------------------------------------------------------------- */
-.loader { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); width: min(420px, calc(100vw - 32px)); padding: 12px 14px 14px; z-index: 17; }
+.loader { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); width: min(420px, calc(100% - 32px)); padding: 12px 14px 14px; z-index: 17; }
 .keys-panel {
-  position: fixed; top: 84px; right: 12px; width: min(380px, calc(100vw - 24px)); padding: 12px 16px 14px; z-index: 15;
-  max-height: calc(100vh - 160px); overflow-y: auto;   /* never down over the transport bar */
+  position: fixed; top: 84px; right: 12px; width: min(380px, calc(100% - 24px)); padding: 12px 16px 14px; z-index: 15;
+  max-height: calc(100% - 160px); overflow-y: auto;   /* never down over the transport bar */
 }
-@media (max-width: 620px) { .keys-panel { max-height: calc(100vh - 240px); } }
+@media (min-width: 621px) and (min-height: 521px) {
+  body:has(#cam:not([hidden])) .keys-panel { max-height: calc(100% - 216px); }   /* nor the camera sliders */
+}
+@media (max-width: 620px) { .keys-panel { max-height: calc(100% - var(--above) - 108px); } }   /* --above: see below */
 .panel-title { margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--green); text-align: center; font: 700 15px/1 var(--mono); letter-spacing: 0.06em; color: var(--green); text-shadow: var(--glow); }
 .keys-panel dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: 13px; }
 .keys-panel dt { color: var(--green); text-shadow: var(--glow); }
 .keys-panel dd { margin: 0; color: var(--green-dim); }
 
 /* settings: one row per setting, its name on the left and the choices as soft keys (the chosen one lit) */
-.settings-panel { width: min(430px, calc(100vw - 24px)); }
+.settings-panel { width: min(430px, calc(100% - 24px)); container: settings / inline-size; }
 .set-group { padding: 8px 0 9px; border-bottom: 1px solid var(--green-faint); display: grid; gap: 7px; }
 .set-group:first-of-type { padding-top: 0; }
 .set-head { margin: 0; font: 700 13px/1 var(--mono); letter-spacing: 0.06em; color: var(--green); text-shadow: var(--glow); }
@@ -180,11 +191,11 @@ header#top > * { pointer-events: auto; }
 .set-foot { margin: 9px 0 0; font-size: 12px; color: var(--green-dim); text-align: center; }
 .toast {
   position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 16;
-  display: flex; align-items: center; gap: 14px; width: max-content; max-width: calc(100vw - 32px); padding: 10px 12px 10px 16px;
+  display: flex; align-items: center; gap: 14px; width: max-content; max-width: calc(100% - 32px); padding: 10px 12px 10px 16px;
   border-color: var(--alert); color: var(--alert); font-size: 15px;
 }
 .toast .key { border-color: var(--alert); color: var(--alert); text-shadow: none; }
-@media (max-width: 620px) { .toast { bottom: 150px; } }   /* above the taller two row transport bar */
+@media (max-width: 620px) { .toast { bottom: calc(var(--above) + 18px); } }   /* above the taller two row transport bar */
 
 .drop { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(0, 0, 0, 0.82); pointer-events: none; }
 .drop-frame { padding: 40px 56px; border: 2px dashed var(--green); color: var(--green); font-size: 22px; letter-spacing: 0.05em; text-shadow: var(--glow); }
@@ -193,8 +204,10 @@ header#top > * { pointer-events: auto; }
 
 /* ---- unit list (left) ------------------------------------------------------------------------------------ */
 .units-panel {
-  position: fixed; left: 12px; top: 92px; bottom: 80px; width: min(300px, calc(100vw - 24px)); z-index: 6;
+  /* under the mission plate, which a bigger UI size makes taller (--top-h is the top bar's real height, src/main.js) */
+  position: fixed; left: 12px; top: max(92px, calc(var(--top-h, 0px) + 20px)); bottom: 80px; width: min(300px, calc(100% - 24px)); z-index: 6;
   display: flex; flex-direction: column; gap: 8px; padding: 10px 10px 8px;
+  overflow: hidden;   /* squeezed short on a phone with a big UI size, it never spills over the keys below */
 }
 .panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .panel-head .panel-title { font: 700 15px/1 var(--mono); letter-spacing: 0.06em; color: var(--green); text-shadow: var(--glow); }
@@ -227,9 +240,11 @@ header#top > * { pointer-events: auto; }
 
 /* ---- selected unit (right) -------------------------------------------------------------------------------- */
 .inspector {
-  position: fixed; right: 12px; bottom: 80px; width: min(300px, calc(100vw - 24px)); z-index: 6;
+  position: fixed; right: 12px; bottom: 80px; width: min(300px, calc(100% - 24px)); z-index: 6;
   padding: 10px 12px; border-width: 2px;
+  display: flex; flex-direction: column;   /* squeezed short, the readouts scroll and the keys stay in view */
 }
+.inspector > * { flex: none; }
 .inspector.bdf { border-color: var(--bdf); }
 .inspector.pala { border-color: var(--pala); }
 .insp-title { font: 600 17px/1.2 var(--prose); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -239,15 +254,82 @@ header#top > * { pointer-events: auto; }
 .insp-status { margin-top: 4px; font-size: 13px; color: var(--alert); }
 .insp-status:empty { display: none; }
 .insp-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; margin: 8px 0 10px; padding-top: 8px; border-top: 1px solid var(--green-line); font-size: 13px; color: var(--green); font-variant-numeric: tabular-nums; }
+.inspector > .insp-rows {
+  flex: 0 1 auto; min-height: 0; overflow-y: auto; grid-auto-rows: max-content;   /* whole lines, scrolled, never squashed */
+  scrollbar-color: var(--green-faint) transparent; scrollbar-width: thin;
+}
 .insp-rows .row { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .insp-keys { display: flex; gap: 6px; flex-wrap: wrap; }
 
 @media (max-width: 900px) {
-  .units-panel { top: auto; bottom: 80px; height: 45vh; }
+  .units-panel { top: auto; bottom: 80px; height: 45%; }
+  /* side by side at the bottom, so both always fit, however big the UI size */
+  .units-panel, .inspector { width: min(300px, calc(50% - 18px)); }
+}
+@media (min-width: 621px) and (max-width: 900px) and (min-height: 521px) {
+  /* and the list stays under the mission plate */
+  .units-panel { max-height: calc(100% - var(--top-h, 0px) - 100px); }
+  body:has(#cam:not([hidden])) .units-panel { max-height: calc(100% - var(--top-h, 0px) - 152px); }
 }
 @media (max-width: 620px) {
-  .units-panel, .inspector { bottom: 132px; }
+  /* the panels sit above the transport bar (and the camera sliders). --transport-h is the bar's real height
+     (src/main.js): a bigger UI size or the live key can give it a third row. */
+  body { --above: calc(var(--transport-h, 98px) + 34px); }
+  .units-panel, .inspector { bottom: var(--above); }
+  .units-panel { max-height: calc(100% - var(--above) - 54px); }   /* and below the top keys */
   .top-keys { max-width: none; }
+}
+
+/* ---- camera sliders (a setting): zoom, turn and tilt, just above the transport bar ---------------------------- */
+.cam {
+  position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%); z-index: 5;
+  width: min(600px, calc(100% - 24px)); padding: 0 14px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;
+}
+.cam-slider { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; }
+.cam-slider:has(:disabled) .lbl { color: var(--off); }   /* the gyro is turning the view */
+/* a thin green track and a soft key for the thumb, 36 px tall so a thumb lands on it easily */
+.cam input {
+  flex: 1 1 auto; min-width: 0; height: 36px; margin: 0; background: none; cursor: pointer;
+  appearance: none; -webkit-appearance: none; touch-action: none;
+}
+.cam input::-webkit-slider-runnable-track { height: 2px; background: var(--green-line); }
+.cam input::-moz-range-track { height: 2px; background: var(--green-line); }
+.cam input::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 26px; margin-top: -12px;
+  border: 2px solid var(--green); border-radius: 2px; background: var(--key-fill); box-shadow: var(--glow);
+}
+.cam input::-moz-range-thumb {
+  box-sizing: border-box; width: 14px; height: 26px;
+  border: 2px solid var(--green); border-radius: 2px; background: var(--key-fill); box-shadow: var(--glow);
+}
+.cam input:hover::-webkit-slider-thumb { border-color: var(--hover); }
+.cam input:hover::-moz-range-thumb { border-color: var(--hover); }
+.cam input:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.cam input:disabled { cursor: default; }
+.cam input:disabled::-webkit-slider-runnable-track { background: var(--off); }
+.cam input:disabled::-moz-range-track { background: var(--off); }
+.cam input:disabled::-webkit-slider-thumb { border-color: var(--off); box-shadow: none; }
+.cam input:disabled::-moz-range-thumb { border-color: var(--off); box-shadow: none; }
+/* with the sliders on, the panels down at the bottom sit above them */
+body:has(#cam:not([hidden])) :is(.units-panel, .inspector) { bottom: 132px; }
+body:has(#cam:not([hidden])) .toast { bottom: 136px; }
+@media (min-width: 621px) and (min-height: 521px) {
+  /* a message goes above the selected unit's panel, so it never covers its keys */
+  body:has(#inspector:not([hidden])) .toast { bottom: calc(92px + var(--insp-h, 0px)); }
+  body:has(#cam:not([hidden])):has(#inspector:not([hidden])) .toast { bottom: calc(144px + var(--insp-h, 0px)); }
+}
+@media (max-width: 620px) {
+  /* upright: the full width in two rows, ZOOM and TILT over TURN, so each slider is long enough to set finely
+     (TURN, which goes all the way round, the longest) */
+  .cam {
+    left: 8px; right: 8px; bottom: calc(var(--transport-h, 98px) + 20px); width: auto; transform: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; padding: 2px 12px;
+  }
+  .cam-slider:has(#cam-turn) { grid-column: 1 / -1; grid-row: 2; }
+  body:has(#cam:not([hidden])) { --above: calc(var(--transport-h, 98px) + 108px); }
+  body:has(#cam:not([hidden])) :is(.units-panel, .inspector) { bottom: var(--above); }
+  body:has(#cam:not([hidden])) .toast { bottom: calc(var(--above) + 18px); }
 }
 
 /* ---- phones ------------------------------------------------------------------------------------------------
@@ -268,18 +350,28 @@ header#top > * { pointer-events: auto; }
   .speed { gap: 6px; }
   .timeline-wrap { height: 32px; }
 
-  .inspector { right: 8px; bottom: 52px; width: 230px; padding: 6px 9px; border-width: 1px; max-height: calc(100vh - 100px); overflow-y: auto; }
+  /* --keys-h is the top keys' real height (src/main.js): a bigger UI size can give them a second row */
+  .inspector {
+    right: 8px; bottom: 52px; width: min(230px, calc(50% - 12px)); padding: 6px 9px; border-width: 1px; overflow-y: auto;
+    max-height: calc(100% - 52px - max(48px, calc(var(--keys-h, 26px) + 14px)));
+  }
   .insp-title { font-size: 14px; }
   .insp-sub { font-size: 10px; }
   .insp-status { font-size: 11px; margin-top: 2px; }
   .insp-rows { font-size: 11px; gap: 1px 10px; margin: 5px 0 6px; padding-top: 5px; }
   .insp-keys .key.small, .units-panel .key.small { min-height: 22px; padding: 0 6px; font-size: 10px; }
 
-  .units-panel { top: 54px; bottom: 52px; height: auto; left: 8px; width: 240px; padding: 6px 8px 6px; gap: 5px; }
+  /* the unit list takes the mission plate's place while it's open, just under the top keys */
+  .units-panel { top: max(54px, calc(var(--keys-h, 26px) + 14px)); bottom: 52px; height: auto; left: 8px; width: min(240px, calc(50% - 12px)); padding: 6px 8px 6px; gap: 5px; }
+  body:has(#units:not([hidden])) .mission { visibility: hidden; }
   .panel-head .panel-title { font-size: 13px; }
   .search { padding: 4px 6px; font-size: 12px; }
   .unit-row { padding: 2px 5px; font-size: 12px; }
-  .keys-panel { top: 44px; max-height: calc(100vh - 100px); padding: 8px 12px; }
+  .keys-panel {
+    top: max(44px, calc(var(--keys-h, 26px) + 18px)); padding: 8px 12px;
+    max-height: calc(100% - 56px - max(44px, calc(var(--keys-h, 26px) + 18px)));
+  }
+  body:has(#cam:not([hidden])) .keys-panel { background: var(--black); }   /* over the sliders: none show through */
   .keys-panel dl { font-size: 11px; gap: 3px 10px; }
   .set-group { padding: 5px 0 6px; gap: 4px; }
   .set-row { grid-template-columns: 96px 1fr; gap: 6px; }
@@ -287,7 +379,27 @@ header#top > * { pointer-events: auto; }
   .set-note { font-size: 11px; }
   .settings-panel .key.small { min-height: 22px; padding: 0 6px; font-size: 10px; }
   .toast { bottom: 54px; font-size: 13px; padding: 6px 8px 6px 12px; }
+  /* a message stays left of the selected unit's panel, so it never covers its keys */
+  body:has(#inspector:not([hidden])) .toast { left: 8px; transform: none; max-width: calc(100% - 254px); }
   .loader { top: 44px; }
+
+  .cam { bottom: 52px; padding: 0 10px; gap: 12px; }
+  .cam-slider { flex-direction: row; align-items: center; gap: 6px; font-size: 11px; }
+  body:has(#cam:not([hidden])) :is(.units-panel, .inspector) { bottom: 98px; }
+  body:has(#cam:not([hidden])) .inspector { max-height: calc(100% - 98px - max(48px, calc(var(--keys-h, 26px) + 14px))); }
+  body:has(#cam:not([hidden])) .toast { bottom: 98px; }
+
+  /* the start page held sideways: no bigger than this, or its keys would be off the bottom */
+  .start-plate { zoom: min(var(--ui), 1.1); }
+}
+
+/* a bigger UI size on a phone or a small window: the unit list's head kept short, so the list itself has room (no rule
+   under the title, and the filters in one row that scrolls sideways) */
+@media (max-width: 900px), (max-height: 520px) {
+  :root:is([data-ui="120"], [data-ui="140"]) .panel-head .panel-title { margin: 0; padding: 0; border: 0; }
+  :root:is([data-ui="120"], [data-ui="140"]) .toggles { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  :root:is([data-ui="120"], [data-ui="140"]) .toggles::-webkit-scrollbar { display: none; }
+  :root:is([data-ui="120"], [data-ui="140"]) .toggles .key { flex: none; }
 }
 @media (max-width: 620px) {
   /* upright: the buttons scroll sideways in one row rather than running off the edge; no room for the title */
@@ -298,11 +410,34 @@ header#top > * { pointer-events: auto; }
   }
   .top-keys::-webkit-scrollbar { display: none; }
   #top .key { flex: none; min-height: 30px; padding: 0 10px; font-size: 12px; }
-  .inspector { left: 8px; right: 8px; width: auto; padding: 8px 10px; }
+  .inspector { left: 8px; right: 8px; width: auto; padding: 8px 10px; overflow-y: auto; }
   .insp-title { font-size: 15px; }
   .insp-sub { font-size: 10px; }
   .insp-rows { font-size: 12px; margin: 6px 0 8px; padding-top: 6px; }
   .units-panel { left: 8px; right: 8px; width: auto; }
-  /* with the unit list open at the bottom, the selected unit's panel goes to the top, under the buttons */
-  body:has(#units:not([hidden])) .inspector { top: 54px; bottom: auto; }
+  /* When the bottom is busy (the unit list open, the sliders on, or a bigger UI size), the selected unit's panel goes
+     to the top, under the buttons. It stops short of the middle of the screen, where a followed unit is; its readouts
+     scroll if they have to. */
+  body:has(#units:not([hidden])) .inspector,
+  body:has(#cam:not([hidden])) .inspector,
+  :root:is([data-ui="120"], [data-ui="140"]) .inspector { top: 54px; bottom: auto; max-height: max(96px, calc(50% - 78px)); }
+  /* with the list open it leaves the list room for its search, filters and three units */
+  body:has(#units:not([hidden])) .inspector { max-height: max(96px, calc(100% - var(--above) - 262px)); }
+  /* and the list stops short of it (--insp-h is its real height, from src/main.js) */
+  body:has(#inspector:not([hidden])) .units-panel {
+    height: min(45%, calc(100% - var(--above) - 62px - var(--insp-h, 0px)));
+  }
 }
+
+/* a small window held sideways (less than 620 by 520): the sliders in one row, as on a sideways phone */
+@media (max-width: 620px) and (max-height: 520px) {
+  .cam { left: 50%; right: auto; bottom: 52px; width: min(600px, calc(100% - 16px)); transform: translateX(-50%); grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 0 10px; }
+  .cam-slider:has(#cam-turn) { grid-column: auto; grid-row: auto; }
+  body { --above: 52px; }
+  body:has(#cam:not([hidden])) { --above: 98px; }
+}
+
+/* ---- a narrow settings panel (a phone, or a big UI size) ----------------------------------------------------------
+   The choices go under the setting's name: UI size's five on an upright phone, every row when it's narrower still. */
+@container settings (max-width: 360px) { .set-row.sizes { grid-template-columns: 1fr; gap: 5px; } }
+@container settings (max-width: 300px) { .set-row { grid-template-columns: 1fr; gap: 5px; } }

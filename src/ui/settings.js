@@ -1,4 +1,5 @@
-// The settings panel: how the map looks, how units are sized, and graphics options that help a slower PC.
+// The settings panel: how the map looks, how units are sized, the size of the panels and keys, the camera sliders,
+// and graphics options that help a slower PC.
 //
 // Every choice is saved in this browser (localStorage), so it comes back next time the viewer opens. A browser that
 // blocks storage (a private window, cleared site data) simply starts from the defaults each time; nothing breaks.
@@ -9,6 +10,8 @@ const STORE = "nov.settings.v1";
 export const SETTINGS = {
   map: ["terrain", "tactical", "empty"],
   units: ["focus", "real"],
+  ui: ["100", "80", "90", "120", "140"],   // size of the panels and keys, in percent
+  sliders: ["off", "on"],                  // the camera sliders over the view
   resolution: ["full", "high", "low"],
   fps: ["max", "60", "30"],
   smooth: ["on", "off"],

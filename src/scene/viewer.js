@@ -1,7 +1,8 @@
 // Renderer, camera, controls and lights.
 //
 // The camera belongs to the person watching: only the first load and "frame everything" move it on their own.
-// Left drag pans, right drag orbits, wheel zooms, like a map.
+// Left drag pans, right drag orbits, wheel zooms, like a map (while following a unit, left drag orbits too: see
+// camera.js).
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -46,7 +47,7 @@ export class Viewer {
     this.groundAt = null;   // (x, sceneZ) -> ground height under that point, set once a map is loaded
     this.following = false; // set while the camera follows a unit
     this.airPivot = false;  // the pivot is up where a followed unit was let go; it lands with dropPivot
-    this.interacting = false;   // a mouse drag or wheel turn is in progress
+    this.interacting = false;   // a mouse drag or wheel turn is in progress (or a camera slider is held, camsliders.js)
     this.controls.addEventListener("start", () => { this.interacting = true; });
     this.controls.addEventListener("end", () => { this.interacting = false; });
     this._d = new THREE.Vector3();

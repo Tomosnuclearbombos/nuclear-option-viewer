@@ -14,6 +14,7 @@ import { KIND } from "./parser/acmi.js";
 import { Timeline } from "./ui/timeline.js";
 import { UnitList } from "./ui/unitlist.js";
 import { Inspector } from "./ui/inspector.js";
+import { CameraSliders } from "./ui/camsliders.js";
 import { loadSettings, SettingsPanel, RESOLUTION, FPS } from "./ui/settings.js";
 import { LiveFeed, LIVE_BUFFER_S, LIVE_PVE, liveMatch } from "./live.js";
 import { mapName, duration, missionClock, recorded, speedLabel } from "./ui/format.js";
@@ -31,6 +32,7 @@ const smoothInUse = settings.smooth === "on";
 
 // ---- 3D view (needs WebGL 2) -------------------------------------------------------------------------------
 let viewer = null, ground = null, scenery = null, blasts = null, units = null, trails = null, overlay = null, cameraMan = null;
+let camSliders = null;
 try {
   viewer = new Viewer($("view"), { antialias: smoothInUse });
   ground = new Ground(viewer.scene);
@@ -40,6 +42,7 @@ try {
   trails = new Trails(viewer.scene);
   overlay = new Overlay($("overlay"));
   cameraMan = new CameraMan(viewer);
+  if ($("cam")) camSliders = new CameraSliders($("cam"), viewer, cameraMan);   // (not in an older cached index.html)
   viewer.groundAt = (x, z) => ground.surfaceAt(x, z);
   units.surfaceAt = viewer.groundAt;
 } catch (err) {
@@ -153,6 +156,7 @@ function start(replay, fileName, opts = {}) {
   $("start").hidden = true;
   $("top").hidden = false;
   $("transport").hidden = false;
+  showCamSliders();
   // start over the busiest area, from a readable height
   const b = replay.bounds, m = ground.meta;
   const x0 = m ? Math.max(b.x0, m.x0) : b.x0, x1 = m ? Math.min(b.x1, m.x1) : b.x1;
@@ -258,6 +262,7 @@ if (viewer) viewer.onFrame = (now) => {
   ground.update(viewer.camera);
   scenery.update(viewer.camera, now);
   if (cameraMan.follow >= 0 || cameraMan.gyro) viewer.keepAboveGround();   // the camera moved: keep it above the hills
+  if (camSliders) camSliders.update();
   viewer.camera.updateMatrixWorld();
   units.update(t, viewer.camera, viewer.height);
   if (settings.effects === "on") blasts.update(rp, t, units.booms, units.nBooms, viewer.camera, viewer.height);
@@ -380,6 +385,7 @@ function toggleUnits(show) {
   p.hidden = !on;
   setKey($("units-btn"), on);
   if (on) unitList.dirty = true;
+  showCamSliders();
 }
 // labels, trails and curtains are settings too, so they stay the way you left them next time
 function toggleLabels() { settingsPanel.set("labels", overlay.showLabels ? "off" : "on"); }
@@ -390,6 +396,16 @@ $("labels-btn").addEventListener("click", () => toggleLabels());
 $("trails-btn").addEventListener("click", () => toggleTrails());
 $("curtains-btn").addEventListener("click", () => toggleCurtains());
 setKey($("units-btn"), false);
+
+// A bigger UI size can give the top keys and the transport bar another row on a phone, and makes the mission plate and
+// the selected unit's panel taller: the panels near them go by their real heights (style.css), in the panels' own
+// pixels
+const BARS = [["--top-h", $("top")], ["--keys-h", document.querySelector(".top-keys")], ["--transport-h", $("transport")], ["--insp-h", $("inspector")]];
+const bars = new ResizeObserver(() => {
+  const s = document.documentElement.style;
+  for (const [name, el] of BARS) if (el.offsetHeight) s.setProperty(name, el.offsetHeight + "px");
+});
+for (const [, el] of BARS) bars.observe(el);
 
 // the gyro, on touch screens only: turning and tilting the phone turns the view
 const GYRO_SAYS = {
@@ -426,6 +442,11 @@ $("settings-btn").addEventListener("click", () => toggleSettings());
 // ---- settings --------------------------------------------------------------------------------------------
 // puts one setting into effect; every one applies straight away except smooth edges (next time the page opens)
 function applySetting(key, value) {
+  if (key === "ui") {
+    document.documentElement.style.setProperty("--ui", String(value / 100));
+    document.documentElement.dataset.ui = value;   // a phone's layout changes a little at the bigger sizes (style.css)
+    return;
+  }
   if (!viewer) return;
   const on = value === "on";
   switch (key) {
@@ -452,8 +473,17 @@ function applySetting(key, value) {
     case "labels": overlay.showLabels = on; setKey($("labels-btn"), on); break;
     case "trails": trails.showTrails = on; setKey($("trails-btn"), on); break;
     case "curtains": trails.showCurtains = on; setKey($("curtains-btn"), on); break;
+    case "sliders": showCamSliders(); break;
   }
 }
+// the camera sliders, while a replay is on screen and the setting is on. A phone has no room for them and the unit
+// list together, so they make way while the list is open.
+const PHONE = window.matchMedia("(max-width: 620px), (max-height: 520px)");
+function showCamSliders() {
+  const el = $("cam");
+  if (el) el.hidden = !(viewer && state.replay && settings.sliders === "on" && ($("units").hidden || !PHONE.matches));
+}
+PHONE.addEventListener("change", showCamSliders);
 const settingsPanel = new SettingsPanel($("settings"), settings, applySetting, smoothInUse);
 if (viewer) {
   ground.style = settings.map;   // the first map loads straight in the saved look

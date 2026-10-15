@@ -2,8 +2,9 @@
 // and on phones the gyro: turning and tilting the phone turns the view around the point you're looking at.
 //
 // The camera belongs to the person watching. Following carries the camera along with the unit by the unit's own
-// movement each frame, so the distance and angle they chose are kept and the wheel and orbit still work; panning
-// (mouse or keys) lets go of the unit.
+// movement each frame, so the distance and angle they chose are kept and the wheel and orbit still work. There is
+// nothing to pan while following, so dragging turns the view around the unit instead and never lets go of it; the
+// movement keys do let go.
 
 import * as THREE from "three";
 import { KIND } from "../parser/acmi.js";
@@ -34,16 +35,6 @@ export class CameraMan {
     };
     // turning the phone between upright and sideways changes which way is "forward": start again from the view
     window.addEventListener("orientationchange", () => { this.gyroRef = null; });
-
-    // a mouse pan (left drag) lets go of the followed unit; a click doesn't
-    const canvas = viewer.canvas;
-    let down = null;
-    canvas.addEventListener("pointerdown", (e) => { down = e.button === 0 ? { x: e.clientX, y: e.clientY } : null; });
-    canvas.addEventListener("pointermove", (e) => {
-      if (!down || this.follow < 0 || !(e.buttons & 1)) return;
-      if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) { this.setFollow(-1); down = null; }
-    });
-    window.addEventListener("pointerup", () => { down = null; });
     window.addEventListener("blur", () => this.keys.clear());
   }
 
@@ -55,7 +46,18 @@ export class CameraMan {
     this.follow = i;
     this.hasLast = false;
     this.viewer.following = i >= 0;
+    this.setDrag();
     if (this.onFollowChange) this.onFollowChange(i);
+  }
+
+  // One finger and the left mouse button pan the map. While following there is nothing to pan (the pivot goes where
+  // the unit goes), so they turn the view around the unit instead. With the gyro on the phone does the turning, so
+  // one finger rests while following; two fingers still pinch to zoom.
+  setDrag() {
+    const c = this.viewer.controls, on = this.follow >= 0;
+    c.mouseButtons.LEFT = on ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN;
+    c.touches.ONE = on ? (this.gyro ? -1 : THREE.TOUCH.ROTATE) : THREE.TOUCH.PAN;
+    c.enablePan = !on;   // and no pan with Shift or Ctrl held either
   }
 
   // called every frame with the frame time step (s), the replay and time t
@@ -141,6 +143,7 @@ export class CameraMan {
       window.removeEventListener("deviceorientation", this.onOrientation);
       this.gyro = false; this.gyroRef = null; this.gyroNow = null;
       v.controls.enableRotate = true;
+      this.setDrag();
       return "ok";
     }
     if (typeof DeviceOrientationEvent === "undefined") return "none";
@@ -153,7 +156,8 @@ export class CameraMan {
     for (let k = 0; k < 15 && !this.gyroNow; k++) await new Promise((r) => setTimeout(r, 100));
     if (!this.gyroNow) { window.removeEventListener("deviceorientation", this.onOrientation); return "none"; }
     this.gyro = true; this.gyroRef = null;
-    v.controls.enableRotate = false;   // the phone turns the view now; dragging still pans, pinching still zooms
+    v.controls.enableRotate = false;   // the phone turns the view now; pinching still zooms, dragging pans (see setDrag)
+    this.setDrag();
     return "ok";
   }
 
