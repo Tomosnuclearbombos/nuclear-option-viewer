@@ -605,15 +605,16 @@ $("live").addEventListener("click", () => {
 });
 
 // the start page's key for the PvE server's live match: lit while a match is being played there, grey when not
+// (a browser can hold on to an older index.html for a few minutes after an update, so the key may not be there)
 async function checkLivePve() {
-  if (state.replay || live) return;
-  const title = await liveMatch(LIVE_PVE);
   const b = $("live-pve");
+  if (!b || state.replay || live) return;
+  const title = await liveMatch(LIVE_PVE);
   b.disabled = !title;
   b.classList.toggle("off", !title);
   b.title = title || "Nothing is being played on the PvE server right now";
 }
-$("live-pve").addEventListener("click", () => {
+$("live-pve")?.addEventListener("click", () => {
   if (live || state.replay) return;
   history.replaceState(null, "", "?live=" + LIVE_PVE);
   startLive(LIVE_PVE);
