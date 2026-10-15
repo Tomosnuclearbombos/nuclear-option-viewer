@@ -279,12 +279,15 @@ class Match:
         changed = False
         while self.done and (force or (newest is not None and self.done[0][1] <= newest - self.a.delay)):
             t0, t1, text = self.done[0]
-            fname = "c%06d.acmi.gz" % (self.seq + 1)
+            # Named by its place in the match, not by how many came before: a publisher restarted mid match rebuilds the
+            # very same piece (same lines, same snapshot) under the very same name, so a copy a browser cached stays right.
+            seq = int(round(t0 / self.a.piece))
+            fname = "c%07d.acmi.gz" % seq
             data = gzip.compress(text.encode("utf-8"), compresslevel=6, mtime=0)
             self.out.write(self.dir + "/" + fname, data)
             self.done.pop(0)
             self.seq += 1
-            self.published.append({"seq": self.seq, "file": fname, "t0": round(t0, 3), "t1": round(t1, 3), "bytes": len(data)})
+            self.published.append({"seq": seq, "file": fname, "t0": round(t0, 3), "t1": round(t1, 3), "bytes": len(data)})
             changed = True
         # keep only the newest --keep seconds
         if self.published:
