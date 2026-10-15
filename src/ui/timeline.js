@@ -54,8 +54,10 @@ export class Timeline {
     canvas.addEventListener("pointerleave", () => { this.hoverX = -1; });
   }
 
-  setReplay(rp) {
+  // base: the time the labels count from (the start of the recording; live, the start of the match, before the window)
+  setReplay(rp, base = rp.tMin) {
     this.rp = rp;
+    this.base = base;
     // aircraft and weapons alive in each bucket, via difference arrays (one pass over the objects)
     const B = BUCKETS, span = rp.tMax - rp.tMin || 1;
     const air = new Float32Array(B + 1), wpn = new Float32Array(B + 1);
@@ -115,15 +117,17 @@ export class Timeline {
       g.fillRect(xa, top, 1, gh); g.fillRect(xb - 1, top, 1, gh);
     }
 
-    // time ticks every 30 s .. 2 h, the first that leaves 70 px for each label; past that, whole hours
+    // time ticks every 30 s .. 2 h, the first that leaves 70 px for each label; past that, whole hours. They fall on
+    // whole steps counted from the base, which is the track's start except live.
     let step = STEPS.find((s) => (s / span) * tw >= 70);
     if (!step) step = Math.ceil((span * 70) / tw / 3600) * 3600;
     g.font = FONT; g.textBaseline = "top";
-    for (let s = 0; s <= span; s += step) {
+    const off = rp.tMin - this.base;
+    for (let s = Math.ceil(off / step) * step - off; s <= span; s += step) {
       const x = Math.round(xAt(s)) + 0.5;
       g.strokeStyle = s ? "rgba(0, 255, 0, 0.18)" : FAINT;
       g.beginPath(); g.moveTo(x, top); g.lineTo(x, base); g.stroke();
-      const txt = duration(s);
+      const txt = duration(s + off);
       if (x + 3 + g.measureText(txt).width <= W) { g.fillStyle = DIM; g.fillText(txt, x + 3, 1); }
     }
 

@@ -76,8 +76,10 @@ export class UnitList {
     this.dirty = true;       // pin it (or unpin the last one)
   }
 
-  setReplay(rp) {
+  // base: the time the rows' times count from (the start of the recording; live, the start of the match)
+  setReplay(rp, base = rp.tMin) {
     this.rp = rp;
+    this.base = base;
     this.selected = -1;
     this.dirty = true;
     // the kind groups each record belongs to, once
@@ -155,7 +157,7 @@ export class UnitList {
       const label = labelOf(o, i);
       row.children[1].textContent = label;
       row.children[2].textContent = o.pilot[i] ? o.name[i] : callSignOf(o, i);
-      row.children[3].textContent = duration(o.t0[i] - rp.tMin);
+      row.children[3].textContent = duration(o.t0[i] - this.base);
     });
     const listed = this.shown.length - (this.pinned ? 1 : 0);   // the count is of what the filters found
     this.count.textContent = this.total > listed ? `${listed} OF ${this.total}` : String(this.total);

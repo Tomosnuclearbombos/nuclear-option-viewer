@@ -21,7 +21,8 @@ import { mapName, duration, missionClock, recorded, speedLabel } from "./ui/form
 const $ = (id) => document.getElementById(id);
 const SPEEDS = [0.1, 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128];
 const START_SPEED = SPEEDS.indexOf(1);   // every replay opens paused at 1X
-const state = { replay: null, t: 0, playing: false, speed: START_SPEED, lastNow: 0, sel: -1 };
+// base: where the clock counts from (the recording's start; live, the match's start, before the pieces kept)
+const state = { replay: null, t: 0, playing: false, speed: START_SPEED, lastNow: 0, sel: -1, base: 0 };
 const NO_WEBGL = "This browser can't show 3D graphics. Turn on hardware acceleration in its settings, or try another browser.";
 
 // the settings saved in this browser (the defaults on a first visit); smooth edges can only be set as the page opens
@@ -50,7 +51,7 @@ const models = new ModelLibrary();
 const timeline = new Timeline($("timeline"), {
   onSeek: (t) => seek(t),
   onNudge: (dir, big) => skip(dir, big),
-  label: (t) => `${duration(t - state.replay.tMin)}  ${missionClock(state.replay.header.referenceTime, t)}`,
+  label: (t) => `${duration(t - state.base)}  ${missionClock(state.replay.header.referenceTime, t)}`,
 });
 const unitList = new UnitList($("units"), { onPick: (i) => pickFromList(i) });
 const inspector = new Inspector($("inspector"));
@@ -130,6 +131,7 @@ function parseInWorker(file, onProgress) {
 
 function start(replay, fileName, opts = {}) {
   state.replay = replay;
+  state.base = opts.live ? opts.base : replay.tMin;
   state.t = opts.live ? Math.max(replay.tMin, replay.tMax - LIVE_BUFFER_S) : replay.tMin;
   state.playing = !!opts.live;   // a replay opens paused at the start; live opens playing at the live moment
   state.speed = START_SPEED;
@@ -137,8 +139,8 @@ function start(replay, fileName, opts = {}) {
   units.setReplay(replay);
   blasts.setReplay(replay, replay.maxAlive[KIND.EXPLOSION]);
   trails.setReplay(replay);
-  timeline.setReplay(replay);
-  unitList.setReplay(replay);
+  timeline.setReplay(replay, state.base);
+  unitList.setReplay(replay, state.base);
   inspector.setReplay(replay);
   select(-1);
   overlay.hover = -1;
@@ -147,9 +149,7 @@ function start(replay, fileName, opts = {}) {
   $("m-map").textContent = mapName(h.mapId);
   $("m-rec").textContent = recorded(h.recordingTime);
   document.title = (h.title || "Replay") + " | Nuclear Option Viewer";
-  $("length").textContent = duration(replay.tMax - replay.tMin);
-  // room for the longest "elapsed / length" up front, so the timeline never shrinks as the clock grows
-  $("length").parentElement.style.minWidth = 2 * $("length").textContent.length + 3 + "ch";
+  showLength(replay);
   $("start").hidden = true;
   $("top").hidden = false;
   $("transport").hidden = false;
@@ -159,6 +159,12 @@ function start(replay, fileName, opts = {}) {
   const z0 = m ? Math.max(b.z0, -m.z1) : b.z0, z1 = m ? Math.min(b.z1, -m.z0) : b.z1;
   viewer.frameBox(x0, x1, z0, z1);
   updateSpeed();
+}
+
+function showLength(rp) {
+  $("length").textContent = duration(rp.tMax - state.base);
+  // room for the longest "elapsed / length" up front, so the timeline never shrinks as the clock grows
+  $("length").parentElement.style.minWidth = 2 * $("length").textContent.length + 3 + "ch";
 }
 
 // ---- selection and following -------------------------------------------------------------------------------
@@ -243,7 +249,8 @@ if (viewer) viewer.onFrame = (now) => {
   if (state.playing) {
     state.t += dt * SPEEDS[state.speed];
     // the end of a replay stops it; live, the end is just where the next piece hasn't arrived yet, so it waits there
-    if (state.t >= rp.tMax) { state.t = rp.tMax; if (!live) state.playing = false; }
+    // (until the match is over: then its end is a replay's end)
+    if (state.t >= rp.tMax) { state.t = rp.tMax; if (!live || liveOver()) state.playing = false; }
   }
   if (live) updateLiveKey(rp);
   const t = state.t;
@@ -264,7 +271,7 @@ if (viewer) viewer.onFrame = (now) => {
   timeline.band = b >= 0 ? [rp.o.t0[b], rp.o.t1[b]] : null;
   timeline.draw(t);
   $("clock").textContent = missionClock(rp.header.referenceTime, t);
-  $("elapsed").textContent = duration(t - rp.tMin);
+  $("elapsed").textContent = duration(t - state.base);
   const label = state.playing ? "PAUSE" : "PLAY";
   if ($("play").textContent !== label) $("play").textContent = label;
 };
@@ -308,7 +315,7 @@ function rangeInfo(a, b) {
 function togglePlay() {
   const rp = state.replay;
   if (!rp) return;
-  if (!state.playing && state.t >= rp.tMax && !live) state.t = rp.tMin;
+  if (!state.playing && state.t >= rp.tMax && (!live || liveOver())) state.t = rp.tMin;
   state.playing = !state.playing;
 }
 function changeSpeed(d) { state.speed = Math.max(0, Math.min(SPEEDS.length - 1, state.speed + d)); updateSpeed(); }
@@ -513,53 +520,73 @@ window.addEventListener("drop", (e) => {
 
 // ---- live mode: ?live=<a server's current.json> ------------------------------------------------------------
 let live = null;
+// the live match on screen: its id, what the feed last said about it, whether playback is at its end once it is over,
+// and whether the end of it has been told
+const onAir = { match: null, status: "", end: false, told: false };
+const liveOver = () => !!live && onAir.status === "MATCH OVER";
+const OVER_SAYS = "The match is over. Its full replay goes up in the Discord #replays channel shortly.";
+
 function startLive(url) {
   if (!viewer) { showStartError(NO_WEBGL); return; }
   showProgress(0, "CONNECTING TO THE LIVE MATCH");
   live = new LiveFeed(url, {
     onBuild: liveBuild,
     onStatus: liveStatus,
+    onProgress: (f, feed) => { if (feed === live && !state.replay) showProgress(f, "CONNECTING TO THE LIVE MATCH"); },
     needSoon: () => !!state.replay && state.replay.tMax - state.t < 8,
+    playedOut: () => !state.replay || state.t >= state.replay.tMax,
   });
   live.start();
 }
 function stopLive() {
   live.stop();
   live = null;
+  Object.assign(onAir, { match: null, status: "", end: false, told: false });
   $("live").hidden = true;
   $("m-live").hidden = true;
 }
 
-// the newest pieces, joined into one recording: the first time it opens like a file; after that it is swapped in
-async function liveBuild(file) {
+// The newest pieces, joined into one recording. A match's first build opens like a file (its own map and title,
+// nothing selected, at the live moment); after that each build is swapped in. Only the current feed counts: opening a
+// file meanwhile has left live mode.
+async function liveBuild(file, info, feed) {
+  if (feed !== live) return;
   try {
-    if (!state.replay) { await open(file, "", { live: true }); $("live").hidden = false; return; }
+    if (!state.replay || info.match !== onAir.match) {
+      const before = state.replay;
+      await open(file, before ? "Next match: " + (info.title || "Live match") : "", { live: true, base: info.start });
+      if (feed !== live || state.replay === before) return;   // left live mode, or it didn't open
+      Object.assign(onAir, { match: info.match, status: "", end: false, told: false });
+      $("live").hidden = false;
+      return;
+    }
     const result = await parseInWorker(file, () => {});
-    if (live) swapReplay(new Replay(result));
+    if (feed !== live) return;
+    state.base = info.start;
+    swapReplay(new Replay(result));
   } catch (err) {
     if (err !== CANCELLED) console.warn("live build:", err);
   }
 }
 
-let liveSaid = "";
-function liveStatus(text, final) {
+function liveStatus(text, final, feed) {
+  if (feed !== live) return;
   if (!state.replay) {   // nothing on screen yet: say it on the start screen
     if (final) { hideProgress(); showStartError(text === "MATCH OVER" ? "That match is over. Its full replay goes up in the Discord #replays channel shortly." : "There's no live match on right now. Try again when one starts."); }
-    else showProgress(0, text);
+    else if (text !== "LIVE") showProgress(0, text);
     return;
   }
+  onAir.status = text;
   $("m-live").hidden = false;
   $("m-live").textContent = text;
-  if (text === "MATCH OVER" && liveSaid !== text) showToast("The match is over. Its full replay goes up in the Discord #replays channel shortly.");
-  liveSaid = text;
 }
 
-// The newest data with the camera, selection and following kept: the time stays put, and the selected and followed
-// units are found again by their recorded id (ids are reused after a unit is removed, so the newest one by then).
+// The newest data with the camera, selection, following and hover kept: the time stays put, and those units are found
+// again by their recorded id (ids are reused after a unit is removed, so the newest one by then).
 function swapReplay(replay) {
   const old = state.replay;
-  const selId = state.sel >= 0 ? old.o.id[state.sel] : null;
-  const folId = cameraMan.follow >= 0 ? old.o.id[cameraMan.follow] : null;
+  const idOf = (i) => (i >= 0 ? old.o.id[i] : null);
+  const selId = idOf(state.sel), folId = idOf(cameraMan.follow), hoverId = idOf(overlay.hover), relId = idOf(overlay.relative);
   const keepModels = units.modelSet;
   state.t = Math.max(replay.tMin, Math.min(replay.tMax, state.t));
   state.replay = replay;
@@ -567,8 +594,8 @@ function swapReplay(replay) {
   if (keepModels) units.setModels(replay, keepModels);   // no flash of the simple shapes while new names load
   blasts.setReplay(replay, replay.maxAlive[KIND.EXPLOSION]);
   trails.setReplay(replay);
-  timeline.setReplay(replay);
-  unitList.setReplay(replay);
+  timeline.setReplay(replay, state.base);
+  unitList.setReplay(replay, state.base);
   inspector.setReplay(replay);
   const find = (id) => {
     if (id === null) return -1;
@@ -581,19 +608,33 @@ function swapReplay(replay) {
   const sel = find(selId), fol = find(folId);
   if (sel >= 0) select(sel);
   else { state.sel = -1; units.selected = -1; overlay.selected = -1; trails.selected = -1; }
-  cameraMan.follow = fol;          // straight in, so the camera doesn't let go and catch the unit again
-  viewer.following = fol >= 0;
+  if (fol >= 0) {
+    cameraMan.follow = fol;        // straight in, so the camera doesn't let go and catch the unit again
+    viewer.following = true;
+  } else cameraMan.setFollow(-1);  // gone: let go the usual way, the view staying where it was
   inspector.setFollowing(fol >= 0 && fol === state.sel);
-  overlay.hover = -1;
-  $("length").textContent = duration(replay.tMax - replay.tMin);
+  overlay.hover = find(hoverId);
+  overlay.relative = sel >= 0 ? find(relId) : -1;
+  showLength(replay);
   loadModels(replay, loadId);
 }
 
-// LIVE while you are watching the live moment at normal speed; GO LIVE when you have paused, rewound or sped up
+// LIVE while you are watching the live moment at normal speed; GO LIVE when you have paused, rewound or sped up. When
+// the feed has trouble or the match is over, the key says that instead (phones have no room for the status line).
+const KEY_SAYS = { "RECONNECTING": "RECONNECTING", "LIVE FEED PAUSED": "PAUSED", "MATCH OVER": "MATCH OVER" };
 function updateLiveKey(rp) {
+  // a match that is over ends like a replay: that is told once playback gets to its end, and the next match is looked
+  // for straight away
+  const end = liveOver() && state.t >= rp.tMax;
+  if (end && !onAir.end) {
+    if (!onAir.told) { onAir.told = true; showToast(OVER_SAYS); }
+    live.pollNow();
+  }
+  onAir.end = end;
   const at = state.playing && SPEEDS[state.speed] === 1 && rp.tMax - state.t <= LIVE_BUFFER_S + 5;
-  const b = $("live"), label = at ? "LIVE" : "GO LIVE";
-  if (b.textContent !== label) { b.textContent = label; b.classList.toggle("off", !at); b.setAttribute("aria-pressed", String(at)); }
+  const label = KEY_SAYS[onAir.status] || (at ? "LIVE" : "GO LIVE"), lit = label === "LIVE";
+  const b = $("live");
+  if (b.textContent !== label) { b.textContent = label; b.classList.toggle("off", !lit); b.setAttribute("aria-pressed", String(lit)); }
 }
 $("live").addEventListener("click", () => {
   const rp = state.replay;
@@ -620,10 +661,22 @@ $("live-pve")?.addEventListener("click", () => {
   startLive(LIVE_PVE);
 });
 
+// ?live= follows only our own feeds: one on this site, or the PvE server's (?live=pve for short)
+function liveLink(v) {
+  if (v === "pve") return LIVE_PVE;
+  try {
+    const u = new URL(v, location.href);
+    if (/^https?:$/.test(u.protocol) && (u.origin === location.origin || u.origin === new URL(LIVE_PVE).origin)) return u.href;
+  } catch { /* not a link at all */ }
+  return "";
+}
+
 // for testing: ?replay=<url> opens a file from the site itself
 const q = new URL(location.href).searchParams;
-if (!q.get("live") && !q.get("replay")) { checkLivePve(); setInterval(checkLivePve, 30000); }
-if (q.get("live")) startLive(q.get("live"));
+const liveUrl = q.get("live") ? liveLink(q.get("live")) : "";
+if (!liveUrl && !q.get("replay")) { checkLivePve(); setInterval(checkLivePve, 30000); }
+if (liveUrl) startLive(liveUrl);
+else if (q.get("live")) showStartError("That live link doesn't point at our live feed.");
 else if (q.get("replay")) {
   fetch(q.get("replay"))
     .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.blob(); })

@@ -70,7 +70,14 @@ def main():
         pending.append(raw)
     out.write(b"".join(pending))
     out.close()
-    os.replace(out_path, out_path + ".done")
+    for tries in range(10):          # the publisher may have the file open for a moment (Windows won't rename it then)
+        try:
+            os.replace(out_path, out_path + ".done")
+            break
+        except PermissionError:
+            if tries == 9:
+                raise
+            time.sleep(0.2)
     print("finished: %s.done" % name, flush=True)
 
 

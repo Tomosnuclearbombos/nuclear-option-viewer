@@ -13,6 +13,7 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
 - **Hosting:** a static site on GitHub Pages. No server and no replay hosting: people download the `.zip.acmi` from the
   GitHub release (repo `Tomosnuclearbombos/tomosnukes-replays`, one release per mission) and drag it into the viewer,
   or watch it in Tacview. "Let's not overcook it." No pack/convert step: the viewer reads the raw file.
+  Live mode (below) is the one thing served from elsewhere.
 - **Models:** Tomo's model kit on the gaming PC, `~/.local/share/tacview-no-models` (built 10-04/05 for Tacview).
   It holds 108 .obj meshes, heightmaps, map textures at 5 m/px, cities, the Ignus towns and the bridges. The `NOX_`
   models and the map data were extracted from the game files. The other 54 entries came from the community NOBlackBox
@@ -36,7 +37,22 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   use.
 - **Performance target:** Tomo will test on the server PC, a mini PC with Intel Iris Xe graphics. If it's smooth there,
   it's smooth anywhere.
-- **Repo:** private until Tomo says to go public (GitHub Pages on a free account needs a public repo).
+- **Repo:** public, with GitHub Pages on (Tomo's OK, 2026-10-15). Live site:
+  https://tomosnuclearbombos.github.io/nuclear-option-viewer/
+
+## Live mode (Tomo, 2026-10-15)
+
+- **What:** people watch the match being played, from a link in the S2 new mission Discord alert ("Watch it live,
+  running with a minute delay: <link>") or the start page's LIVE MATCH: PVE SERVER key.
+- **Servers:** S2 (PvE) only. S1 (PvP) maybe later with a 3 to 5 minute delay, or never: his call. PvP must never go out
+  live (fairness).
+- **Delay:** about a minute. The publisher holds every piece until it is 45 s old (enforced on the publishing side);
+  the viewer plays 15 s behind the newest piece. In the player it just says LIVE, no delay wording (Tomo).
+- **Hosting:** his OVH VPS (Caddy) serves the pieces. Pieces are deleted about 10 minutes after the match ends; replays
+  still go out as the GitHub release.
+- **Where it runs:** this repo has the publisher (tools/live_publish.py) and the viewer side (src/live.js). The S2
+  runner that reads the game host and uploads to the VPS lives outside the repo, on the server PC
+  (TacviewReplay\live\live_s2.py, scheduled task "NukeOption Live Feed S2"). Design and format: docs/live-viewer.md.
 
 ## Plan (approved)
 
