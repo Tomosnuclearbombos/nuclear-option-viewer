@@ -549,7 +549,7 @@ function liveStatus(text, final) {
     return;
   }
   $("m-live").hidden = false;
-  $("m-live").textContent = text === "LIVE" ? "LIVE, ABOUT A MINUTE BEHIND" : text;
+  $("m-live").textContent = text;
   if (text === "MATCH OVER" && liveSaid !== text) showToast("The match is over. Its full replay goes up in the Discord #replays channel shortly.");
   liveSaid = text;
 }

@@ -62,7 +62,7 @@ export class LiveFeed {
       this.pieces.set(p.seq, { t0: p.t0, t1: p.t1, bytes, body: bodyStart(bytes) });
     }
     this.ended = !!man.ended;
-    if (!this.pieces.size) { this.onStatus(this.ended ? "MATCH OVER" : "MATCH STARTING, THE FIRST PICTURE IS ABOUT A MINUTE AWAY", this.ended); return; }
+    if (!this.pieces.size) { this.onStatus(this.ended ? "MATCH OVER" : "MATCH STARTING", this.ended); return; }
     const newest = Math.max(...this.pieces.keys());
     const due = this.builtSeq < 0 || this.ended || this.needSoon() || performance.now() - this.lastBuild >= REBUILD_MS;
     if (newest > this.builtSeq && due) {
