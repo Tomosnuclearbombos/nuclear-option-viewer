@@ -15,6 +15,7 @@ import { Timeline } from "./ui/timeline.js";
 import { UnitList } from "./ui/unitlist.js";
 import { Inspector } from "./ui/inspector.js";
 import { loadSettings, SettingsPanel, RESOLUTION, FPS } from "./ui/settings.js";
+import { LiveFeed, LIVE_BUFFER_S } from "./live.js";
 import { mapName, duration, missionClock, recorded, speedLabel } from "./ui/format.js";
 
 const $ = (id) => document.getElementById(id);
@@ -59,8 +60,9 @@ const inspector = new Inspector($("inspector"));
 // that fails to open leaves the replay you were watching exactly as it was.
 let loadId = 0, job = null;
 
-async function open(file, note = "") {
+async function open(file, note = "", opts = {}) {
   if (!viewer) { showStartError(NO_WEBGL); return; }
+  if (!opts.live && live) stopLive();   // opening a file leaves live mode
   const id = ++loadId;
   if (job) { job.cancel(); job = null; }
   ground.cancel();                    // a map still downloading for an earlier open must not land on screen
@@ -75,7 +77,7 @@ async function open(file, note = "") {
     const loaded = await ground.load(replay.header.mapId, settings.map);
     if (id !== loadId) return;
     hideProgress();
-    start(replay, file.name);
+    start(replay, file.name, opts);
     scenery.setMap(loaded ? mapKeyFor(replay.header.mapId) : null);   // towns and bridges, fetched as you get near
     const notes = [];
     if (!known) notes.push("This replay's map isn't in the viewer yet, so it plays over open sea.");
@@ -126,10 +128,10 @@ function parseInWorker(file, onProgress) {
   });
 }
 
-function start(replay, fileName) {
+function start(replay, fileName, opts = {}) {
   state.replay = replay;
-  state.t = replay.tMin;
-  state.playing = false;
+  state.t = opts.live ? Math.max(replay.tMin, replay.tMax - LIVE_BUFFER_S) : replay.tMin;
+  state.playing = !!opts.live;   // a replay opens paused at the start; live opens playing at the live moment
   state.speed = START_SPEED;
   state.lastNow = 0;
   units.setReplay(replay);
@@ -240,8 +242,10 @@ if (viewer) viewer.onFrame = (now) => {
   state.lastNow = now;
   if (state.playing) {
     state.t += dt * SPEEDS[state.speed];
-    if (state.t >= rp.tMax) { state.t = rp.tMax; state.playing = false; }
+    // the end of a replay stops it; live, the end is just where the next piece hasn't arrived yet, so it waits there
+    if (state.t >= rp.tMax) { state.t = rp.tMax; if (!live) state.playing = false; }
   }
+  if (live) updateLiveKey(rp);
   const t = state.t;
   cameraMan.update(dt, rp, t);
   ground.update(viewer.camera);
@@ -304,7 +308,7 @@ function rangeInfo(a, b) {
 function togglePlay() {
   const rp = state.replay;
   if (!rp) return;
-  if (!state.playing && state.t >= rp.tMax) state.t = rp.tMin;
+  if (!state.playing && state.t >= rp.tMax && !live) state.t = rp.tMin;
   state.playing = !state.playing;
 }
 function changeSpeed(d) { state.speed = Math.max(0, Math.min(SPEEDS.length - 1, state.speed + d)); updateSpeed(); }
@@ -507,9 +511,103 @@ window.addEventListener("drop", (e) => {
   open(replays[0] || files[0], replays.length > 1 ? "Only the first replay was opened. Drop one at a time to switch." : "");
 });
 
+// ---- live mode: ?live=<a server's current.json> ------------------------------------------------------------
+let live = null;
+function startLive(url) {
+  if (!viewer) { showStartError(NO_WEBGL); return; }
+  showProgress(0, "CONNECTING TO THE LIVE MATCH");
+  live = new LiveFeed(url, {
+    onBuild: liveBuild,
+    onStatus: liveStatus,
+    needSoon: () => !!state.replay && state.replay.tMax - state.t < 8,
+  });
+  live.start();
+}
+function stopLive() {
+  live.stop();
+  live = null;
+  $("live").hidden = true;
+  $("m-live").hidden = true;
+}
+
+// the newest pieces, joined into one recording: the first time it opens like a file; after that it is swapped in
+async function liveBuild(file) {
+  try {
+    if (!state.replay) { await open(file, "", { live: true }); $("live").hidden = false; return; }
+    const result = await parseInWorker(file, () => {});
+    if (live) swapReplay(new Replay(result));
+  } catch (err) {
+    if (err !== CANCELLED) console.warn("live build:", err);
+  }
+}
+
+let liveSaid = "";
+function liveStatus(text, final) {
+  if (!state.replay) {   // nothing on screen yet: say it on the start screen
+    if (final) { hideProgress(); showStartError(text === "MATCH OVER" ? "That match is over. Its full replay goes up in the Discord #replays channel shortly." : "There's no live match on right now. Try again when one starts."); }
+    else showProgress(0, text);
+    return;
+  }
+  $("m-live").hidden = false;
+  $("m-live").textContent = text === "LIVE" ? "LIVE, ABOUT A MINUTE BEHIND" : text;
+  if (text === "MATCH OVER" && liveSaid !== text) showToast("The match is over. Its full replay goes up in the Discord #replays channel shortly.");
+  liveSaid = text;
+}
+
+// The newest data with the camera, selection and following kept: the time stays put, and the selected and followed
+// units are found again by their recorded id (ids are reused after a unit is removed, so the newest one by then).
+function swapReplay(replay) {
+  const old = state.replay;
+  const selId = state.sel >= 0 ? old.o.id[state.sel] : null;
+  const folId = cameraMan.follow >= 0 ? old.o.id[cameraMan.follow] : null;
+  const keepModels = units.modelSet;
+  state.t = Math.max(replay.tMin, Math.min(replay.tMax, state.t));
+  state.replay = replay;
+  units.setReplay(replay);
+  if (keepModels) units.setModels(replay, keepModels);   // no flash of the simple shapes while new names load
+  blasts.setReplay(replay, replay.maxAlive[KIND.EXPLOSION]);
+  trails.setReplay(replay);
+  timeline.setReplay(replay);
+  unitList.setReplay(replay);
+  inspector.setReplay(replay);
+  const find = (id) => {
+    if (id === null) return -1;
+    let best = -1;
+    for (let i = 0; i < replay.count; i++) {
+      if (replay.o.id[i] === id && replay.o.t0[i] <= state.t + 0.01 && (best < 0 || replay.o.t0[i] > replay.o.t0[best])) best = i;
+    }
+    return best;
+  };
+  const sel = find(selId), fol = find(folId);
+  if (sel >= 0) select(sel);
+  else { state.sel = -1; units.selected = -1; overlay.selected = -1; trails.selected = -1; }
+  cameraMan.follow = fol;          // straight in, so the camera doesn't let go and catch the unit again
+  viewer.following = fol >= 0;
+  inspector.setFollowing(fol >= 0 && fol === state.sel);
+  overlay.hover = -1;
+  $("length").textContent = duration(replay.tMax - replay.tMin);
+  loadModels(replay, loadId);
+}
+
+// LIVE while you are watching the live moment at normal speed; GO LIVE when you have paused, rewound or sped up
+function updateLiveKey(rp) {
+  const at = state.playing && SPEEDS[state.speed] === 1 && rp.tMax - state.t <= LIVE_BUFFER_S + 5;
+  const b = $("live"), label = at ? "LIVE" : "GO LIVE";
+  if (b.textContent !== label) { b.textContent = label; b.classList.toggle("off", !at); b.setAttribute("aria-pressed", String(at)); }
+}
+$("live").addEventListener("click", () => {
+  const rp = state.replay;
+  if (!rp) return;
+  state.t = Math.max(rp.tMin, rp.tMax - LIVE_BUFFER_S);
+  state.speed = START_SPEED;
+  state.playing = true;
+  updateSpeed();
+});
+
 // for testing: ?replay=<url> opens a file from the site itself
 const q = new URL(location.href).searchParams;
-if (q.get("replay")) {
+if (q.get("live")) startLive(q.get("live"));
+else if (q.get("replay")) {
   fetch(q.get("replay"))
     .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.blob(); })
     .then((b) => open(new File([b], q.get("replay").split("/").pop())))

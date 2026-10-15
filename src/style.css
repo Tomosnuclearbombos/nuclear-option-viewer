@@ -68,6 +68,9 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
 .key.wide { min-width: 84px; }
 .key.big { min-height: 44px; padding: 0 26px; font-size: 17px; }
 .key.small { min-height: 26px; padding: 0 8px; font-size: 12px; }
+/* live mode: lit in the game's alert colour while you're at the live moment, a normal grey key when you're not */
+.key.live:not(.off) { color: var(--alert); border-color: var(--alert); text-shadow: 0 0 6px rgba(255, 64, 0, 0.6); }
+.live-tag { color: var(--alert); text-shadow: 0 0 6px rgba(255, 64, 0, 0.6); }
 
 .progress-label { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--green); text-shadow: var(--glow); }
 .bar { position: relative; height: 12px; margin-top: 6px; border: 1px solid var(--green-line); padding: 2px; }
