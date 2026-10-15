@@ -161,7 +161,7 @@ def fmt_t(t):
     return s or "0"
 
 
-# ---- the publisher ----------------------------------------------------------------------------------------------
+# ---- outputs: where the pieces are written (paths are relative, "/" separated) ----------------------------------
 
 def write_atomic(path, data):
     tmp = path + ".tmp"
@@ -170,10 +170,39 @@ def write_atomic(path, data):
     os.replace(tmp, path)
 
 
+class LocalOut:
+    """A folder on this machine (a web server serves it, or the dev server while testing)."""
+
+    def __init__(self, root):
+        self.root = root
+        os.makedirs(root, exist_ok=True)
+
+    def _p(self, rel):
+        return os.path.join(self.root, *rel.split("/"))
+
+    def makedirs(self, rel):
+        os.makedirs(self._p(rel), exist_ok=True)
+
+    def write(self, rel, data):
+        write_atomic(self._p(rel), data)
+
+    def remove(self, rel):
+        try:
+            os.remove(self._p(rel))
+        except FileNotFoundError:
+            pass
+
+    def rmtree(self, rel):
+        shutil.rmtree(self._p(rel), ignore_errors=True)
+
+
+# ---- the publisher ----------------------------------------------------------------------------------------------
+
+
 class Match:
     """One recording being cut into pieces."""
 
-    def __init__(self, name, out_root, a):
+    def __init__(self, name, out, a):
         self.name = name
         self.a = a
         self.state = State()
@@ -181,8 +210,8 @@ class Match:
         self.partial = b""
         self.last_growth = time.time()
         self.match_id = None
-        self.dir = None
-        self.out_root = out_root
+        self.dir = None                # the match's folder, relative to the output
+        self.out = out
         self.piece_start = None       # match time the open piece starts at
         self.piece_lines = []         # its lines so far
         self.piece_snapshot = None    # its snapshot, taken when it opened
@@ -198,8 +227,8 @@ class Match:
         rt = self.state.globals.get("RecordingTime", "")
         m = re.match(r"(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)", rt)
         self.match_id = "".join(m.groups()) if m else re.sub(r"[^A-Za-z0-9]+", "", self.name)[:40]
-        self.dir = os.path.join(self.out_root, self.match_id)
-        os.makedirs(self.dir, exist_ok=True)
+        self.dir = self.match_id
+        self.out.makedirs(self.dir)
 
     def feed(self, data):
         lines = (self.partial + data).split(b"\n")
@@ -237,17 +266,24 @@ class Match:
     def close_piece(self):
         t0, t1 = self.piece_start, self.piece_start + self.a.piece
         self.done.append((t0, t1, self.piece_snapshot + "\n".join(self.piece_lines) + ("\n" if self.piece_lines else "")))
+        # catching up on a match already under way: only the newest stretch can ever be shown, so older finished
+        # pieces are dropped before they are written (and memory stays bounded)
+        span = self.a.keep + self.a.delay + self.a.piece
+        while self.done and self.done[0][1] < t1 - span:
+            self.done.pop(0)
 
-    # pieces old enough to show (all of them once the match is over)
+    # pieces old enough to show (all of them once the match is over). A piece leaves the queue only once it is written,
+    # so an upload that fails is tried again on the next pass rather than lost.
     def release(self, force=False):
         newest = self.state.time
         changed = False
         while self.done and (force or (newest is not None and self.done[0][1] <= newest - self.a.delay)):
-            t0, t1, text = self.done.pop(0)
-            self.seq += 1
-            fname = "c%06d.acmi.gz" % self.seq
+            t0, t1, text = self.done[0]
+            fname = "c%06d.acmi.gz" % (self.seq + 1)
             data = gzip.compress(text.encode("utf-8"), compresslevel=6, mtime=0)
-            write_atomic(os.path.join(self.dir, fname), data)
+            self.out.write(self.dir + "/" + fname, data)
+            self.done.pop(0)
+            self.seq += 1
             self.published.append({"seq": self.seq, "file": fname, "t0": round(t0, 3), "t1": round(t1, 3), "bytes": len(data)})
             changed = True
         # keep only the newest --keep seconds
@@ -255,10 +291,7 @@ class Match:
             cut = self.published[-1]["t1"] - self.a.keep
             while len(self.published) > 1 and self.published[0]["t1"] <= cut:
                 old = self.published.pop(0)
-                try:
-                    os.remove(os.path.join(self.dir, old["file"]))
-                except FileNotFoundError:
-                    pass
+                self.out.remove(self.dir + "/" + old["file"])
                 changed = True
         return changed
 
@@ -279,69 +312,81 @@ class Match:
             "pieceSeconds": self.a.piece, "delaySeconds": self.a.delay, "ended": self.ended,
             "updated": int(time.time()), "newest": self.state.time, "pieces": self.published,
         }
-        write_atomic(os.path.join(self.dir, "manifest.json"), json.dumps(man, separators=(",", ":")).encode())
+        self.out.write(self.dir + "/manifest.json", json.dumps(man, separators=(",", ":")).encode())
         cur = {"format": FORMAT, "match": self.match_id, "manifest": self.match_id + "/manifest.json",
                "title": man["title"], "mapId": man["mapId"], "ended": self.ended, "updated": man["updated"]}
-        write_atomic(os.path.join(self.out_root, "current.json"), json.dumps(cur, separators=(",", ":")).encode())
+        self.out.write("current.json", json.dumps(cur, separators=(",", ":")).encode())
 
 
 def pick_running(recs, now, active_s):
-    """the newest raw .acmi still growing (a killed server leaves an old one behind)"""
-    live = [r for r in recs if now - r[2] < active_s]
+    """the newest raw .acmi still growing (a killed server leaves an old one behind). Finished matches sit next to it as
+    .zip.acmi, which also ends in .acmi: never those."""
+    live = [r for r in recs if now - r[2] < active_s and not r[0].lower().endswith(".zip.acmi")]
     return max(live, key=lambda r: (r[2], r[0])) if live else None
 
 
-def run(a):
-    src = LocalDir(a.watch_dir)
-    os.makedirs(a.out, exist_ok=True)
+def run(a, src=None, out=None):
+    """The publisher's loop. src lists and reads the recordings (LocalDir by default), out writes the pieces
+    (LocalOut by default); tools that read over SFTP or upload to a web server pass their own."""
+    src = src or LocalDir(a.watch_dir)
+    out = out or LocalOut(a.out)
     cur = None
     ended_at = {}                      # match dir -> when it ended, for cleanup
     finished = {}                      # recording -> its size when its match ended: a quiet file left behind (a killed
                                        # server's) is not followed again unless it grows
     log("watching %s, writing %s (pieces %ds, delay %ds, keep %ds)" % (a.watch_dir, a.out, a.piece, a.delay, a.keep))
     while True:
-        now = time.time()
-        recs = src.recordings()
-        run_rec = pick_running(recs, now, a.active)
-        # our match is over once its file is gone (zipped at the end), a newer recording has started, or it has
-        # stopped growing
-        if cur and (not any(r[0] == cur.name for r in recs)
-                    or (run_rec is not None and run_rec[0] != cur.name)
-                    or now - cur.last_growth > a.idle_end):
-            log("match %s over: %d pieces published" % (cur.match_id, cur.seq))
-            finished[cur.name] = cur.offset
-            cur.end()
-            if cur.dir:
-                ended_at[cur.dir] = now
-            cur = None
-        if cur is None and run_rec and finished.get(run_rec[0]) != run_rec[1]:
-            cur = Match(run_rec[0], a.out, a)
-            log("following %s" % run_rec[0])
-        if cur:
-            got = False
-            while True:
-                data = src.read(cur.name, cur.offset)
-                if not data:
-                    break
-                cur.offset += len(data)
-                cur.feed(data)
-                got = True
-                if cur.dir:
-                    cur.release()            # catching up on a long match: don't hold every piece in memory
-                if len(data) < (4 << 20):
-                    break
-            if got:
-                cur.last_growth = now
-            if cur.dir and (cur.release() or got):
-                cur.write_manifest()         # also before the first piece, so the page can say the match has started
-        for d, t in list(ended_at.items()):
-            if now - t > a.cleanup:
-                shutil.rmtree(d, ignore_errors=True)
-                del ended_at[d]
-                log("deleted %s" % os.path.basename(d))
+        try:
+            cur = step(a, src, out, cur, ended_at, finished)
+        except Exception as e:               # noqa: BLE001 - a dropped connection or a failed upload: try again
+            log("error, retrying: %s: %s" % (type(e).__name__, str(e)[:200]))
+            time.sleep(5)
         if a.once:
             break
         time.sleep(a.poll)
+
+
+def step(a, src, out, cur, ended_at, finished):
+    """One pass: read whatever the running recording has gained, publish what is old enough, and notice the end of a
+    match. "Gone quiet" counts from the last read that got anything, so catching up on a long match already under way
+    (which can take a while over SFTP) never looks like the match stopping."""
+    recs = src.recordings()
+    run_rec = pick_running(recs, time.time(), a.active)
+    got = False
+    if cur:
+        while True:
+            data = src.read(cur.name, cur.offset)
+            if not data:
+                break
+            cur.offset += len(data)
+            cur.feed(data)
+            got = True
+            cur.last_growth = time.time()
+            if len(data) < (4 << 20):    # a full block means more is waiting: keep catching up before publishing
+                break
+        if cur.dir and (cur.release() or got):
+            cur.write_manifest()         # also before the first piece, so the page can say the match has started
+        # over once its file is gone (zipped at the end), a newer recording has started, or it has stopped growing
+        gone = not got and not any(r[0] == cur.name for r in recs)
+        newer = run_rec is not None and run_rec[0] != cur.name
+        quiet = time.time() - cur.last_growth > a.idle_end
+        if gone or newer or quiet:
+            log("match %s over (%s): %d pieces published" % (cur.match_id, "file gone" if gone else "newer match" if newer else "quiet", cur.seq))
+            finished[cur.name] = cur.offset
+            cur.end()
+            if cur.dir:
+                ended_at[cur.dir] = time.time()
+            cur = None
+    if cur is None and run_rec and finished.get(run_rec[0]) != run_rec[1]:
+        cur = Match(run_rec[0], out, a)
+        log("following %s" % run_rec[0])
+    now = time.time()
+    for d, t in list(ended_at.items()):
+        if now - t > a.cleanup:
+            out.rmtree(d)
+            del ended_at[d]
+            log("deleted %s" % d)
+    return cur
 
 
 def main():
