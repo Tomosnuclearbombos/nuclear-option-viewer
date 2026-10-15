@@ -53,14 +53,16 @@
   <main id="start" class="start">
     <div class="backdrop" aria-hidden="true"></div>
     <section class="plate start-plate">
-      <h1 class="title">NUCLEAR OPTION VIEWER</h1>
-      <p class="lead">WATCH NUCLEAR OPTION REPLAYS ON THE REAL MAP</p>
+      <h1 class="title">NOBlackBox ACMI Viewer</h1>
       <div class="dropzone" id="dropzone">
         <div>DROP A REPLAY HERE</div>
         <div class="dim">.ZIP.ACMI OR .ACMI</div>
       </div>
       <label class="key big">CHOOSE REPLAY<input id="file2" type="file" accept=".acmi,.zip,.gz,application/zip"></label>
-      <div class="live-row"><button id="live-pve" class="key big live off" type="button" disabled title="Nothing is being played on the PvE server right now">LIVE MATCH: PVE SERVER</button></div>
+      <div class="live-row">
+        <h2 class="live-head">Tomo's Nukes Live Servers:</h2>
+        <button id="live-pve" class="key big live off" type="button" disabled title="Nothing is being played on the PvE server right now">PVE SERVER</button>
+      </div>
       <div class="status">
         <div class="progress" id="progress" hidden>
           <div class="progress-label"><span id="progress-label">READING REPLAY</span><span id="progress-pct"></span></div>
@@ -68,7 +70,7 @@
         </div>
         <p class="error prose" id="error" role="alert" hidden></p>
       </div>
-      <p class="prose hint">Replays are the .zip.acmi files in the Discord #replays posts. They open in Tacview too.</p>
+      <p class="prose hint">Replays are generated using NOBlackBox which creates a .zip [Tacview ACMI - Flight Recording]</p>
       <p class="prose credit">Inspired by <a href="https://acmi-viewer.github.io" target="_blank" rel="noopener">ACMI Viewer</a> by Aleksi Lassila. Unit models from the <a href="https://github.com/KopterBuzz/NOBlackBoxTacviewAssets" target="_blank" rel="noopener">NOBlackBox Tacview assets</a> by KopterBuzz, forked by Tomo.</p>
     </section>
   </main>
