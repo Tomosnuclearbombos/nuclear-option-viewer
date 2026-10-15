@@ -15,7 +15,7 @@ import { Timeline } from "./ui/timeline.js";
 import { UnitList } from "./ui/unitlist.js";
 import { Inspector } from "./ui/inspector.js";
 import { loadSettings, SettingsPanel, RESOLUTION, FPS } from "./ui/settings.js";
-import { LiveFeed, LIVE_BUFFER_S } from "./live.js";
+import { LiveFeed, LIVE_BUFFER_S, LIVE_PVE, liveMatch } from "./live.js";
 import { mapName, duration, missionClock, recorded, speedLabel } from "./ui/format.js";
 
 const $ = (id) => document.getElementById(id);
@@ -604,8 +604,24 @@ $("live").addEventListener("click", () => {
   updateSpeed();
 });
 
+// the start page's key for the PvE server's live match: lit while a match is being played there, grey when not
+async function checkLivePve() {
+  if (state.replay || live) return;
+  const title = await liveMatch(LIVE_PVE);
+  const b = $("live-pve");
+  b.disabled = !title;
+  b.classList.toggle("off", !title);
+  b.title = title || "Nothing is being played on the PvE server right now";
+}
+$("live-pve").addEventListener("click", () => {
+  if (live || state.replay) return;
+  history.replaceState(null, "", "?live=" + LIVE_PVE);
+  startLive(LIVE_PVE);
+});
+
 // for testing: ?replay=<url> opens a file from the site itself
 const q = new URL(location.href).searchParams;
+if (!q.get("live") && !q.get("replay")) { checkLivePve(); setInterval(checkLivePve, 30000); }
 if (q.get("live")) startLive(q.get("live"));
 else if (q.get("replay")) {
   fetch(q.get("replay"))

@@ -124,7 +124,8 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
 - **Commits:** `TomosBombos <323103104+Tomosnuclearbombos@users.noreply.github.com>`, never his Gmail. End messages
   with the Co-Authored-By line.
 - **Never commit:**
-  - server IPs or hostnames
+  - server IPs or hostnames. One exception (Tomo, 2026-10-15): the live feed's VPS address in `src/live.js`
+    (`LIVE_PVE`), for the start page's live match button. It's public in the Discord alert anyway.
   - Steam IDs (except Tomo's own)
   - tokens, keys or passwords
   - the Discord webhook

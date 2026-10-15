@@ -70,6 +70,8 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
 .key.small { min-height: 26px; padding: 0 8px; font-size: 12px; }
 /* live mode: lit in the game's alert colour while you're at the live moment, a normal grey key when you're not */
 .key.live:not(.off) { color: var(--alert); border-color: var(--alert); text-shadow: 0 0 6px rgba(255, 64, 0, 0.6); }
+.key:disabled { cursor: default; }
+.key:disabled:hover, .key:disabled:active { color: var(--off); border-color: var(--off); }
 .live-tag { color: var(--alert); text-shadow: 0 0 6px rgba(255, 64, 0, 0.6); }
 
 .progress-label { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--green); text-shadow: var(--glow); }
@@ -103,6 +105,7 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
 .status { min-height: 54px; margin-top: 14px; display: grid; align-content: center; }
 .start .progress { margin: 0; text-align: left; }
 .error { margin: 0; color: var(--alert); font-size: 15px; }
+.live-row { margin-top: 10px; }
 .hint { margin: 10px 0 0; font-size: 14px; color: var(--green-dim); }
 .credit { margin: 8px 0 0; font-size: 13px; color: var(--green-dim); }
 @media (max-height: 520px) {

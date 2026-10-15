@@ -13,6 +13,19 @@ const REBUILD_MS = 20000;       // the replay is rebuilt at most this often, unl
 export const LIVE_BUFFER_S = 15; // the live moment sits this far behind the newest data, so a new piece is always in time
 const MARK = new TextEncoder().encode("\n// nov-keyframe-end\n");
 
+// the PvE server's feed, for the start page's live key
+export const LIVE_PVE = "https://vps-26413982.vps.ovh.ca/s2/current.json";
+const FRESH_S = 300;            // a feed not updated for this long has stopped (its publisher is down)
+
+// the title of the match being played on that server right now, or "" when there's none
+export async function liveMatch(url) {
+  try {
+    const cur = await getJSON(new URL(url, location.href).href);
+    if (!cur || !cur.manifest || cur.ended || !(Date.now() / 1000 - cur.updated < FRESH_S)) return "";
+    return cur.title || "Live match";
+  } catch { return ""; }
+}
+
 export class LiveFeed {
   // url = the server's current.json. onBuild(file, info) gets the joined recording as a File; onStatus(text, ended)
   // reports what is going on; needSoon() says whether playback is close to the end of the data.
