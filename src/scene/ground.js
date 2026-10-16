@@ -16,6 +16,8 @@ const MAPS = {
 export const MAP_STYLES = ["terrain", "tactical", "empty"];
 const MESH_STEP = 160; // metres between vertices of the far terrain mesh
 const SEA = 3_000_000;  // open sea plane size (metres): its edge stays inside the fog even zoomed right out
+const GRID_PAD = 3;     // tactical: the grid carries on this many 10 km squares past the map edge (as the web panel's map)
+const PAD_STEP = 2000;  // metres between vertices of that band (small cells keep its grid steady, see followPlane)
 // The game tints its map picture pure green, drawn over black. 1.35 times brighter to read (as the start screen
 // backdrop is): a gain on the picture's sRGB value is about its 2.2nd power on the linear value the shader works in.
 const GREEN = new THREE.Color().setRGB(0, Math.pow(1.35, 2.2), 0);
@@ -36,6 +38,7 @@ export class Ground {
     this.mesh = null;      // { x0, z0 (scene, north-west corner), cols, rows, step, h: Float32Array } of the drawn mesh
     this.landGeo = null;   // the ground shape, kept across style changes
     this.seaGeo = null;    // the open sea frame around it
+    this.padSeaGeo = null; // the same with a band for the tactical grid (group 0) inside the plain sea (group 1)
     this.texture = null;   // the current style's picture: { style, tex, edge }
     this.style = "terrain";
     this.loading = 0;      // bumped by every map load and cancel
@@ -125,10 +128,13 @@ export class Ground {
     this.group.add(land);
     // open sea past the map edges, in the picture's own deep water colour, wide enough that its edge is always in the
     // fog. It stops at the map edge. A sea plane under the whole map sat 2 m below the map's own water and the two
-    // fought over the depth buffer, so the sea flickered in patches (worst on Ignus, which is 93% sea). No grid out
-    // here: the game's map has none past its edge, and this frame's cells are far too big to draw one steadily.
-    const seaMat = tactical ? new THREE.MeshBasicMaterial({ color: pic.edge.clone().multiply(GREEN) }) : new THREE.MeshLambertMaterial({ color: pic.edge });
-    const sea = new THREE.Mesh(this.seaGeo, seaMat);
+    // fought over the depth buffer, so the sea flickered in patches (worst on Ignus, which is 93% sea). Tactical keeps
+    // its grid going a few squares past the edge, on a band of small cells; the rest of the frame's cells are far too
+    // big to draw a grid on steadily, so they stay plain.
+    const seaColour = pic.edge.clone().multiply(GREEN);
+    const sea = tactical
+      ? new THREE.Mesh(this.padSeaGeo, [gridMaterial({ color: seaColour }), new THREE.MeshBasicMaterial({ color: seaColour })])
+      : new THREE.Mesh(this.seaGeo, new THREE.MeshLambertMaterial({ color: pic.edge }));
     sea.name = "sea";
     this.group.add(sea);
   }
@@ -164,7 +170,7 @@ export class Ground {
     for (const child of [...this.group.children]) {
       this.group.remove(child);
       if (child.userData.ownGeometry) child.geometry.dispose();
-      child.material?.dispose();
+      for (const mat of [child.material].flat()) mat?.dispose();
     }
   }
 
@@ -173,8 +179,9 @@ export class Ground {
     this.clearDrawn();
     this.landGeo?.dispose();
     this.seaGeo?.dispose();
+    this.padSeaGeo?.dispose();
     this.texture?.tex.dispose();
-    this.landGeo = null; this.seaGeo = null; this.texture = null;
+    this.landGeo = null; this.seaGeo = null; this.padSeaGeo = null; this.texture = null;
     this.key = null; this.meta = null; this.heights = null; this.mesh = null;
   }
 
@@ -229,6 +236,7 @@ export class Ground {
     this.mesh = { x0: m.x0, z0: -m.z1, cols, rows, step: W / cols, h: hs };
     this.landGeo = geo;
     this.seaGeo = seaFrame(m, cols, rows);
+    this.padSeaGeo = seaFrame(m, cols, rows, GRID_PAD);
   }
 }
 
@@ -303,30 +311,51 @@ function followPlane() {
 // The open sea around a map: flat at 0 m (the height the map holds its own water at), from the map edge out to SEA / 2
 // from the map's middle, with a hole where the map is. Its inner edge uses the land mesh's own edge vertices, worked out
 // the way PlaneGeometry + translate work them out, so the two meet without cracks or T-junctions.
-function seaFrame(m, cols, rows) {
+// With pad, a band of PAD_STEP cells reaches from the map edge out to `pad` whole 10 km grid lines past it, for the
+// tactical grid: its cells are geometry group 0 and the plain sea beyond them group 1. The plain cells share the band's
+// edge vertices, so those two meet without cracks too.
+function seaFrame(m, cols, rows, pad = 0) {
   const W = m.x1 - m.x0, D = m.z1 - m.z0;
   const cx = (m.x0 + m.x1) / 2, cz = -(m.z0 + m.z1) / 2;           // map middle in scene x / z
   const f = Math.fround;
-  const xs = [cx - SEA / 2], zs = [cz - SEA / 2];
-  for (let i = 0; i <= cols; i++) xs.push(f(f(i * (W / cols) - W / 2) + cx));
-  for (let j = 0; j <= rows; j++) zs.push(f(f(j * (D / rows) - D / 2) + cz));
-  xs.push(cx + SEA / 2);
-  zs.push(cz + SEA / 2);
+  const landX = [], landZ = [];
+  for (let i = 0; i <= cols; i++) landX.push(f(f(i * (W / cols) - W / 2) + cx));
+  for (let j = 0; j <= rows; j++) landZ.push(f(f(j * (D / rows) - D / 2) + cz));
+  // the land's edge lines, with the band's lines added each side, and the sea's far edge outside those
+  const lines = (land, mid) => {
+    const lo = land[0], hi = land[land.length - 1], out = [mid - SEA / 2];
+    if (pad) {
+      const a = (Math.floor(lo / 10000) - pad) * 10000, n = Math.ceil((lo - a) / PAD_STEP);
+      for (let k = 0; k < n; k++) out.push(a + (k * (lo - a)) / n);
+    }
+    out.push(...land);
+    if (pad) {
+      const b = (Math.ceil(hi / 10000) + pad) * 10000, n = Math.ceil((b - hi) / PAD_STEP);
+      for (let k = 1; k <= n; k++) out.push(hi + (k * (b - hi)) / n);
+    }
+    out.push(mid + SEA / 2);
+    return out;
+  };
+  const xs = lines(landX, cx), zs = lines(landZ, cz);
   const nx = xs.length - 1, nz = zs.length - 1;
-  const pos = [], nor = [], idx = [];
+  const iL = xs.indexOf(landX[0]), iR = iL + cols, jT = zs.indexOf(landZ[0]), jB = jT + rows;
+  const pos = [], nor = [], band = [], plain = [];
   for (let j = 0; j < nz; j++) {
     for (let i = 0; i < nx; i++) {
-      if (i > 0 && i < nx - 1 && j > 0 && j < nz - 1) continue;      // inside the map: the land mesh draws it
+      if (i >= iL && i < iR && j >= jT && j < jB) continue;          // inside the map: the land mesh draws it
       const k = pos.length / 3;
       pos.push(xs[i], 0, zs[j], xs[i], 0, zs[j + 1], xs[i + 1], 0, zs[j + 1], xs[i + 1], 0, zs[j]);
       nor.push(0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0);
-      idx.push(k, k + 1, k + 3, k + 1, k + 2, k + 3);                 // both triangles face up
+      const outer = i === 0 || i === nx - 1 || j === 0 || j === nz - 1;
+      (outer ? plain : band).push(k, k + 1, k + 3, k + 1, k + 2, k + 3);   // both triangles face up
     }
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   geo.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
-  geo.setIndex(idx);
+  geo.setIndex([...band, ...plain]);
+  geo.addGroup(0, band.length, 0);
+  geo.addGroup(band.length, plain.length, 1);
   return geo;
 }
 
