@@ -12,6 +12,11 @@ export const SETTINGS = {
   units: ["focus", "real"],
   ui: ["100", "80", "90", "120", "140"],   // size of the panels and keys, in percent
   sliders: ["off", "on"],                  // the camera sliders over the view
+  ranges: ["off", "on"],                   // radar and sight range domes
+  rangePlanes: ["on", "off"],              // ... for planes and helicopters,
+  rangeShips: ["on", "off"],               // ships,
+  rangeGround: ["on", "off"],              // ground units that move,
+  rangeStationary: ["on", "off"],          // and ground units and buildings that stay put
   resolution: ["full", "high", "low"],
   fps: ["max", "60", "30"],
   smooth: ["on", "off"],
@@ -63,6 +68,8 @@ export class SettingsPanel {
     this.onChange = onChange;
     this.smoothInUse = smoothInUse;
     el.addEventListener("click", (e) => {
+      const flip = e.target.closest("button[data-toggle]");   // a key that is a setting of its own, on or off
+      if (flip) { const k = flip.dataset.toggle; this.set(k, this.settings[k] === "on" ? "off" : "on"); return; }
       const btn = e.target.closest("button[data-val]");
       const row = btn && btn.closest("[data-set]");
       if (!row) return;
@@ -89,6 +96,11 @@ export class SettingsPanel {
         b.classList.toggle("off", !on);
         b.setAttribute("aria-pressed", String(on));
       }
+    }
+    for (const b of this.el.querySelectorAll("button[data-toggle]")) {
+      const on = this.settings[b.dataset.toggle] === "on";
+      b.classList.toggle("off", !on);
+      b.setAttribute("aria-pressed", String(on));
     }
     for (const n of this.el.querySelectorAll("[data-note]")) {
       const k = n.dataset.note;
