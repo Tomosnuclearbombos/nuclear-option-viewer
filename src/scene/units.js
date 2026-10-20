@@ -26,14 +26,17 @@ export const SELECTED = {
   neutral: new THREE.Color("#ffffff"),
 };
 
-// real length in metres (stand-ins only) and minimum on-screen length in pixels, per kind
+// real length in metres (stand-ins only) and minimum on-screen length in pixels, per kind. With ref, the kind grows as
+// one: a ship ref metres long is kept minPx long and every other ship is grown by the same amount, so far away they
+// stay in proportion (a 30 m patrol boat stays well under half a 77 m corvette) instead of all being drawn the same
+// length.
 const LOOK = {
   [KIND.PLANE]: { len: 16, minPx: 24 },
   [KIND.HELI]: { len: 15, minPx: 22 },
   [KIND.MISSILE]: { len: 4, minPx: 10 },
   [KIND.BOMB]: { len: 3, minPx: 8 },
   [KIND.SHELL]: { len: 1.5, minPx: 5 },
-  [KIND.SHIP]: { len: 120, minPx: 28 },
+  [KIND.SHIP]: { len: 120, minPx: 28, ref: 80 },   // a corvette keeps its old focus size
   [KIND.GROUND]: { len: 8, minPx: 10 },
   [KIND.BUILDING]: { len: 14, minPx: 6 },
 };
@@ -297,7 +300,11 @@ export class Units {
       const minLen = this.focus ? (look.minPx * dist) / pxPerRad : 0;
       // stand-ins are 1 m long and scale to their kind's length; models are real size and only grow when far away
       // buildings keep their real size: grown to a minimum, a cluster of oil rig parts became a giant star
-      const scale = shape.model ? (k === KIND.BUILDING ? 1 : Math.max(1, minLen / shape.len)) : Math.max(look.len, minLen);
+      let scale;
+      if (look.ref) {                                    // the whole kind grown by one amount (see LOOK)
+        const grow = Math.max(1, minLen / look.ref);
+        scale = shape.model ? grow : look.len * grow;
+      } else scale = shape.model ? (k === KIND.BUILDING ? 1 : Math.max(1, minLen / shape.len)) : Math.max(look.len, minLen);
       const drawnLen = shape.model ? shape.len * scale : scale;
       q.set(st[3], st[4], st[5], st[6]);
       p.set(st[0], y, st[2]);
