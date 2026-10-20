@@ -16,12 +16,12 @@ Status: live for S2 (PvE) since 2026-10-15. Tomo's decisions are in CLAUDE.md ("
 ## How it works
 
 ```
-S2 game host: NOBlackBox writes the match's .acmi as it goes
-     |  read only over SFTP, every second
+PvE box: NOBlackBox writes the match's .acmi into /home/container/tacview as it goes
+     |  read every second, from the same box
      v
-server PC: TacviewReplay\live\live_s2.py (outside this repo) runs tools/live_publish.py
+PvE box: tools/live_runner.py (the systemd user unit nov-live-s2, run by PvE OPs) runs tools/live_publish.py
      |  every 10 s of match time one piece, published only once it is 45 s old
-     v  uploaded over SFTP
+     v  uploaded over ssh (the "vps" alias in ~/.ssh/config)
 OVH VPS: Caddy serves /srv/nov-live/s2 over https
      v
 viewer: ?live=<the VPS>/s2/current.json (or ?live=pve)
@@ -33,8 +33,9 @@ viewer: ?live=<the VPS>/s2/current.json (or ?live=pve)
   own lines for that stretch. The viewer joins the newest contiguous run of pieces (the first whole, the rest after the
   marker) and reads it with the same reader a dropped file goes through, rebuilding as pieces arrive and keeping the
   time, camera, selection, follow and hover. After a feed outage it jumps back to the live moment if you were on it.
-- **PvP never goes out live**: the runner asks the S2 bot's own is_pvp() about every match title and the publisher
-  writes nothing for a PvP match. The runner refuses any server folder but S2.
+- **PvP never goes out live**: the runner reads the bot's PVP_MISSIONS list out of its file (--pvp-list; the bot is
+  never imported or run) and the publisher writes nothing for a mission on it. If the list can't be read, nothing goes
+  out. Only the S2 feed exists.
 - **Restarts are safe**: piece names come from their place in the match, so a restarted publisher rebuilds the same
   bytes under the same names. Catching up on a long match skips pieces that can't be shown (a 3 h, 610 MB recording
   catches up in about 20 s).

@@ -50,9 +50,11 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   the viewer plays 15 s behind the newest piece. In the player it just says LIVE, no delay wording (Tomo).
 - **Hosting:** his OVH VPS (Caddy) serves the pieces. Pieces are deleted about 10 minutes after the match ends; replays
   still go out as the GitHub release.
-- **Where it runs:** this repo has the publisher (tools/live_publish.py) and the viewer side (src/live.js). The S2
-  runner that reads the game host and uploads to the VPS lives outside the repo, on the server PC
-  (TacviewReplay\live\live_s2.py, scheduled task "NukeOption Live Feed S2"). Design and format: docs/live-viewer.md.
+- **Where it runs:** this repo has the publisher (tools/live_publish.py), its runner (tools/live_runner.py) and the
+  viewer side (src/live.js). Since 2026-10-17 the runner runs on the PvE box as the systemd user unit `nov-live-s2`,
+  owned by PvE OPs, from a copy pinned to a commit; a code change reaches it only when PvE OPs re-pins it. The
+  pieces are served from the VPS folder /srv/nov-live/s2 (ours). Design and format: docs/live-viewer.md; the shared
+  drive page how-it-works/viewer-and-live-feed.md.
 
 ## Plan (approved)
 
