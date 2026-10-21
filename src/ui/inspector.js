@@ -102,23 +102,36 @@ export class Inspector {
     if (Number.isFinite(thr)) lines.push(["THR", fmt(thr * 100, 0) + " %"]);
     const gear = rp.channelAt(CH.LandingGear, i, t);
     if (Number.isFinite(gear)) lines.push(["GEAR", gear > 0.5 ? "DOWN" : "UP"]);
-    const lock = lockedTarget(rp, i, t, this.byId);
-    if (lock >= 0) lines.push(["LOCK", labelOf(o, lock)]);
-    this.rows.innerHTML = lines.map(([a, b]) => `<div class="row"><span class="lbl">${a} :</span> <span>${esc(b)}</span></div>`).join("");
+    // what it has locked (Tomo: "Lock/s"), shown for every selected unit: the recorded LockedTarget list. On an aircraft
+    // that is its picked or planned targets, on a missile the target it's guiding to.
+    lines.push(["LOCK/S", lockList(o, lockedTargets(rp, i, t, this.byId))]);
+    // the lock list can be long: it gets a whole line of its own, and wraps
+    this.rows.innerHTML = lines.map(([a, b]) =>
+      `<div class="row${a === "LOCK/S" ? " wide" : ""}"><span class="lbl">${a} :</span> <span>${esc(b)}</span></div>`).join("");
   }
 }
 
-// the unit's primary radar lock at t, as a record index (or -1)
-function lockedTarget(rp, i, t, byId) {
-  const L = rp.locks, n = L.count[i];
-  if (!n) return -1;
-  const a = L.start[i];
-  let id = 0;
-  for (let q = a; q < a + n && L.t[q] <= t; q++) if (L.slot[q] === 0) id = L.target[q];
-  if (!id) return -1;
-  // the record carrying that id at time t
-  for (const r of byId.get(id) || []) if (rp.alive(r, t)) return r;
-  return -1;
+// every target in the unit's recorded lock list at t, as record indices (one per slot, so a unit can be there twice)
+function lockedTargets(rp, i, t, byId) {
+  const L = rp.locks, n = L.count[i], out = [];
+  if (!n) return out;
+  const a = L.start[i], ids = new Float64Array(10);
+  for (let q = a; q < a + n && L.t[q] <= t; q++) ids[L.slot[q]] = L.target[q];
+  for (const id of ids) {
+    if (!id) continue;
+    // the record carrying that id at time t
+    for (const r of byId.get(id) || []) if (rp.alive(r, t)) { out.push(r); break; }
+  }
+  return out;
+}
+
+// "NAME, NAME x2" for up to three names, then how many more
+function lockList(o, recs) {
+  if (!recs.length) return "NONE";
+  const count = new Map();
+  for (const r of recs) { const name = labelOf(o, r); count.set(name, (count.get(name) || 0) + 1); }
+  const names = [...count].map(([name, n]) => (n > 1 ? `${name} x${n}` : name));
+  return names.length > 3 ? names.slice(0, 3).join(", ") + ` +${names.length - 3} MORE` : names.join(", ");
 }
 
 function fmt(v, d) { return Number.isFinite(v) ? v.toLocaleString("en-GB", { maximumFractionDigits: d, minimumFractionDigits: d }) : "0"; }

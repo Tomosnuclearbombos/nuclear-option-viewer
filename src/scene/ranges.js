@@ -65,7 +65,7 @@ function sphereGeometry() {
 function coneGeometry(half) {
   const end = new THREE.SphereGeometry(1, 32, 6, 0, Math.PI * 2, 0, half).rotateX(-Math.PI / 2);
   const len = Math.cos(half), r = Math.sin(half);
-  const side = new THREE.ConeGeometry(r, len, 32, 1, true).rotateX(-Math.PI / 2).translate(0, 0, -len / 2);
+  const side = new THREE.ConeGeometry(r, len, 32, 1, true).rotateX(Math.PI / 2).translate(0, 0, -len / 2);   // point at the nose
   const g = new THREE.BufferGeometry();
   const parts = [end.toNonIndexed(), side.toNonIndexed()];
   for (const name of ["position", "normal"]) {
@@ -84,6 +84,8 @@ export class Ranges {
     this.on = false;
     this.show = { planes: true, ships: true, ground: true, stationary: true };
     this.sightGround = false;  // ground units and buildings without a radar (their range is only how far they see)
+    this.onlySelected = false; // just the selected unit's range, whatever it is (the filters don't apply to it)
+    this.selected = -1;        // record index of the selected unit
     this.group = new THREE.Group();
     this.group.visible = false;
     scene.add(this.group);
@@ -144,7 +146,7 @@ export class Ranges {
     for (const { mesh, units, turns } of this.meshes) {
       let n = 0;
       for (const u of units) {
-        if (!this.show[u.group] || (u.sight && !this.sightGround)) continue;
+        if (this.onlySelected ? u.i !== this.selected : !this.show[u.group] || (u.sight && !this.sightGround)) continue;
         if (!rp.alive(u.i, t) || !rp.visibleAt(u.i, t) || !rp.poseAt(u.i, t, st)) continue;
         p.set(st[0], st[1], st[2]);
         if (turns) q.set(st[3], st[4], st[5], st[6]); else q.identity();

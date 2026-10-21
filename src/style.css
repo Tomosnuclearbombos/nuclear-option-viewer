@@ -264,6 +264,7 @@ header#top > * { pointer-events: auto; }
   scrollbar-color: var(--green-faint) transparent; scrollbar-width: thin;
 }
 .insp-rows .row { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.insp-rows .row.wide { grid-column: 1 / -1; white-space: normal; }
 .insp-keys { display: flex; gap: 6px; flex-wrap: wrap; }
 
 @media (max-width: 900px) {

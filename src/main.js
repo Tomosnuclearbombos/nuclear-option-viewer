@@ -179,6 +179,7 @@ function showLength(rp) {
 function select(i) {
   state.sel = i;
   units.selected = i;
+  if (ranges) ranges.selected = i;
   overlay.selected = i;
   overlay.relative = -1;
   trails.selected = i;
@@ -485,6 +486,7 @@ function applySetting(key, value) {
     case "rangeGround": ranges.show.ground = on; break;
     case "rangeStationary": ranges.show.stationary = on; break;
     case "rangeSight": ranges.sightGround = on; break;
+    case "rangeSelected": ranges.onlySelected = on; break;
   }
 }
 // the camera sliders, while a replay is on screen and the setting is on. A phone has no room for them and the unit
@@ -660,7 +662,7 @@ function swapReplay(replay) {
   };
   const sel = find(selId), fol = find(folId);
   if (sel >= 0) select(sel);
-  else { state.sel = -1; units.selected = -1; overlay.selected = -1; trails.selected = -1; }
+  else { state.sel = -1; units.selected = -1; overlay.selected = -1; trails.selected = -1; ranges.selected = -1; }
   if (fol >= 0) {
     cameraMan.follow = fol;        // straight in, so the camera doesn't let go and catch the unit again
     viewer.following = true;

@@ -18,6 +18,7 @@ export const SETTINGS = {
   rangeGround: ["on", "off"],              // ground units that move,
   rangeStationary: ["on", "off"],          // and ground units and buildings that stay put
   rangeSight: ["off", "on"],               // ground units and buildings without a radar (their sight range)
+  rangeSelected: ["off", "on"],            // only the selected unit's range
   resolution: ["full", "high", "low"],
   fps: ["max", "60", "30"],
   smooth: ["on", "off"],
