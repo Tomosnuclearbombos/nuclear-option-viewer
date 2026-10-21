@@ -17,6 +17,7 @@ export const SETTINGS = {
   rangeShips: ["on", "off"],               // ships,
   rangeGround: ["on", "off"],              // ground units that move,
   rangeStationary: ["on", "off"],          // and ground units and buildings that stay put
+  rangeSight: ["off", "on"],               // ground units and buildings without a radar (their sight range)
   resolution: ["full", "high", "low"],
   fps: ["max", "60", "30"],
   smooth: ["on", "off"],

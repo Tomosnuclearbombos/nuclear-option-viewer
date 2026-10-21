@@ -215,7 +215,14 @@
           <button class="key small" type="button" data-toggle="rangeStationary">STATIONARY</button>
         </div>
       </div>
-      <p class="set-note prose">How far each unit's radar reaches, or how far it can see if it has no radar. Planes get a cone, as their radar only looks ahead. In the game, hills, the curve of the earth and flying low cut it shorter, and big targets are seen further.</p>
+      <div class="set-row" data-set="rangeSight" role="group" aria-label="Ground units without a radar">
+        <span class="set-lbl">GROUND WITHOUT RADAR</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="on">ON</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <p class="set-note prose">How far each unit's radar reaches, or how far it can see if it has no radar. Planes get a cone, as their radar only looks ahead. Ground units without a radar are hidden unless you turn them on. In the game, hills, the curve of the earth and flying low cut it shorter, and big targets are seen further.</p>
     </div>
     <div class="set-group">
       <h3 class="set-head">GRAPHICS</h3>

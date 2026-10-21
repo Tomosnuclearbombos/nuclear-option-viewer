@@ -5,7 +5,8 @@
 // The ranges are the game's own (src/data/ranges.js, from the game's data). The recorder's table has gaps and a few
 // wrong values, so the recording's EngagementRange is only used for a unit that isn't in ours. They are nominal ranges:
 // in the game, hills, the curve of the earth and a target flying low all cut detection shorter, and a big target is
-// seen out to twice the range (Game expert, 2026-10-20).
+// seen out to twice the range (Game expert, 2026-10-20). Ground units and buildings without a radar are left out unless
+// asked for (sightGround): there can be hundreds of them, each with a small sight range.
 
 import * as THREE from "three";
 import { KIND } from "../parser/acmi.js";
@@ -35,27 +36,21 @@ const vertex = /* glsl */ `
 const fragment = /* glsl */ `
   #include <common>
   #include <logdepthbuf_pars_fragment>
-  uniform float uGrid;       // 1: draw lines of latitude and longitude on it (domes)
+  uniform float uRing;       // 1: a dome, with a crisp ring where it meets the ground
   varying vec3 vLocal;
   varying vec3 vColor;
   varying float vFacing;
-  // 1 on a line every 'step' radians of angle a, about a pixel wide whatever the size on screen
-  float lines(float a, float step) {
-    float d = abs(fract(a / step + 0.5) - 0.5) * step;
-    return 1.0 - smoothstep(0.0, fwidth(a) * 1.2, d);
-  }
   void main() {
     #include <logdepthbuf_fragment>
-    // A very faint skin, a little stronger towards its outline: many domes overlap (a base can have hundreds of units),
-    // so the fill has to stay see-through when stacked, and the lines carry the shape.
-    float a = 0.012 + 0.12 * pow(1.0 - vFacing, 4.0);
-    if (uGrid > 0.5) {
-      vec3 p = normalize(vLocal);
-      float lat = asin(clamp(p.y, -1.0, 1.0)), lon = atan(p.z, p.x);
-      float grid = max(lines(lat, PI / 6.0), lines(lon, PI / 6.0) * (1.0 - smoothstep(1.2, 1.5, lat)));
-      a += 0.16 * grid + 0.45 * (1.0 - smoothstep(0.0, fwidth(lat) * 2.0, lat));   // and a ring on the ground
-    } else a += 0.03;
-    gl_FragColor = vec4(vColor, min(a, 0.7));
+    // Many domes overlap (a base can have dozens), so each is a clear bubble: an almost invisible skin, a soft outline
+    // where it curves away, and its range as one crisp ring on the ground. No lines across the surface: their spacing
+    // differs with every dome's size, and stacked they turned into a mesh.
+    float a = 0.01 + 0.2 * pow(1.0 - vFacing, 5.0);
+    if (uRing > 0.5) {
+      float lat = asin(clamp(normalize(vLocal).y, -1.0, 1.0));
+      a += 0.6 * (1.0 - smoothstep(fwidth(lat) * 1.0, fwidth(lat) * 2.5, lat));
+    }
+    gl_FragColor = vec4(vColor, min(a, 0.75));
   }`;
 
 // a dome of radius 1 over the ground plane
@@ -88,10 +83,11 @@ export class Ranges {
     this.scene = scene;
     this.on = false;
     this.show = { planes: true, ships: true, ground: true, stationary: true };
+    this.sightGround = false;  // ground units and buildings without a radar (their range is only how far they see)
     this.group = new THREE.Group();
     this.group.visible = false;
     scene.add(this.group);
-    this.meshes = [];          // { mesh, units: [{ i, r, group }] }
+    this.meshes = [];          // { mesh, units: [{ i, r, group, sight }] }
     this.pos = new Float64Array(7);
     this._m = new THREE.Matrix4(); this._q = new THREE.Quaternion(); this._p = new THREE.Vector3(); this._s = new THREE.Vector3();
   }
@@ -120,14 +116,15 @@ export class Ranges {
       const cone = air && known && known.radar > 0 ? known.cone || 180 : 180;
       const shape = !air ? "dome" : cone >= 180 ? "sphere" : "cone:" + cone;
       if (!byShape.has(shape)) byShape.set(shape, []);
-      byShape.get(shape).push({ i, r, group });
+      const radar = !!(known && known.radar > 0);
+      byShape.get(shape).push({ i, r, group, sight: !radar && (group === "ground" || group === "stationary") });
     }
     for (const [shape, list] of byShape) {
       const geometry = shape === "dome" ? domeGeometry() : shape === "sphere" ? sphereGeometry()
         : coneGeometry((Number(shape.slice(5)) * Math.PI) / 180);
       const material = new THREE.ShaderMaterial({
         vertexShader: vertex, fragmentShader: fragment, transparent: true, depthWrite: false, side: THREE.DoubleSide,
-        uniforms: { uGrid: { value: shape === "dome" ? 1 : 0 } },
+        uniforms: { uRing: { value: shape === "dome" ? 1 : 0 } },
       });
       const mesh = new THREE.InstancedMesh(geometry, material, list.length);
       mesh.setColorAt(0, SIDE.neutral);   // makes the colour attribute
@@ -147,7 +144,8 @@ export class Ranges {
     for (const { mesh, units, turns } of this.meshes) {
       let n = 0;
       for (const u of units) {
-        if (!this.show[u.group] || !rp.alive(u.i, t) || !rp.visibleAt(u.i, t) || !rp.poseAt(u.i, t, st)) continue;
+        if (!this.show[u.group] || (u.sight && !this.sightGround)) continue;
+        if (!rp.alive(u.i, t) || !rp.visibleAt(u.i, t) || !rp.poseAt(u.i, t, st)) continue;
         p.set(st[0], st[1], st[2]);
         if (turns) q.set(st[3], st[4], st[5], st[6]); else q.identity();
         s.set(u.r, u.r, u.r);

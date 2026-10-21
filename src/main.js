@@ -484,6 +484,7 @@ function applySetting(key, value) {
     case "rangeShips": ranges.show.ships = on; break;
     case "rangeGround": ranges.show.ground = on; break;
     case "rangeStationary": ranges.show.stationary = on; break;
+    case "rangeSight": ranges.sightGround = on; break;
   }
 }
 // the camera sliders, while a replay is on screen and the setting is on. A phone has no room for them and the unit
