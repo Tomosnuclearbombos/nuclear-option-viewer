@@ -10,6 +10,7 @@ import { ModelLibrary } from "./scene/models.js";
 import { Scenery } from "./scene/scenery.js";
 import { Blasts } from "./scene/blasts.js";
 import { Ranges } from "./scene/ranges.js";
+import { LockLines } from "./scene/locks.js";
 import { Replay } from "./replay.js";
 import { KIND } from "./parser/acmi.js";
 import { Timeline } from "./ui/timeline.js";
@@ -33,7 +34,7 @@ const smoothInUse = settings.smooth === "on";
 
 // ---- 3D view (needs WebGL 2) -------------------------------------------------------------------------------
 let viewer = null, ground = null, scenery = null, blasts = null, units = null, trails = null, overlay = null, cameraMan = null;
-let ranges = null;
+let ranges = null, lockLines = null;
 let camSliders = null;
 try {
   viewer = new Viewer($("view"), { antialias: smoothInUse });
@@ -42,6 +43,7 @@ try {
   units = new Units(viewer.scene);
   blasts = new Blasts(viewer.scene);
   ranges = new Ranges(viewer.scene);
+  lockLines = new LockLines(viewer.scene);
   trails = new Trails(viewer.scene);
   overlay = new Overlay($("overlay"));
   cameraMan = new CameraMan(viewer);
@@ -145,6 +147,7 @@ function start(replay, fileName, opts = {}) {
   units.setReplay(replay);
   blasts.setReplay(replay, replay.maxAlive[KIND.EXPLOSION]);
   ranges.setReplay(replay);
+  lockLines.setReplay(replay);
   trails.setReplay(replay);
   timeline.setReplay(replay, state.base);
   unitList.setReplay(replay, state.base);
@@ -273,6 +276,7 @@ if (viewer) viewer.onFrame = (now) => {
   if (settings.effects === "on") blasts.update(rp, t, units.booms, units.nBooms, viewer.camera, viewer.height);
   else if (blasts.mesh) blasts.mesh.count = 0;
   ranges.update(t);
+  lockLines.update(t, settings.lockLines, state.sel);
   overlay.project(units.live, viewer.camera);
   trails.update(t, units.live, viewer.groundAt);
   overlay.draw(rp, hoverInfo, rangeInfo, t);
@@ -398,9 +402,6 @@ function toggleLabels() { settingsPanel.set("labels", overlay.showLabels ? "off"
 function toggleTrails() { settingsPanel.set("trails", trails.showTrails ? "off" : "on"); }
 function toggleCurtains() { settingsPanel.set("curtains", trails.showCurtains ? "off" : "on"); }
 $("units-btn").addEventListener("click", () => toggleUnits());
-$("labels-btn").addEventListener("click", () => toggleLabels());
-$("trails-btn").addEventListener("click", () => toggleTrails());
-$("curtains-btn").addEventListener("click", () => toggleCurtains());
 setKey($("units-btn"), false);
 
 // A bigger UI size can give the top keys and the transport bar another row on a phone, and makes the mission plate and
@@ -419,11 +420,12 @@ const GYRO_SAYS = {
   denied: "The phone didn't let the viewer read its motion sensor.",
   none: "This device didn't send any motion sensor readings.",
 };
-if (viewer && window.matchMedia("(pointer: coarse)").matches && "DeviceOrientationEvent" in window) $("gyro-btn").hidden = false;
+if (viewer && window.matchMedia("(pointer: coarse)").matches && "DeviceOrientationEvent" in window) $("gyro-row").hidden = false;
 $("gyro-btn").addEventListener("click", async () => {
   const on = !cameraMan.gyro;
   const result = await cameraMan.setGyro(on);
   setKey($("gyro-btn"), cameraMan.gyro);
+  $("gyro-btn").textContent = cameraMan.gyro ? "ON" : "OFF";
   if (result !== "ok") showToast(GYRO_SAYS[result] || GYRO_SAYS.none);
 });
 
@@ -476,9 +478,9 @@ function applySetting(key, value) {
       break;
     case "scenery": scenery.setShown(on && settings.map !== "empty"); break;
     case "effects": units.effects = on; break;
-    case "labels": overlay.showLabels = on; setKey($("labels-btn"), on); break;
-    case "trails": trails.showTrails = on; setKey($("trails-btn"), on); break;
-    case "curtains": trails.showCurtains = on; setKey($("curtains-btn"), on); break;
+    case "labels": overlay.showLabels = on; break;
+    case "trails": trails.showTrails = on; break;
+    case "curtains": trails.showCurtains = on; break;
     case "sliders": showCamSliders(); break;
     case "ranges": ranges.on = on; break;
     case "rangePlanes": ranges.show.planes = on; break;
@@ -648,6 +650,7 @@ function swapReplay(replay) {
   if (keepModels) units.setModels(replay, keepModels);   // no flash of the simple shapes while new names load
   blasts.setReplay(replay, replay.maxAlive[KIND.EXPLOSION]);
   ranges.setReplay(replay);
+  lockLines.setReplay(replay);
   trails.setReplay(replay);
   timeline.setReplay(replay, state.base);
   unitList.setReplay(replay, state.base);
@@ -745,4 +748,4 @@ else if (q.get("replay")) {
     .catch((e) => showStartError("Couldn't fetch that replay: " + e.message));
 }
 
-window.nov = { viewer, ground, scenery, blasts, ranges, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, select, follow };
+window.nov = { viewer, ground, scenery, blasts, ranges, lockLines, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, select, follow };

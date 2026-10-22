@@ -40,10 +40,6 @@
     </section>
     <nav class="top-keys" aria-label="View">
       <button id="units-btn" class="key" type="button" aria-pressed="false" title="Unit list (U)">UNITS</button>
-      <button id="labels-btn" class="key" type="button" aria-pressed="true" title="Labels (L)">LABELS</button>
-      <button id="trails-btn" class="key" type="button" aria-pressed="true" title="Trails (T)">TRAILS</button>
-      <button id="curtains-btn" class="key off" type="button" aria-pressed="false" title="Altitude curtains (C)">CURTAINS</button>
-      <button id="gyro-btn" class="key off" type="button" aria-pressed="false" title="Turn the phone to look around" hidden>GYRO</button>
       <button id="settings-btn" class="key" type="button" aria-expanded="false" aria-controls="settings" title="Settings">SETTINGS</button>
       <button id="keys-btn" class="key" type="button" aria-expanded="false" aria-controls="keys" title="Controls (?)">KEYS</button>
       <label class="key">OPEN REPLAY<input id="file" type="file" accept=".acmi,.zip,.gz,application/zip"></label>
@@ -154,6 +150,47 @@
 
   <section id="settings" class="plate keys-panel settings-panel" hidden aria-label="Settings">
     <h2 class="panel-title">SETTINGS</h2>
+    <div class="set-group">
+      <div class="set-row" data-set="labels" role="group" aria-label="Labels">
+        <span class="set-lbl">LABELS</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="on">ON</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <div class="set-row" data-set="trails" role="group" aria-label="Trails">
+        <span class="set-lbl">TRAILS</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="on">ON</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <div class="set-row" data-set="curtains" role="group" aria-label="Altitude curtains">
+        <span class="set-lbl">CURTAINS</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="on">ON</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <div class="set-row" id="gyro-row" role="group" aria-label="Gyro" hidden>
+        <span class="set-lbl">GYRO</span>
+        <div class="set-opts">
+          <button id="gyro-btn" class="key small off" type="button" aria-pressed="false" title="Turn the phone to look around">OFF</button>
+        </div>
+      </div>
+      <p class="set-note prose">On a keyboard, L, T and C switch labels, trails and curtains too. The gyro turns the view as you turn the phone.</p>
+    </div>
+    <div class="set-group">
+      <div class="set-row" data-set="lockLines" role="group" aria-label="Lock lines">
+        <span class="set-lbl">LOCK LINES</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="selected">SELECTED</button>
+          <button class="key small" type="button" data-val="all">ALL</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <p class="set-note prose">A line from a unit to everything in its LOCK/S list: a missile to the target it's flying at, a plane to the targets its pilot picked. Selected shows the lines of the unit you've picked, all shows everyone's.</p>
+    </div>
     <div class="set-group">
       <div class="set-row" data-set="map" role="group" aria-label="Map">
         <span class="set-lbl">MAP</span>

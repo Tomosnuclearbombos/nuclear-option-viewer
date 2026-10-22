@@ -3,6 +3,7 @@
 
 import { KIND, CHANNELS } from "../parser/acmi.js";
 import { labelOf, callSignOf } from "../scene/overlay.js";
+import { lockedTargets } from "../scene/locks.js";
 
 const CH = Object.fromEntries(CHANNELS.map((n, i) => [n, i]));
 const SIDE_NAME = { Boscali: "BDF", Primeva: "PALA" };
@@ -109,20 +110,6 @@ export class Inspector {
     this.rows.innerHTML = lines.map(([a, b]) =>
       `<div class="row${a === "LOCK/S" ? " wide" : ""}"><span class="lbl">${a} :</span> <span>${esc(b)}</span></div>`).join("");
   }
-}
-
-// every target in the unit's recorded lock list at t, as record indices (one per slot, so a unit can be there twice)
-function lockedTargets(rp, i, t, byId) {
-  const L = rp.locks, n = L.count[i], out = [];
-  if (!n) return out;
-  const a = L.start[i], ids = new Float64Array(10);
-  for (let q = a; q < a + n && L.t[q] <= t; q++) ids[L.slot[q]] = L.target[q];
-  for (const id of ids) {
-    if (!id) continue;
-    // the record carrying that id at time t
-    for (const r of byId.get(id) || []) if (rp.alive(r, t)) { out.push(r); break; }
-  }
-  return out;
 }
 
 // "NAME, NAME x2" for up to three names, then how many more

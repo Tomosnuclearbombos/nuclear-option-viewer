@@ -12,6 +12,7 @@ export const SETTINGS = {
   units: ["focus", "real"],
   ui: ["100", "80", "90", "120", "140"],   // size of the panels and keys, in percent
   sliders: ["off", "on"],                  // the camera sliders over the view
+  lockLines: ["selected", "all", "off"],   // lines from units to what they have locked
   ranges: ["off", "on"],                   // radar and sight range domes
   rangePlanes: ["on", "off"],              // ... for planes and helicopters,
   rangeShips: ["on", "off"],               // ships,
