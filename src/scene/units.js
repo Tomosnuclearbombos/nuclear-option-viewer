@@ -36,7 +36,7 @@ const LOOK = {
   [KIND.MISSILE]: { len: 4, minPx: 10 },
   [KIND.BOMB]: { len: 3, minPx: 8 },
   [KIND.SHELL]: { len: 1.5, minPx: 5 },
-  [KIND.SHIP]: { len: 120, minPx: 28, ref: 80 },   // a corvette keeps its old focus size
+  [KIND.SHIP]: { len: 120, minPx: 20, ref: 80 },   // a 77 m corvette about 20 px long when far away (Tomo: a little smaller)
   [KIND.GROUND]: { len: 8, minPx: 10 },
   [KIND.BUILDING]: { len: 14, minPx: 6 },
 };
