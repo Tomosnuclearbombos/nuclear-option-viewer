@@ -1,14 +1,16 @@
-// Lock lines: a line from a unit to each target in its recorded lock list (LOCK/S in its panel), in the unit's side
-// colour. For a missile that is the target it's guiding to. For an aircraft it is the recorder's LockedTarget list,
-// which is a player's picked targets or an AI's planned shots, not a radar lock (Game expert, 2026-10-20), and older
-// recordings only hold it when two or more are picked.
+// Lock lines: a line from a unit to each target in its recorded lock list (LOCK/S in its panel), in colours of their
+// own, apart from the side colours (Tomo, 10-22): red from a missile or bomb, white from an aircraft. For a missile
+// that is the target it's guiding to. For an aircraft it is the recorder's LockedTarget list, which is a player's
+// picked targets or an AI's planned shots, not a radar lock (Game expert, 2026-10-20), and older recordings only hold
+// it when two or more are picked.
 //
 // Drawn over everything (no depth test), so a line to a target behind a hill still shows.
 
 import * as THREE from "three";
-import { SIDE } from "./units.js";
+import { KIND } from "../parser/acmi.js";
 
-const SLOTS = 10;   // LockedTarget, LockedTarget1..9
+const WEAPON = new THREE.Color("#ff3b30");   // a missile or bomb to the target it's flying at
+const PICKED = new THREE.Color("#ffffff");   // an aircraft to its targets
 
 // every target in unit i's recorded lock list at time t, as record indices (one per slot, so a target can be there
 // twice). byId maps a recorded id to its records (ids are reused after a unit is removed).
@@ -88,7 +90,7 @@ export class LockLines {
       if (!rp.alive(i, t) || !rp.poseAt(i, t, this.a)) return;
       const targets = lockedTargets(rp, i, t, this.byId, this.targets);
       if (!targets.length) return;
-      const c = SIDE[rp.sideAt(i, t)] || SIDE.neutral;
+      const k = rp.o.kind[i], c = k === KIND.MISSILE || k === KIND.BOMB ? WEAPON : PICKED;
       for (const r of targets) {
         if (!rp.poseAt(r, t, this.b)) continue;
         if (n >= this.cap) { this.full = true; return; }
