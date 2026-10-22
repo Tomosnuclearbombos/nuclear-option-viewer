@@ -26,17 +26,18 @@ export const SELECTED = {
   neutral: new THREE.Color("#ffffff"),
 };
 
-// real length in metres (stand-ins only) and minimum on-screen length in pixels, per kind. With ref, the kind grows as
-// one: a ship ref metres long is kept minPx long and every other ship is grown by the same amount, so far away they
-// stay in proportion (a 30 m patrol boat stays well under half a 77 m corvette) instead of all being drawn the same
-// length.
+// real length in metres (stand-ins only) and minimum on-screen length in pixels, per kind. With ref, the kind keeps its
+// order of size when far away: a ship ref metres long is kept minPx long, and another by the square root of how much
+// longer or shorter it is (a 30 m patrol boat 0.6 of a corvette, a 162 m destroyer 1.4, a 267 m carrier 1.8). Grown by
+// one amount for all, a ship's bulk went with the square of its length: a destroyer and a carrier in formation became
+// one huge shape next to tiny corvettes (Tomo, 10-22: "the dynamo is huge and exponentially bigger than the shard").
 const LOOK = {
   [KIND.PLANE]: { len: 16, minPx: 24 },
   [KIND.HELI]: { len: 15, minPx: 22 },
   [KIND.MISSILE]: { len: 4, minPx: 10 },
   [KIND.BOMB]: { len: 3, minPx: 8 },
   [KIND.SHELL]: { len: 1.5, minPx: 5 },
-  [KIND.SHIP]: { len: 120, minPx: 20, ref: 80 },   // a 77 m corvette about 20 px long when far away (Tomo: a little smaller)
+  [KIND.SHIP]: { len: 120, minPx: 20, ref: 80 },   // a 77 m corvette about 20 px long when far away
   [KIND.GROUND]: { len: 8, minPx: 10 },
   [KIND.BUILDING]: { len: 14, minPx: 6 },
 };
@@ -301,8 +302,9 @@ export class Units {
       // stand-ins are 1 m long and scale to their kind's length; models are real size and only grow when far away
       // buildings keep their real size: grown to a minimum, a cluster of oil rig parts became a giant star
       let scale;
-      if (look.ref) {                                    // the whole kind grown by one amount (see LOOK)
-        const grow = Math.max(1, minLen / look.ref);
+      if (look.ref) {                                    // in order of size, the differences squeezed (see LOOK)
+        const len = shape.model ? shape.len : look.len;
+        const grow = Math.max(1, (minLen * Math.sqrt(len / look.ref)) / len);
         scale = shape.model ? grow : look.len * grow;
       } else scale = shape.model ? (k === KIND.BUILDING ? 1 : Math.max(1, minLen / shape.len)) : Math.max(look.len, minLen);
       const drawnLen = shape.model ? shape.len * scale : scale;
