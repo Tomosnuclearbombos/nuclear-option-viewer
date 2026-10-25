@@ -244,6 +244,9 @@ def main():
     ap.add_argument("--no-pvp-check", action="store_true", help="publish every mission (only for a PvE only server)")
     ap.add_argument("--log", help="log file (rotated at 1 MB, 3 kept); default: the console")
     ap.add_argument("--lock", help="lock file, so only one runs (default: next to the log, or none)")
+    ap.add_argument("--delay", type=int, default=45,
+                    help="seconds a piece must be old before it goes out (45; the PvP and vanilla servers use 600)")
+    ap.add_argument("--keep", type=int, default=900, help="seconds of pieces kept for rewinding (900)")
     ap.add_argument("--once", action="store_true", help="one pass, then exit (tests)")
     a = ap.parse_args()
 
@@ -292,9 +295,9 @@ def main():
     else:
         src = lp.LocalDir(a.watch_dir)
         scrub = [a.ssh_host]
-    args = types.SimpleNamespace(watch_dir=a.watch_dir or "the game host (sftp, read only)", out="<web server>:<live folder>", piece=10, delay=45,
-                                 keep=900, poll=1.0, active=180, idle_end=120, switch_quiet=10, cleanup=600,
-                                 once=a.once)
+    args = types.SimpleNamespace(watch_dir=a.watch_dir or "the game host (sftp, read only)",
+                                 out="<web server>:<live folder>", piece=10, delay=a.delay, keep=a.keep, poll=1.0,
+                                 active=180, idle_end=120, switch_quiet=10, cleanup=600, once=a.once)
     lp.run(args, src=src, out=SshOut(a.ssh_host, a.remote_dir), allow=allow, scrub=[x for x in scrub if x])
 
 
