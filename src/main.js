@@ -470,6 +470,7 @@ function applySetting(key, value) {
       });
       break;
     case "units": units.focus = value === "focus"; break;
+    case "focusSize": units.focusScale = value / 100; break;
     case "resolution": viewer.setRenderScale(RESOLUTION[value]); break;
     case "fps": viewer.maxFps = FPS[value]; break;
     case "models":

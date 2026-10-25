@@ -10,6 +10,7 @@ const STORE = "nov.settings.v1";
 export const SETTINGS = {
   map: ["terrain", "tactical", "empty"],
   units: ["focus", "real"],
+  focusSize: ["100", "80", "50", "25"],    // how big focus mode keeps far units, in percent
   ui: ["100", "80", "90", "120", "140"],   // size of the panels and keys, in percent
   sliders: ["off", "on"],                  // the camera sliders over the view
   lockLines: ["selected", "all", "off"],   // lines from units to what they have locked

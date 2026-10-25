@@ -109,6 +109,7 @@ export class Units {
     this.surfaceAt = null;   // (x, sceneZ) -> drawn ground height; ground units are lifted onto it
     this.selected = -1;      // record index drawn in the selected colour
     this.focus = true;       // keep a minimum size on screen (false = real size)
+    this.focusScale = 1;     // how big that minimum is: 1, 0.8, 0.5 or 0.25 (the focus size setting)
     this.modelsOn = true;    // the detailed models (false = the simple shapes, lighter on a slow PC)
     this.effects = true;     // gun round tracers and flares (the effects setting)
     this.modelSet = null;    // the models found for this replay, kept so they can be switched back on
@@ -298,7 +299,7 @@ export class Units {
       const look = LOOK[k];
       const dx = st[0] - cam.x, dy = y - cam.y, dz = st[2] - cam.z;
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      const minLen = this.focus ? (look.minPx * dist) / pxPerRad : 0;
+      const minLen = this.focus ? (look.minPx * this.focusScale * dist) / pxPerRad : 0;
       // stand-ins are 1 m long and scale to their kind's length; models are real size and only grow when far away
       // buildings keep their real size: grown to a minimum, a cluster of oil rig parts became a giant star
       let scale;
