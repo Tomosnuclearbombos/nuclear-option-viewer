@@ -15,6 +15,7 @@ export const SETTINGS = {
   sliders: ["off", "on"],                  // the camera sliders over the view
   lockLines: ["selected", "all", "off"],   // lines from units to what they have locked
   radarLines: ["selected", "all", "off"],  // lines from radars to what they see
+  sightLines: ["selected", "all", "off"],  // lines from units to what they see by eye
   passiveLines: ["selected", "all", "off"], // lines from passive receivers to the radars they pick up
   ranges: ["off", "on"],                   // radar and sight range domes
   rangePlanes: ["on", "off"],              // ... for planes and helicopters,

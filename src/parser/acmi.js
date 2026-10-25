@@ -150,11 +150,12 @@ export class AcmiParser {
     // numeric channels: rec, t, value
     this.ch = CHANNELS.map(() => ({ rec: new Grow(Uint32Array, 1 << 12), t: new Grow(Float32Array, 1 << 12), v: new Grow(Float32Array, 1 << 12) }));
     this.locks = { rec: new Grow(Uint32Array, 1 << 12), t: new Grow(Float32Array, 1 << 12), slot: new Grow(Uint8Array, 1 << 12), target: new Grow(Float64Array, 1 << 12) };
-    // what each radar sees (RadarDetects) and each passive receiver picks up (PassiveTracks): per change, a run of ids
-    // in one shared list (at, n); and which sides' data link has each unit (TrackedBy), per change a sideBit mask.
-    // Written only when they change, an empty value clearing them (agreed 10-25 for the next NOBlackBox build).
+    // what each radar sees (RadarDetects), each unit sees by eye (SightDetects) and each passive receiver picks up
+    // (PassiveTracks): per change, a run of ids in one shared list (at, n); and which sides' data link has each unit
+    // (TrackedBy), per change a sideBit mask. Written only when they change, an empty value clearing them (agreed 10-25
+    // for the next NOBlackBox build; SightDetects 10-26).
     const ids = () => ({ rec: new Grow(Uint32Array, 256), t: new Grow(Float32Array, 256), at: new Grow(Uint32Array, 256), n: new Grow(Uint16Array, 256), ids: new Grow(Float64Array, 256) });
-    this.radarDetects = ids(); this.passiveTracks = ids();
+    this.radarDetects = ids(); this.sightDetects = ids(); this.passiveTracks = ids();
     this.trackedBy = { rec: new Grow(Uint32Array, 256), t: new Grow(Float32Array, 256), sides: new Grow(Uint8Array, 256) };
 
     this.events = [];        // { t, kind, ids:[...], text }
@@ -317,6 +318,7 @@ export class AcmiParser {
       }
       case "Color": this.recColor[r] = decode(b, s, e); return;
       case "RadarDetects": this.idList(this.radarDetects, r, b, s, e); return;
+      case "SightDetects": this.idList(this.sightDetects, r, b, s, e); return;
       case "PassiveTracks": this.idList(this.passiveTracks, r, b, s, e); return;
       case "TrackedBy": this.sides(r, b, s, e); return;
       case "Armed": { const v = readNumber(b, s, e); if (v === v) this.recArmed[r] = v ? 1 : 0; return; }
@@ -509,6 +511,7 @@ export class AcmiParser {
       channels,
       locks,
       radarDetects: idSeries(this.radarDetects, "radarDetects"),
+      sightDetects: idSeries(this.sightDetects, "sightDetects"),
       passiveTracks: idSeries(this.passiveTracks, "passiveTracks"),
       trackedBy: groupByRecord(N, T.rec.done(), { t: T.t.done(), sides: T.sides.done() }, "trackedBy", none),
       events: this.events,
@@ -568,6 +571,6 @@ export function transferables(result) {
     for (const k in o) walk(o[k]);
   };
   walk(result.objects); walk(result.samples); walk(result.channels); walk(result.locks);
-  walk(result.radarDetects); walk(result.passiveTracks); walk(result.trackedBy);
+  walk(result.radarDetects); walk(result.sightDetects); walk(result.passiveTracks); walk(result.trackedBy);
   return [...new Set(out)];
 }

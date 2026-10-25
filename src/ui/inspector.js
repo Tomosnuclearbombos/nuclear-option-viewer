@@ -13,7 +13,7 @@ const KIND_NAME = {
   [KIND.SHELL]: "SHELL", [KIND.SHIP]: "SHIP", [KIND.GROUND]: "GROUND UNIT", [KIND.BUILDING]: "BUILDING",
 };
 const SIDE_CLASS = { Boscali: "bdf", Primeva: "pala" };
-const WIDE = new Set(["LOCK/S", "DATA LINK"]);   // rows with a whole line of their own
+const WIDE = new Set(["LOCK/S", "DATA LINK", "DETECTED BY"]);   // rows with a whole line of their own
 
 export class Inspector {
   constructor(root) {
@@ -27,6 +27,7 @@ export class Inspector {
     this.rp = null;
     this.pos = new Float64Array(7);
     this.last = 0;
+    this.byRadar = []; this.bySight = [];
   }
 
   setReplay(rp) {
@@ -34,10 +35,13 @@ export class Inspector {
     this.show(-1);
     // who destroyed what: the recorder only says "Has been destroyed", so keep its time per unit
     this.destroyedAt = new Map();
-    // records by recorded id (ids are reused after a unit is removed), for naming radar lock targets
-    // the units with a radar list, for counting the enemy radars that see the selected unit
-    this.radars = [];
-    for (let r = 0; r < rp.count; r++) if (rp.radarDetects.count[r]) this.radars.push(r);
+    // the units with a radar or sight list, once per replay: for finding the enemy units that see the selected unit
+    this.radars = []; this.sights = [];
+    for (let r = 0; r < rp.count; r++) {
+      if (rp.radarDetects.count[r]) this.radars.push(r);
+      if (rp.sightDetects.count[r]) this.sights.push(r);
+    }
+    // records by recorded id (ids are reused after a unit is removed), for naming lock targets and reading the lists
     this.byId = new Map();
     for (let r = 0; r < rp.count; r++) {
       const id = rp.o.id[r];
@@ -111,30 +115,54 @@ export class Inspector {
     // what it has locked (Tomo: "Lock/s"), shown for every selected unit: the recorded LockedTarget list. On an aircraft
     // that is its picked or planned targets, on a missile the target it's guiding to.
     lines.push(["LOCK/S", lockList(o, lockedTargets(rp, i, t, this.byId))]);
+    // the enemy units whose radar or eyes have it right now (Tomo, 10-26: "what has detected something")
+    const side = rp.sideAt(i, t);
+    const radar = this.seenBy(this.radars, rp.radarDetects, i, side, t, here, this.byRadar);
+    const sight = this.seenBy(this.sights, rp.sightDetects, i, side, t, here, this.bySight, radar);
     // whether the enemy's data link has it (Tomo, 10-25), when the recording says (TrackedBy) and it's still there
     const tracked = here ? rp.trackedAt(i, t) : -1;
+    const onLink = tracked < 0 || (tracked & ~sideBit(side)) !== 0;   // or the recording doesn't say
     if (tracked >= 0) {
-      const side = rp.sideAt(i, t);
-      if (tracked & ~sideBit(side)) {
-        // and how many enemy radars have it right now (Tomo: "add to detected how many"); sight and passive
-        // detections reach the data link too but aren't counted, so it can say DETECTED with no radars
-        let n = 0;
-        for (const h of this.radars) {
-          if (!rp.alive(h, t) || !rp.visibleAt(h, t) || rp.sideAt(h, t) === side) continue;
-          if (holds(rp, rp.radarDetects, h, i, t, this.byId)) n++;
-        }
-        lines.push(["DATA LINK", n ? `DETECTED (${n} ${n === 1 ? "RADAR" : "RADARS"})` : "DETECTED"]);
+      if (onLink) {
+        // and how many enemy radars and eyes have it (Tomo: "add to detected how many"); passive detections reach
+        // the data link too but aren't counted, so it can say DETECTED with none
+        const n = radar.length, m = sight.length, parts = [];
+        if (n) parts.push(`${n} ${n === 1 ? "RADAR" : "RADARS"}`);
+        if (m) parts.push(`${m} BY SIGHT`);
+        lines.push(["DATA LINK", parts.length ? `DETECTED (${parts.join(", ")})` : "DETECTED"]);
       } else lines.push(["DATA LINK", "NOT DETECTED"]);
     }
-    // the lock list can be long: it gets a whole line of its own, and wraps
+    // and which they are, on recordings with radar or sight lists. Not under NOT DETECTED: each list is its unit's last
+    // full scan, so it can trail the data link by a scan (3 to 5 s on a corvette) when a target drops off.
+    if (onLink && (radar.length || sight.length)) {
+      const parts = [];
+      if (radar.length) parts.push("RADAR: " + nameList(o, radar));
+      if (sight.length) parts.push("SIGHT: " + nameList(o, sight));
+      lines.push(["DETECTED BY", parts.join("; ")]);
+    }
+    // the lock and detection lists can be long: they get a whole line of their own, and wrap
     this.rows.innerHTML = lines.map(([a, b]) =>
-      `<div class="row${WIDE.has(a) ? " wide" : ""}"><span class="lbl">${a} :</span> <span>${esc(b)}</span></div>`).join("");
+      `<div class="row${WIDE.has(a) ? " wide" : ""}${a === "DETECTED BY" ? " by" : ""}"><span class="lbl">${a} :</span> <span>${esc(b)}</span></div>`).join("");
+  }
+
+  // the enemy units among holders (records with a list in series g) whose list has unit i at t, alive and not wrecks;
+  // none when i isn't there. skip: units already counted (by radar), as each list is its own last scan and the two
+  // can both have a target for a moment.
+  seenBy(holders, g, i, side, t, here, out, skip) {
+    out.length = 0;
+    if (!here) return out;
+    const rp = this.rp;
+    for (const h of holders) {
+      if (rp.alive(h, t) && rp.sideAt(h, t) !== side && holds(rp, g, h, i, t, this.byId) && rp.visibleAt(h, t) && !(skip && skip.includes(h))) out.push(h);
+    }
+    return out;
   }
 }
 
+function lockList(o, recs) { return recs.length ? nameList(o, recs) : "NONE"; }
+
 // "NAME, NAME x2" for up to three names, then how many more
-function lockList(o, recs) {
-  if (!recs.length) return "NONE";
+function nameList(o, recs) {
   const count = new Map();
   for (const r of recs) { const name = labelOf(o, r); count.set(name, (count.get(name) || 0) + 1); }
   const names = [...count].map(([name, n]) => (n > 1 ? `${name} x${n}` : name));

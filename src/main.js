@@ -11,7 +11,7 @@ import { Scenery } from "./scene/scenery.js";
 import { Blasts } from "./scene/blasts.js";
 import { Ranges } from "./scene/ranges.js";
 import { LockLines } from "./scene/locks.js";
-import { DetectLines } from "./scene/detects.js";
+import { DetectLines, RADAR, SIGHT, PASSIVE } from "./scene/detects.js";
 import { Replay } from "./replay.js";
 import { KIND } from "./parser/acmi.js";
 import { Timeline } from "./ui/timeline.js";
@@ -35,7 +35,7 @@ const smoothInUse = settings.smooth === "on";
 
 // ---- 3D view (needs WebGL 2) -------------------------------------------------------------------------------
 let viewer = null, ground = null, scenery = null, blasts = null, units = null, trails = null, overlay = null, cameraMan = null;
-let ranges = null, lockLines = null, radarLines = null, passiveLines = null;
+let ranges = null, lockLines = null, radarLines = null, sightLines = null, passiveLines = null;
 let camSliders = null;
 try {
   viewer = new Viewer($("view"), { antialias: smoothInUse });
@@ -45,8 +45,9 @@ try {
   blasts = new Blasts(viewer.scene);
   ranges = new Ranges(viewer.scene);
   lockLines = new LockLines(viewer.scene);
-  radarLines = new DetectLines(viewer.scene, "radarDetects", false, true);
-  passiveLines = new DetectLines(viewer.scene, "passiveTracks", true);
+  radarLines = new DetectLines(viewer.scene, "radarDetects", RADAR, true);
+  sightLines = new DetectLines(viewer.scene, "sightDetects", SIGHT, true);
+  passiveLines = new DetectLines(viewer.scene, "passiveTracks", PASSIVE);
   trails = new Trails(viewer.scene);
   overlay = new Overlay($("overlay"));
   cameraMan = new CameraMan(viewer);
@@ -152,6 +153,7 @@ function start(replay, fileName, opts = {}) {
   ranges.setReplay(replay);
   lockLines.setReplay(replay);
   radarLines.setReplay(replay);
+  sightLines.setReplay(replay);
   passiveLines.setReplay(replay);
   trails.setReplay(replay);
   timeline.setReplay(replay, state.base);
@@ -283,6 +285,7 @@ if (viewer) viewer.onFrame = (now) => {
   ranges.update(t);
   lockLines.update(t, settings.lockLines, state.sel);
   radarLines.update(t, settings.radarLines, state.sel, viewer);
+  sightLines.update(t, settings.sightLines, state.sel, viewer);
   passiveLines.update(t, settings.passiveLines, state.sel, viewer);
   overlay.project(units.live, viewer.camera);
   trails.update(t, units.live, viewer.groundAt);
@@ -660,6 +663,7 @@ function swapReplay(replay) {
   ranges.setReplay(replay);
   lockLines.setReplay(replay);
   radarLines.setReplay(replay);
+  sightLines.setReplay(replay);
   passiveLines.setReplay(replay);
   trails.setReplay(replay);
   timeline.setReplay(replay, state.base);
@@ -762,4 +766,4 @@ else if (q.get("replay")) {
     .catch((e) => showStartError("Couldn't fetch that replay: " + e.message));
 }
 
-window.nov = { viewer, ground, scenery, blasts, ranges, lockLines, radarLines, passiveLines, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, select, follow };
+window.nov = { viewer, ground, scenery, blasts, ranges, lockLines, radarLines, sightLines, passiveLines, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, select, follow };

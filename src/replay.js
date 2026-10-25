@@ -19,6 +19,7 @@ export class Replay {
     this.channels = r.channels;
     this.locks = r.locks;
     this.radarDetects = r.radarDetects;
+    this.sightDetects = r.sightDetects;
     this.passiveTracks = r.passiveTracks;
     this.trackedBy = r.trackedBy;
     this.events = r.events;

@@ -108,12 +108,16 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
 - **Properties:** Name, CallSign, Pilot (player name, only when known), Coalition (Boscali / Primeva), Color, Type,
   TAS, Mach, AOA, AGL, Pitch/Roll/YawControlInput, Throttle, LandingGear, RadarMode, LockedTarget and
   LockedTarget1..9, Visible, Radius, EngagementRange, Debug. EngineRPM may appear in older files.
-- **Detection properties** (agreed with the recorder chat 2026-10-25, coming in the next NOBlackBox build; ids are hex
+- **Detection properties** (agreed with the recorder chat 2026-10-25, NOBlackBox from c37808c666f1; ids are hex
   object ids as in LockedTarget, `;` separated, written only on change, an empty value clears):
   - `RadarDetects=<id>;<id>` on units with a radar: the aircraft and missiles its own radar detects (last full scan).
   - `PassiveTracks=<id>;<id>` on aircraft with a passive receiver: the emitters that pinged it in the last 4 s.
+  - `SightDetects=<id>;<id>` on every unit with eyes (10-26, recorder c37808c666f1): what it sees by eye, minus what
+    its radar found (an id is never in both).
   - `TrackedBy=<Coalition>;<Coalition>` on aircraft, ships and ground vehicles: the sides whose data link has it now.
-  The viewer draws radar lines (magenta) and passive lines (blue dashes) and shows DATA LINK in the unit panel.
+  The viewer draws lock lines red, radar lines lemon yellow solid, sight lines deep orange dotted and passive lines
+  light grey dashed (Tomo's colours, 10-26), with a colour key in Settings; the unit panel shows DATA LINK (n RADARS,
+  m BY SIGHT) and DETECTED BY.
 - **Types seen:**
   - Air+FixedWing / Air+Rotorcraft.
   - Ground+... (Vehicle, Tank, AntiAircraft, Sensor, Static+Building).
