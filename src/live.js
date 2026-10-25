@@ -25,8 +25,15 @@ const STALE_MS = 60000;         // a feed that hasn't changed for this long has 
 export const LIVE_BUFFER_S = 15; // the live moment sits this far behind the newest data, so a new piece is always in time
 const MARK = new TextEncoder().encode("\n// nov-keyframe-end\n");
 
-// the PvE server's feed, for the start page's live key
-export const LIVE_PVE = "https://vps-26413982.vps.ovh.ca/s2/current.json";
+// each server's feed, for the start page's live keys and the short ?live= links. PvE runs about a minute behind with
+// PvP missions kept off it; PvP and vanilla run 10 minutes behind (Tomo, 10-25)
+const LIVE_HOST = "https://vps-26413982.vps.ovh.ca";
+export const LIVE_FEEDS = {
+  pve: { url: LIVE_HOST + "/s2/current.json", name: "PvE" },
+  pvp: { url: LIVE_HOST + "/s1/current.json", name: "PvP" },
+  vanilla: { url: LIVE_HOST + "/s3/current.json", name: "vanilla" },
+};
+export const LIVE_PVE = LIVE_FEEDS.pve.url;
 const FRESH_S = 300;            // a feed not updated for this long has stopped (its publisher is down)
 
 // the title of the match being played on that server right now, or "" when there's none

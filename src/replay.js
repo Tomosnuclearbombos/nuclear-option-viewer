@@ -18,6 +18,9 @@ export class Replay {
     this.s = r.samples;
     this.channels = r.channels;
     this.locks = r.locks;
+    this.radarDetects = r.radarDetects;
+    this.passiveTracks = r.passiveTracks;
+    this.trackedBy = r.trackedBy;
     this.events = r.events;
     const N = this.o.count;
     this.count = N;
@@ -153,6 +156,18 @@ export class Replay {
     const k = search(c.t, start, start + n, t);
     if (c.t[k] > t) return NaN;
     return c.v[k];
+  }
+
+  // the sides whose data link has unit i at t, as a sideBit mask (TrackedBy), or -1 when the recording doesn't say:
+  // it has no TrackedBy at all, or none for this unit and it isn't a kind the recorder writes it for
+  trackedAt(i, t) {
+    const g = this.trackedBy, n = g.count[i];
+    if (!n) {
+      const k = this.o.kind[i];
+      return g.t.length && (k === KIND.PLANE || k === KIND.HELI || k === KIND.SHIP || k === KIND.GROUND) ? 0 : -1;
+    }
+    const k = search(g.t, g.start[i], g.start[i] + n, t);
+    return g.t[k] > t ? 0 : g.sides[k];
   }
 
   // An explosion's shockwave radius at t: the recorded front, joined up between records; before the first record and

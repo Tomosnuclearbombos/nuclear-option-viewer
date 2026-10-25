@@ -11,6 +11,7 @@ import { Scenery } from "./scene/scenery.js";
 import { Blasts } from "./scene/blasts.js";
 import { Ranges } from "./scene/ranges.js";
 import { LockLines } from "./scene/locks.js";
+import { DetectLines } from "./scene/detects.js";
 import { Replay } from "./replay.js";
 import { KIND } from "./parser/acmi.js";
 import { Timeline } from "./ui/timeline.js";
@@ -18,7 +19,7 @@ import { UnitList } from "./ui/unitlist.js";
 import { Inspector } from "./ui/inspector.js";
 import { CameraSliders } from "./ui/camsliders.js";
 import { loadSettings, SettingsPanel, RESOLUTION, FPS } from "./ui/settings.js";
-import { LiveFeed, LIVE_BUFFER_S, LIVE_PVE, liveMatch } from "./live.js";
+import { LiveFeed, LIVE_BUFFER_S, LIVE_PVE, LIVE_FEEDS, liveMatch } from "./live.js";
 import { mapName, duration, missionClock, recorded, speedLabel } from "./ui/format.js";
 
 const $ = (id) => document.getElementById(id);
@@ -34,7 +35,7 @@ const smoothInUse = settings.smooth === "on";
 
 // ---- 3D view (needs WebGL 2) -------------------------------------------------------------------------------
 let viewer = null, ground = null, scenery = null, blasts = null, units = null, trails = null, overlay = null, cameraMan = null;
-let ranges = null, lockLines = null;
+let ranges = null, lockLines = null, radarLines = null, passiveLines = null;
 let camSliders = null;
 try {
   viewer = new Viewer($("view"), { antialias: smoothInUse });
@@ -44,6 +45,8 @@ try {
   blasts = new Blasts(viewer.scene);
   ranges = new Ranges(viewer.scene);
   lockLines = new LockLines(viewer.scene);
+  radarLines = new DetectLines(viewer.scene, "radarDetects", false);
+  passiveLines = new DetectLines(viewer.scene, "passiveTracks", true);
   trails = new Trails(viewer.scene);
   overlay = new Overlay($("overlay"));
   cameraMan = new CameraMan(viewer);
@@ -148,6 +151,8 @@ function start(replay, fileName, opts = {}) {
   blasts.setReplay(replay, replay.maxAlive[KIND.EXPLOSION]);
   ranges.setReplay(replay);
   lockLines.setReplay(replay);
+  radarLines.setReplay(replay);
+  passiveLines.setReplay(replay);
   trails.setReplay(replay);
   timeline.setReplay(replay, state.base);
   unitList.setReplay(replay, state.base);
@@ -277,6 +282,8 @@ if (viewer) viewer.onFrame = (now) => {
   else if (blasts.mesh) blasts.mesh.count = 0;
   ranges.update(t);
   lockLines.update(t, settings.lockLines, state.sel);
+  radarLines.update(t, settings.radarLines, state.sel, viewer);
+  passiveLines.update(t, settings.passiveLines, state.sel, viewer);
   overlay.project(units.live, viewer.camera);
   trails.update(t, units.live, viewer.groundAt);
   overlay.draw(rp, hoverInfo, rangeInfo, t);
@@ -628,7 +635,7 @@ function liveStatus(text, final, feed) {
       stopLive();
       history.replaceState(null, "", location.pathname);
       showStartError(text === "MATCH OVER" ? "That match is over. Its full replay goes up in the Discord #replays channel shortly." : "There's no live match on right now. Try again when one starts.");
-      checkLivePve();
+      checkLiveKeys();
     }
     else if (text !== "LIVE") showProgress(0, text);
     return;
@@ -652,6 +659,8 @@ function swapReplay(replay) {
   blasts.setReplay(replay, replay.maxAlive[KIND.EXPLOSION]);
   ranges.setReplay(replay);
   lockLines.setReplay(replay);
+  radarLines.setReplay(replay);
+  passiveLines.setReplay(replay);
   trails.setReplay(replay);
   timeline.setReplay(replay, state.base);
   unitList.setReplay(replay, state.base);
@@ -710,25 +719,29 @@ $("live").addEventListener("click", () => {
   updateSpeed();
 });
 
-// the start page's key for the PvE server's live match: lit while a match is being played there, grey when not
-// (a browser can hold on to an older index.html for a few minutes after an update, so the key may not be there)
-async function checkLivePve() {
-  const b = $("live-pve");
-  if (!b || state.replay || live) return;
-  const title = await liveMatch(LIVE_PVE);
-  b.disabled = !title;
-  b.classList.toggle("off", !title);
-  b.title = title || "Nothing is being played on the PvE server right now";
+// the start page's keys for each server's live match: lit while a match is being played there, grey when not
+// (a browser can hold on to an older index.html for a few minutes after an update, so a key may not be there)
+async function checkLiveKeys() {
+  if (state.replay || live) return;
+  await Promise.all([...document.querySelectorAll("button[data-feed]")].map(async (b) => {
+    const feed = LIVE_FEEDS[b.dataset.feed];
+    const title = await liveMatch(feed.url);
+    b.disabled = !title;
+    b.classList.toggle("off", !title);
+    b.title = title || `Nothing is being played on the ${feed.name} server right now`;
+  }));
 }
-$("live-pve")?.addEventListener("click", () => {
-  if (live || state.replay) return;
-  history.replaceState(null, "", "?live=" + LIVE_PVE);
-  startLive(LIVE_PVE);
-});
+for (const b of document.querySelectorAll("button[data-feed]")) {
+  b.addEventListener("click", () => {
+    if (live || state.replay) return;
+    history.replaceState(null, "", "?live=" + b.dataset.feed);
+    startLive(LIVE_FEEDS[b.dataset.feed].url);
+  });
+}
 
-// ?live= follows only our own feeds: one on this site, or the PvE server's (?live=pve for short)
+// ?live= follows only our own feeds: one on this site, or a server's (?live=pve, pvp or vanilla for short)
 function liveLink(v) {
-  if (v === "pve") return LIVE_PVE;
+  if (LIVE_FEEDS[v]) return LIVE_FEEDS[v].url;
   try {
     const u = new URL(v, location.href);
     if (/^https?:$/.test(u.protocol) && (u.origin === location.origin || u.origin === new URL(LIVE_PVE).origin)) return u.href;
@@ -739,7 +752,7 @@ function liveLink(v) {
 // for testing: ?replay=<url> opens a file from the site itself
 const q = new URL(location.href).searchParams;
 const liveUrl = q.get("live") ? liveLink(q.get("live")) : "";
-if (!liveUrl && !q.get("replay")) { checkLivePve(); setInterval(checkLivePve, 30000); }
+if (!liveUrl && !q.get("replay")) { checkLiveKeys(); setInterval(checkLiveKeys, 30000); }
 if (liveUrl) startLive(liveUrl);
 else if (q.get("live")) showStartError("That live link doesn't point at our live feed.");
 else if (q.get("replay")) {
@@ -749,4 +762,4 @@ else if (q.get("replay")) {
     .catch((e) => showStartError("Couldn't fetch that replay: " + e.message));
 }
 
-window.nov = { viewer, ground, scenery, blasts, ranges, lockLines, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, select, follow };
+window.nov = { viewer, ground, scenery, blasts, ranges, lockLines, radarLines, passiveLines, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, select, follow };

@@ -44,6 +44,9 @@ const RADIUS_CH = CHANNELS.indexOf("Radius");
 // LockedTarget, LockedTarget1..9 hold object ids; kept as one channel per slot.
 const LOCK_SLOTS = 10;
 
+// TrackedBy names sides; kept per change as a bitmask of these
+export function sideBit(side) { return side === "Boscali" ? 1 : side === "Primeva" ? 2 : side ? 4 : 0; }
+
 // ---- growable typed arrays -------------------------------------------------------------------------------
 class Grow {
   constructor(Type, cap = 1 << 16) { this.Type = Type; this.a = new Type(cap); this.n = 0; }
@@ -147,6 +150,12 @@ export class AcmiParser {
     // numeric channels: rec, t, value
     this.ch = CHANNELS.map(() => ({ rec: new Grow(Uint32Array, 1 << 12), t: new Grow(Float32Array, 1 << 12), v: new Grow(Float32Array, 1 << 12) }));
     this.locks = { rec: new Grow(Uint32Array, 1 << 12), t: new Grow(Float32Array, 1 << 12), slot: new Grow(Uint8Array, 1 << 12), target: new Grow(Float64Array, 1 << 12) };
+    // what each radar sees (RadarDetects) and each passive receiver picks up (PassiveTracks): per change, a run of ids
+    // in one shared list (at, n); and which sides' data link has each unit (TrackedBy), per change a sideBit mask.
+    // Written only when they change, an empty value clearing them (agreed 10-25 for the next NOBlackBox build).
+    const ids = () => ({ rec: new Grow(Uint32Array, 256), t: new Grow(Float32Array, 256), at: new Grow(Uint32Array, 256), n: new Grow(Uint16Array, 256), ids: new Grow(Float64Array, 256) });
+    this.radarDetects = ids(); this.passiveTracks = ids();
+    this.trackedBy = { rec: new Grow(Uint32Array, 256), t: new Grow(Float32Array, 256), sides: new Grow(Uint8Array, 256) };
 
     this.events = [];        // { t, kind, ids:[...], text }
     this.keyCache = new Map();
@@ -307,6 +316,9 @@ export class AcmiParser {
         return;
       }
       case "Color": this.recColor[r] = decode(b, s, e); return;
+      case "RadarDetects": this.idList(this.radarDetects, r, b, s, e); return;
+      case "PassiveTracks": this.idList(this.passiveTracks, r, b, s, e); return;
+      case "TrackedBy": this.sides(r, b, s, e); return;
       case "Armed": { const v = readNumber(b, s, e); if (v === v) this.recArmed[r] = v ? 1 : 0; return; }
       case "EngagementRange": { const v = readNumber(b, s, e); if (v === v) this.recRange[r] = v; return; }
       case "Radius": {
@@ -333,6 +345,27 @@ export class AcmiParser {
       if (v !== v && k === "RadarMode") v = 0;
       if (v === v) { const ch = this.ch[c]; ch.rec.push(r); ch.t.push(this.time); ch.v.push(v); }
     }
+  }
+
+  // "Boscali;Primeva" into the TrackedBy series
+  sides(r, b, s, e) {
+    let m = 0;
+    if (e > s) for (const side of decode(b, s, e).split(";")) m |= sideBit(side.trim());
+    const T = this.trackedBy; T.rec.push(r); T.t.push(this.time); T.sides.push(m);
+  }
+
+  // "<id>;<id>;..." into a list series (empty: the list is now empty)
+  idList(L, r, b, s, e) {
+    L.rec.push(r); L.t.push(this.time); L.at.push(L.ids.n);
+    let n = 0, i = s;
+    while (i < e) {
+      let j = i;
+      while (j < e && b[j] !== 59) j++;   // ';'
+      const id = readHex(b, i, j);
+      if (id > 0) { L.ids.push(id); n++; }
+      i = j + 1;
+    }
+    L.n.push(n);
   }
 
   // T=lon|lat|alt|roll|pitch|yaw|U|V|heading  or  lon|lat|alt|U|V  or  lon|lat|alt
@@ -437,6 +470,14 @@ export class AcmiParser {
     const channels = this.ch.map((c, i) => groupByRecord(N, c.rec.done(), { t: c.t.done(), v: c.v.done() }, CHANNELS[i]));
     const L = this.locks;
     const locks = groupByRecord(N, L.rec.done(), { t: L.t.done(), slot: L.slot.done(), target: L.target.done() }, "locks");
+    // most recordings have none of the radar series: those share one empty start and count
+    const none = new Uint32Array(N);
+    const idSeries = (S, name) => {
+      const g = groupByRecord(N, S.rec.done(), { t: S.t.done(), at: S.at.done(), n: S.n.done() }, name, none);
+      g.ids = S.ids.done();   // in file order: each change's at points into it
+      return g;
+    };
+    const T = this.trackedBy;
 
     return {
       header: this.header,
@@ -467,14 +508,23 @@ export class AcmiParser {
       samples,
       channels,
       locks,
+      radarDetects: idSeries(this.radarDetects, "radarDetects"),
+      passiveTracks: idSeries(this.passiveTracks, "passiveTracks"),
+      trackedBy: groupByRecord(N, T.rec.done(), { t: T.t.done(), sides: T.sides.done() }, "trackedBy", none),
       events: this.events,
     };
   }
 }
 
-// group a (rec, ...) series by record: returns { start, count, ...arrays } with arrays permuted
-function groupByRecord(N, rec, arrays, name) {
+// group a (rec, ...) series by record: returns { start, count, ...arrays } with arrays permuted. none: a zeroed array
+// of N to use as start and count when the series is empty
+function groupByRecord(N, rec, arrays, name, none) {
   const n = rec.length;
+  if (!n && none) {
+    const out = { name, start: none, count: none };
+    for (const k in arrays) out[k] = arrays[k];
+    return out;
+  }
   const count = new Uint32Array(N + 1);
   for (let i = 0; i < n; i++) count[rec[i] + 1]++;
   for (let r = 0; r < N; r++) count[r + 1] += count[r];
@@ -518,5 +568,6 @@ export function transferables(result) {
     for (const k in o) walk(o[k]);
   };
   walk(result.objects); walk(result.samples); walk(result.channels); walk(result.locks);
+  walk(result.radarDetects); walk(result.passiveTracks); walk(result.trackedBy);
   return [...new Set(out)];
 }

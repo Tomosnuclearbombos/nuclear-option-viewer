@@ -43,9 +43,11 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
 ## Live mode (Tomo, 2026-10-15)
 
 - **What:** people watch the match being played, from a link in the S2 new mission Discord alert ("Watch it live,
-  running with a minute delay: <link>") or the start page's LIVE MATCH: PVE SERVER key.
-- **Servers:** S2 (PvE) only. S1 (PvP) maybe later with a 3 to 5 minute delay, or never: his call. PvP must never go out
-  live (fairness).
+  running with a minute delay: <link>") or the start page's PVE SERVER key. From Fri 30 Oct also PVP SERVER (S1) and
+  VANILLA SERVER (S3), both 10 minutes behind (Tomo, 10-25), with PvP shown; short links ?live=pve, pvp, vanilla.
+- **Servers:** S2 (PvE): about a minute behind, PvP missions never go out on it (--pvp-list). S1 (PvP) and S3 (vanilla),
+  Tomo 10-25: 10 minutes behind (--delay 600, --no-pvp-check), the delay being the fairness guard. No feed for the arena
+  server (S4), which doesn't record.
 - **Delay:** about a minute. The publisher holds every piece until it is 45 s old (enforced on the publishing side);
   the viewer plays 15 s behind the newest piece. In the player it just says LIVE, no delay wording (Tomo).
 - **Hosting:** his OVH VPS (Caddy) serves the pieces. Pieces are deleted about 10 minutes after the match ends; replays
@@ -106,6 +108,12 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
 - **Properties:** Name, CallSign, Pilot (player name, only when known), Coalition (Boscali / Primeva), Color, Type,
   TAS, Mach, AOA, AGL, Pitch/Roll/YawControlInput, Throttle, LandingGear, RadarMode, LockedTarget and
   LockedTarget1..9, Visible, Radius, EngagementRange, Debug. EngineRPM may appear in older files.
+- **Detection properties** (agreed with the recorder chat 2026-10-25, coming in the next NOBlackBox build; ids are hex
+  object ids as in LockedTarget, `;` separated, written only on change, an empty value clears):
+  - `RadarDetects=<id>;<id>` on units with a radar: the aircraft and missiles its own radar detects (last full scan).
+  - `PassiveTracks=<id>;<id>` on aircraft with a passive receiver: the emitters that pinged it in the last 4 s.
+  - `TrackedBy=<Coalition>;<Coalition>` on aircraft, ships and ground vehicles: the sides whose data link has it now.
+  The viewer draws radar lines (magenta) and passive lines (blue dashes) and shows DATA LINK in the unit panel.
 - **Types seen:**
   - Air+FixedWing / Air+Rotorcraft.
   - Ground+... (Vehicle, Tank, AntiAircraft, Sensor, Static+Building).

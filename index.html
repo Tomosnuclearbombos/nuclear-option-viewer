@@ -57,7 +57,11 @@
       <label class="key big">CHOOSE REPLAY<input id="file2" type="file" accept=".acmi,.zip,.gz,application/zip"></label>
       <div class="live-row">
         <h2 class="live-head">Tomo's Nukes Live Servers:</h2>
-        <button id="live-pve" class="key big live off" type="button" disabled title="Nothing is being played on the PvE server right now">PVE SERVER</button>
+        <div class="live-keys">
+          <button id="live-pve" class="key big live off" type="button" data-feed="pve" disabled title="Nothing is being played on the PvE server right now">PVE SERVER</button>
+          <button id="live-pvp" class="key big live off" type="button" data-feed="pvp" disabled title="Nothing is being played on the PvP server right now">PVP SERVER</button>
+          <button id="live-vanilla" class="key big live off" type="button" data-feed="vanilla" disabled title="Nothing is being played on the vanilla server right now">VANILLA SERVER</button>
+        </div>
       </div>
       <div class="status">
         <div class="progress" id="progress" hidden>
@@ -190,6 +194,25 @@
         </div>
       </div>
       <p class="set-note prose">A line from a unit to everything in its LOCK/S list: red from a missile to the target it's flying at, white from a plane to the targets its pilot picked. Selected shows the lines of the unit you've picked, all shows everyone's.</p>
+    </div>
+    <div class="set-group">
+      <div class="set-row" data-set="radarLines" role="group" aria-label="Radar lines">
+        <span class="set-lbl">RADAR LINES</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="selected">SELECTED</button>
+          <button class="key small" type="button" data-val="all">ALL</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <div class="set-row" data-set="passiveLines" role="group" aria-label="Passive radar lines">
+        <span class="set-lbl">PASSIVE LINES</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="selected">SELECTED</button>
+          <button class="key small" type="button" data-val="all">ALL</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <p class="set-note prose">Magenta is a radar seeing a target. Blue dashes are a passive receiver picking up a radar. Selected shows the lines to and from the unit you've picked, all shows everyone's.</p>
     </div>
     <div class="set-group">
       <div class="set-row" data-set="map" role="group" aria-label="Map">

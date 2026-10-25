@@ -1,9 +1,10 @@
 // The info panel for the selected unit: who it is and live readouts, in the game's "LABEL : value" style.
 // Units are metric, as in the game: metres, km/h.
 
-import { KIND, CHANNELS } from "../parser/acmi.js";
+import { KIND, CHANNELS, sideBit } from "../parser/acmi.js";
 import { labelOf, callSignOf } from "../scene/overlay.js";
 import { lockedTargets } from "../scene/locks.js";
+import { holds } from "../scene/detects.js";
 
 const CH = Object.fromEntries(CHANNELS.map((n, i) => [n, i]));
 const SIDE_NAME = { Boscali: "BDF", Primeva: "PALA" };
@@ -12,6 +13,7 @@ const KIND_NAME = {
   [KIND.SHELL]: "SHELL", [KIND.SHIP]: "SHIP", [KIND.GROUND]: "GROUND UNIT", [KIND.BUILDING]: "BUILDING",
 };
 const SIDE_CLASS = { Boscali: "bdf", Primeva: "pala" };
+const WIDE = new Set(["LOCK/S", "DATA LINK"]);   // rows with a whole line of their own
 
 export class Inspector {
   constructor(root) {
@@ -33,6 +35,9 @@ export class Inspector {
     // who destroyed what: the recorder only says "Has been destroyed", so keep its time per unit
     this.destroyedAt = new Map();
     // records by recorded id (ids are reused after a unit is removed), for naming radar lock targets
+    // the units with a radar list, for counting the enemy radars that see the selected unit
+    this.radars = [];
+    for (let r = 0; r < rp.count; r++) if (rp.radarDetects.count[r]) this.radars.push(r);
     this.byId = new Map();
     for (let r = 0; r < rp.count; r++) {
       const id = rp.o.id[r];
@@ -78,9 +83,9 @@ export class Inspector {
     this.last = now;
     const o = rp.o, k = o.kind[i];
     this.paintSide(rp.sideAt(i, t));
-    const here = rp.alive(i, t);
+    const here = rp.alive(i, t) && rp.visibleAt(i, t);
     const dead = this.destroyedAt.get(i);
-    if (here && rp.visibleAt(i, t)) this.status.textContent = "";
+    if (here) this.status.textContent = "";
     else if (dead !== undefined && t >= dead) this.status.textContent = "DESTROYED";
     else if (t < o.t0[i]) this.status.textContent = "NOT IN THE MISSION YET";
     else this.status.textContent = "GONE";
@@ -106,9 +111,24 @@ export class Inspector {
     // what it has locked (Tomo: "Lock/s"), shown for every selected unit: the recorded LockedTarget list. On an aircraft
     // that is its picked or planned targets, on a missile the target it's guiding to.
     lines.push(["LOCK/S", lockList(o, lockedTargets(rp, i, t, this.byId))]);
+    // whether the enemy's data link has it (Tomo, 10-25), when the recording says (TrackedBy) and it's still there
+    const tracked = here ? rp.trackedAt(i, t) : -1;
+    if (tracked >= 0) {
+      const side = rp.sideAt(i, t);
+      if (tracked & ~sideBit(side)) {
+        // and how many enemy radars have it right now (Tomo: "add to detected how many"); sight and passive
+        // detections reach the data link too but aren't counted, so it can say DETECTED with no radars
+        let n = 0;
+        for (const h of this.radars) {
+          if (!rp.alive(h, t) || !rp.visibleAt(h, t) || rp.sideAt(h, t) === side) continue;
+          if (holds(rp, rp.radarDetects, h, i, t, this.byId)) n++;
+        }
+        lines.push(["DATA LINK", n ? `DETECTED (${n} ${n === 1 ? "RADAR" : "RADARS"})` : "DETECTED"]);
+      } else lines.push(["DATA LINK", "NOT DETECTED"]);
+    }
     // the lock list can be long: it gets a whole line of its own, and wraps
     this.rows.innerHTML = lines.map(([a, b]) =>
-      `<div class="row${a === "LOCK/S" ? " wide" : ""}"><span class="lbl">${a} :</span> <span>${esc(b)}</span></div>`).join("");
+      `<div class="row${WIDE.has(a) ? " wide" : ""}"><span class="lbl">${a} :</span> <span>${esc(b)}</span></div>`).join("");
   }
 }
 

@@ -36,15 +36,16 @@ export function lockedTargets(rp, i, t, byId, out = []) {
   return out;
 }
 
-// records by their recorded id
+// records by their recorded id, made once per replay (the lock, radar and passive lines share it)
 export function recordsById(rp) {
+  if (rp.byId) return rp.byId;
   const byId = new Map();
   for (let r = 0; r < rp.count; r++) {
     const id = rp.o.id[r];
     const list = byId.get(id);
     if (list) list.push(r); else byId.set(id, [r]);
   }
-  return byId;
+  return (rp.byId = byId);
 }
 
 export class LockLines {

@@ -14,6 +14,8 @@ export const SETTINGS = {
   ui: ["100", "80", "90", "120", "140"],   // size of the panels and keys, in percent
   sliders: ["off", "on"],                  // the camera sliders over the view
   lockLines: ["selected", "all", "off"],   // lines from units to what they have locked
+  radarLines: ["selected", "all", "off"],  // lines from radars to what they see
+  passiveLines: ["selected", "all", "off"], // lines from passive receivers to the radars they pick up
   ranges: ["off", "on"],                   // radar and sight range domes
   rangePlanes: ["on", "off"],              // ... for planes and helicopters,
   rangeShips: ["on", "off"],               // ships,
