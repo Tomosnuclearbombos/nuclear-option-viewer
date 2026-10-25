@@ -45,7 +45,7 @@ try {
   blasts = new Blasts(viewer.scene);
   ranges = new Ranges(viewer.scene);
   lockLines = new LockLines(viewer.scene);
-  radarLines = new DetectLines(viewer.scene, "radarDetects", false);
+  radarLines = new DetectLines(viewer.scene, "radarDetects", false, true);
   passiveLines = new DetectLines(viewer.scene, "passiveTracks", true);
   trails = new Trails(viewer.scene);
   overlay = new Overlay($("overlay"));

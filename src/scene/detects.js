@@ -83,11 +83,14 @@ function screenDashed(opts, view) {
 }
 
 export class DetectLines {
-  // key: the series drawn, "radarDetects" (solid) or "passiveTracks"; dashed: drawn dashed
-  constructor(scene, key, dashed) {
+  // key: the series drawn, "radarDetects" (solid) or "passiveTracks"; dashed: drawn dashed; seenOnly: with "selected",
+  // only the lines to the selected unit, from what detects it, not its own list (Tomo, 10-26: "selected unit only
+  // (show only what that unit is being detected by)")
+  constructor(scene, key, dashed, seenOnly = false) {
     this.scene = scene;
     this.key = key;
     this.dashed = dashed;
+    this.seenOnly = seenOnly;
     this.cap = 0;
     this.n = 0;
     this.lines = null;
@@ -122,7 +125,8 @@ export class DetectLines {
     this.scene.add(this.lines);
   }
 
-  // mode: "selected" (the lines to and from the selected unit), "all" or "off"; viewer for the camera and the screen
+  // mode: "selected" (the lines to the selected unit, and from it unless seenOnly), "all" or "off"; viewer for the camera
+  // and the screen
   update(t, mode, selected, viewer) {
     if (!this.lines) return;
     if (this.full) { this.grow(this.cap * 2); this.full = false; }   // ran out of room last frame
@@ -138,7 +142,7 @@ export class DetectLines {
     if (mode === "all") {
       for (const h of this.holders) if (there(rp, h, t)) this.from(h, t);
     } else if (mode === "selected" && selected >= 0 && there(rp, selected, t)) {
-      if (g.count[selected]) this.from(selected, t);
+      if (!this.seenOnly && g.count[selected]) this.from(selected, t);
       // and every unit whose list has it
       if (rp.poseAt(selected, t, this.b)) {
         for (const h of this.holders) {
