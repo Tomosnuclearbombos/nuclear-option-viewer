@@ -119,8 +119,8 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   - `SightDetects=<id>;<id>` on every unit with eyes (10-26, recorder c37808c666f1): what it sees by eye, minus what
     its radar found (an id is never in both).
   - `TrackedBy=<Coalition>;<Coalition>` on aircraft, ships and ground vehicles: the sides whose data link has it now.
-  The viewer draws lock lines dashed, green for what a unit has locked and red for what has locked the selected unit
-  (the two in opposite phase, so a two way lock is one line), radar lines lemon yellow solid, sight lines light blue dotted (the game's visual range cyan) and passive lines
+  The viewer draws lock lines dashed: magenta for what the selected unit has locked, red for an enemy's lock on it,
+  green for any other lock (red in the others' gaps, so a two way lock is one line), radar lines lemon yellow solid, sight lines light blue dotted (the game's visual range cyan) and passive lines
   light grey dashed (Tomo's colours, 10-26), with a colour key in Settings; the unit panel shows DATA LINK with a RADAR
   row and a SIGHT row under it naming what sees the unit.
 - **Types seen:**

@@ -126,6 +126,7 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
 .line-toggle.off { color: var(--off); text-decoration: line-through; }
 .line-toggle.off .swatch { opacity: 0.3; }
 .line-key .swatch { flex: 0 0 34px; height: 0; border-top: 2px solid; }
+.line-key .mine { border-top: 2px dashed #ff40ff; }
 .line-key .locking { border-top: 2px dashed #00ff00; }
 .line-key .locked { border-top: 2px dashed #ff3b30; }
 .line-key .radar { border-top-color: #fff23a; }
