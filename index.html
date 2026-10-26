@@ -153,6 +153,7 @@
       <dt>?</dt><dd>SHOW OR HIDE THIS</dd>
       <dt>GYRO</dt><dd>ON A PHONE: TURN AND TILT IT TO LOOK AROUND</dd>
     </dl>
+    <button id="tour-btn" class="key small tour-again" type="button">TAKE THE TOUR</button>
   </section>
 
   <section id="settings" class="plate keys-panel settings-panel" hidden aria-label="Settings">
@@ -374,6 +375,19 @@
   <div id="toast" class="plate toast" role="alert" hidden>
     <span id="toast-msg" class="prose"></span>
     <button id="toast-close" class="key" type="button">CLOSE</button>
+  </div>
+
+  <div id="tour" class="tour" hidden>
+    <div id="tour-spot" class="tour-spot"></div>
+    <section id="tour-card" class="plate tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+      <div class="tour-head"><h2 id="tour-title" class="tour-title"></h2><span id="tour-count" class="dim"></span></div>
+      <p id="tour-text" class="prose tour-text"></p>
+      <div class="tour-keys">
+        <button id="tour-skip" class="key small" type="button">SKIP TOUR</button>
+        <button id="tour-back" class="key small" type="button">BACK</button>
+        <button id="tour-next" class="key small" type="button">NEXT</button>
+      </div>
+    </section>
   </div>
 
   <div id="drop" class="drop" hidden><div class="drop-frame">DROP TO OPEN THE REPLAY</div></div>

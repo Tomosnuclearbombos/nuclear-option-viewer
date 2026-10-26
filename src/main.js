@@ -17,6 +17,7 @@ import { KIND } from "./parser/acmi.js";
 import { Timeline } from "./ui/timeline.js";
 import { UnitList } from "./ui/unitlist.js";
 import { Inspector } from "./ui/inspector.js";
+import { Tour, tourSeen } from "./ui/tour.js";
 import { CameraSliders } from "./ui/camsliders.js";
 import { loadSettings, SettingsPanel, RESOLUTION, FPS } from "./ui/settings.js";
 import { LiveFeed, LIVE_BUFFER_S, LIVE_PVE, LIVE_FEEDS, liveMatch } from "./live.js";
@@ -177,6 +178,7 @@ function start(replay, fileName, opts = {}) {
   const z0 = m ? Math.max(b.z0, -m.z1) : b.z0, z1 = m ? Math.min(b.z1, -m.z0) : b.z1;
   viewer.frameBox(x0, x1, z0, z1);
   updateSpeed();
+  firstTour();
 }
 
 function showLength(rp) {
@@ -516,6 +518,36 @@ function showCamSliders() {
 }
 PHONE.addEventListener("change", showCamSliders);
 const settingsPanel = new SettingsPanel($("settings"), settings, applySetting, smoothInUse);
+
+// the tour (src/ui/tour.js): by itself the first time a replay opens in this browser, and from the KEYS panel
+const tour = new Tour($("tour"), {
+  panel(name) { toggleSettings(name === "settings"); toggleKeys(name === "keys"); },
+  hasUnit: () => state.sel >= 0,
+  // for the unit panel's step, when nothing is picked: a player's aircraft if one is up, else any aircraft or ship
+  pickUnit() {
+    const rp = state.replay;
+    if (!rp) return false;
+    if (state.sel >= 0) return true;
+    const o = rp.o, t = state.t, RANK = { [KIND.PLANE]: 1, [KIND.HELI]: 2, [KIND.SHIP]: 3 };
+    let best = -1, bestRank = 9;
+    for (let i = 0; i < rp.count; i++) {
+      const r = RANK[o.kind[i]];
+      if (!r || !rp.alive(i, t)) continue;
+      const rank = o.pilot[i] ? 0 : r;
+      if (rank < bestRank) { best = i; bestRank = rank; }
+    }
+    if (best >= 0) select(best);
+    return best >= 0;
+  },
+  done(picked) { toggleSettings(false); toggleKeys(false); if (picked) select(-1); },
+});
+let tourStarted = false;
+function firstTour() {
+  if (tourStarted || tourSeen()) return;
+  tourStarted = true;
+  setTimeout(() => { if (state.replay && !tour.open) { toggleUnits(false); tour.start(); } }, 800);
+}
+$("tour-btn").addEventListener("click", () => { toggleUnits(false); tour.start(); });
 if (viewer) {
   ground.style = settings.map;   // the first map loads straight in the saved look
   for (const [k, v] of Object.entries(settings)) if (k !== "map") applySetting(k, v);

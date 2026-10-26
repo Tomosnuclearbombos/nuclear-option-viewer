@@ -73,6 +73,9 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   - units: Focus (minimum size on screen) / Real Size
   - graphics: resolution, frame rate cap, smooth edges (on reload), detailed or simple models, scenery, effects
   - labels, trails and curtains are remembered too
+  - a browser new to the viewer starts with the lock, radar, sight and passive lines off (Tomo, 10-26)
+- A skippable tour (src/ui/tour.js, Tomo 10-26) runs the first time a replay opens in a browser (localStorage
+  `nov.tour.v1`), and again from KEYS > TAKE THE TOUR. Keep its steps in step with the settings panel.
 
 **Phase 2, Tacview analysis tools**
 - Telemetry panel: altitude, AGL, TAS, Mach, AoA, G (computed), throttle, gear, stick inputs, radar mode, locks.

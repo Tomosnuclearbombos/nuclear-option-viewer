@@ -6,17 +6,18 @@
 
 const STORE = "nov.settings.v1";
 
-// each setting's allowed values, the first being the default
+// each setting's allowed values, the first being the default. A browser new to the viewer starts with the extra
+// lines off (Tomo, 10-26: "by default keep most of the additional settings off").
 export const SETTINGS = {
   map: ["terrain", "tactical", "empty"],
   units: ["focus", "real"],
   focusSize: ["100", "80", "50", "25"],    // how big focus mode keeps far units, in percent
   ui: ["100", "80", "90", "120", "140"],   // size of the panels and keys, in percent
   sliders: ["off", "on"],                  // the camera sliders over the view
-  lockLines: ["selected", "all", "off"],   // lines from units to what they have locked
-  radarLines: ["selected", "all", "off"],  // lines from radars to what they see
-  sightLines: ["selected", "all", "off"],  // lines from units to what they see by eye
-  passiveLines: ["selected", "all", "off"], // lines from passive receivers to the radars they pick up
+  lockLines: ["off", "selected", "all"],   // lines from units to what they have locked
+  radarLines: ["off", "selected", "all"],  // lines from radars to what they see
+  sightLines: ["off", "selected", "all"],  // lines from units to what they see by eye
+  passiveLines: ["off", "selected", "all"], // lines from passive receivers to the radars they pick up
   ranges: ["off", "on"],                   // radar and sight range domes
   rangePlanes: ["on", "off"],              // ... for planes and helicopters,
   rangeShips: ["on", "off"],               // ships,

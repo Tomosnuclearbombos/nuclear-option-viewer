@@ -211,6 +211,20 @@ header#top > * { pointer-events: auto; }
 .toast .key { border-color: var(--alert); color: var(--alert); text-shadow: none; }
 @media (max-width: 620px) { .toast { bottom: calc(var(--above) + 18px); } }   /* above the taller two row transport bar */
 
+/* the tour: the page dimmed and not clickable, one part of it lit, and a card saying what it does */
+.tour { position: fixed; inset: 0; z-index: 40; }
+.tour.whole { background: rgba(0, 0, 0, 0.6); }
+.tour-spot {
+  position: fixed; border: 2px solid var(--green); border-radius: 4px; pointer-events: none;
+  box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 255, 0, 0.5);
+}
+.tour-card { position: fixed; width: min(340px, calc(100% - 24px)); padding: 12px 14px; border-color: var(--green); }
+.tour-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.tour-title { margin: 0; font: 700 14px/1.2 var(--mono); letter-spacing: 0.06em; color: var(--green); text-shadow: var(--glow); }
+.tour-text { margin: 8px 0 12px; font-size: 14px; line-height: 1.4; color: var(--green-text); }
+.tour-keys { display: flex; justify-content: flex-end; gap: 6px; }
+.tour-keys #tour-skip { margin-right: auto; }
+.tour-again { margin-top: 12px; width: 100%; }
 .drop { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(0, 0, 0, 0.82); pointer-events: none; }
 .drop-frame { padding: 40px 56px; border: 2px dashed var(--green); color: var(--green); font-size: 22px; letter-spacing: 0.05em; text-shadow: var(--glow); }
 
