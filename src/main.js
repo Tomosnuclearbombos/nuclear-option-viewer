@@ -48,7 +48,7 @@ try {
   lockLines = new LockLines(viewer.scene);
   radarLines = new DetectLines(viewer.scene, "radarDetects", RADAR, true);
   sightLines = new DetectLines(viewer.scene, "sightDetects", SIGHT, true, radarLines);   // radar comes first
-  passiveLines = new DetectLines(viewer.scene, "passiveTracks", PASSIVE);
+  passiveLines = new DetectLines(viewer.scene, "passiveTracks", PASSIVE, false, radarLines, true);   // no grey back along yellow
   trails = new Trails(viewer.scene);
   overlay = new Overlay($("overlay"));
   cameraMan = new CameraMan(viewer);

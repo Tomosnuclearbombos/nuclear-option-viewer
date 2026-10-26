@@ -11,7 +11,9 @@
 // all three are dashed alike, each a third of the way along, and fill each other's gaps. Sight lines come in thick
 // bundles (every ground unit near a front), so they are drawn under the others. Where a radar line goes to a unit, no
 // sight lines go to it: radar comes first (Tomo, 10-26: "a unit that has seen and detected by radar should just show
-// the radar line"). Each is a setting: SELECTED, ALL or OFF. SELECTED is every line to and
+// the radar line"). And no passive line goes back along a radar line: a jet that radar has detected is no longer just
+// hearing it, as the game's own warning lines turn from grey to yellow (Tomo, 10-27: "no grey when there is yellow is
+// correct"). Each is a setting: SELECTED, ALL or OFF. SELECTED is every line to and
 // from the selected unit: what it detects or hears, and what detects or hears it (for radar and sight, the enemy only,
 // as the unit panel counts them). It was only what detects the selected unit (10-25), which left a radar's own lines
 // on ALL only (Tomo, 10-26: "it only shows detected by radar when all is toggled on").
@@ -64,13 +66,16 @@ export function holds(rp, g, h, j, t, byId) {
 
 export class DetectLines {
   // key: the series drawn, "radarDetects", "sightDetects" or "passiveTracks"; look: RADAR, SIGHT or PASSIVE; enemyOnly:
-  // with "selected", only the enemy's lines to the selected unit; under: the lines that come first (the radar lines,
-  // for the sight lines), updated before these each frame
-  constructor(scene, key, look, enemyOnly = false, under = null) {
+  // with "selected", only the enemy's lines to the selected unit; under: the lines that come first (the radar lines),
+  // updated before these each frame; back: true when a line of under's from j to i hides this one from i to j (passive
+  // under radar), else any line of under's to j does (sight under radar)
+  constructor(scene, key, look, enemyOnly = false, under = null, back = false) {
     this.key = key;
     this.dashed = !!look.dash;
     this.enemyOnly = enemyOnly;
     this.under = under;
+    this.back = back;
+    this.pairs = new Set();   // this frame's lines, as i * count + j
     this.frame = 0;
     this.width = 1;   // CSS pixels (the line width setting)
     this.pose = new Float64Array(7);
@@ -103,6 +108,7 @@ export class DetectLines {
     const rp = this.rp, g = this.g;
     this.batch.begin();
     this.frame++;
+    this.pairs.clear();
     this.cam = viewer.camera;
     if (mode === "all") {
       for (const h of this.holders) if (this.spot(h, t)) this.from(h, t);
@@ -141,11 +147,12 @@ export class DetectLines {
     return this.here[r] === 1;
   }
 
-  // one segment, from unit i to unit j (both spotted this frame), unless the lines under these go to j this frame
+  // one segment, from unit i to unit j (both spotted this frame), unless the lines under these hide it this frame
   put(i, j) {
-    const u = this.under;
-    if (u && u.hit[j] === u.frame && u.rp === this.rp) return;
+    const u = this.under, N = this.rp.count;
+    if (u && u.rp === this.rp && (this.back ? u.pairs.has(j * N + i) : u.hit[j] === u.frame)) return;
     this.hit[j] = this.frame;
+    this.pairs.add(i * N + j);
     const P = this.xyz, a = i * 3, b = j * 3;
     // The dashes count from the same end whichever unit's list the line came from, so two units in each other's lists
     // draw one pattern; from the other end when that one is behind the camera.
