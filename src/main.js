@@ -225,6 +225,8 @@ if (cameraMan) cameraMan.onFollowChange = (i) => inspector.setFollowing(i >= 0 &
 $("insp-follow").addEventListener("click", toggleFollow);
 $("insp-close").addEventListener("click", closeIn);
 $("insp-clear").addEventListener("click", () => select(-1));
+$("insp-min").addEventListener("click", () => settingsPanel.set("panel", settings.panel === "small" ? "full" : "small"));
+inspector.setSmall(settings.panel === "small");
 
 // hover, click and double click on units in the 3D view
 if (viewer) {
@@ -408,7 +410,9 @@ function toggleUnits(show) {
   showCamSliders();
 }
 // labels, trails and curtains are settings too, so they stay the way you left them next time
-function toggleLabels() { settingsPanel.set("labels", overlay.showLabels ? "off" : "on"); }
+function toggleLabels() {   // L goes all, players, off, and round again
+  settingsPanel.set("labels", !overlay.showLabels ? "on" : overlay.playersOnly ? "off" : "players");
+}
 function toggleTrails() { settingsPanel.set("trails", trails.showTrails ? "off" : "on"); }
 function toggleCurtains() { settingsPanel.set("curtains", trails.showCurtains ? "off" : "on"); }
 $("units-btn").addEventListener("click", () => toggleUnits());
@@ -465,6 +469,7 @@ function applySetting(key, value) {
     document.documentElement.dataset.ui = value;   // a phone's layout changes a little at the bigger sizes (style.css)
     return;
   }
+  if (key === "panel") { inspector.setSmall(value === "small"); return; }
   if (!viewer) return;
   const on = value === "on";
   switch (key) {
@@ -489,7 +494,7 @@ function applySetting(key, value) {
       break;
     case "scenery": scenery.setShown(on && settings.map !== "empty"); break;
     case "effects": units.effects = on; break;
-    case "labels": overlay.showLabels = on; break;
+    case "labels": overlay.showLabels = value !== "off"; overlay.playersOnly = value === "players"; break;
     case "trails": trails.showTrails = on; break;
     case "curtains": trails.showCurtains = on; break;
     case "sliders": showCamSliders(); break;

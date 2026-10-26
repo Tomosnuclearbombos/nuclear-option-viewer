@@ -89,7 +89,10 @@
   </section>
 
   <section id="inspector" class="plate inspector" hidden aria-label="Selected unit">
-    <div class="insp-title" id="insp-title"></div>
+    <div class="insp-head">
+      <div class="insp-title" id="insp-title"></div>
+      <button id="insp-min" class="key small insp-min" type="button" aria-expanded="true" title="Show just the name and plane">LESS</button>
+    </div>
     <div class="insp-sub" id="insp-sub"></div>
     <div class="insp-status" id="insp-status"></div>
     <div class="insp-rows" id="insp-rows"></div>
@@ -158,7 +161,8 @@
       <div class="set-row" data-set="labels" role="group" aria-label="Labels">
         <span class="set-lbl">LABELS</span>
         <div class="set-opts">
-          <button class="key small" type="button" data-val="on">ON</button>
+          <button class="key small" type="button" data-val="on">ALL</button>
+          <button class="key small" type="button" data-val="players">PLAYERS</button>
           <button class="key small" type="button" data-val="off">OFF</button>
         </div>
       </div>

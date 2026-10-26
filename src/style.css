@@ -261,7 +261,10 @@ header#top > * { pointer-events: auto; }
 .inspector > * { flex: none; }
 .inspector.bdf { border-color: var(--bdf); }
 .inspector.pala { border-color: var(--pala); }
-.insp-title { font: 600 17px/1.2 var(--prose); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.insp-head { display: flex; align-items: center; gap: 8px; }
+.insp-title { flex: 1; min-width: 0; font: 600 17px/1.2 var(--prose); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.insp-min { flex: none; min-height: 22px; padding: 0 7px; font-size: 11px; }
+.inspector.small .insp-rows, .inspector.small .insp-keys { display: none; }   /* LESS: the name and plane */
 .inspector.bdf .insp-title { color: var(--bdf); }
 .inspector.pala .insp-title { color: var(--pala); }
 .insp-sub { margin-top: 2px; font-size: 11px; color: var(--green-dim); }
@@ -274,6 +277,7 @@ header#top > * { pointer-events: auto; }
 }
 .insp-rows .row { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .insp-rows .row.wide { grid-column: 1 / -1; white-space: normal; }
+.insp-rows .row.sub { margin-left: 3px; padding-left: 9px; border-left: 1px solid var(--green-line); }   /* under DATA LINK */
 .insp-keys { display: flex; gap: 6px; flex-wrap: wrap; }
 
 @media (max-width: 900px) {
@@ -429,8 +433,8 @@ body:has(#cam:not([hidden])) .toast { bottom: 136px; }
   .insp-title { font-size: 15px; }
   .insp-sub { font-size: 10px; }
   .insp-rows { font-size: 12px; margin: 6px 0 8px; padding-top: 6px; }
-  /* the DETECTED BY names two lines at most, the rest scrolled, so the panel stays clear of a followed unit mid screen */
-  .insp-rows .row.by { max-height: 2lh; overflow-y: auto; scrollbar-width: thin; }
+  /* the radar and sight names two lines each at most, the rest scrolled, so the panel stays clear of a followed unit */
+  .insp-rows .row.sub { max-height: 2lh; overflow-y: auto; scrollbar-width: thin; }
   .units-panel { left: 8px; right: 8px; width: auto; }
   /* When the bottom is busy (the unit list open, the sliders on, or a bigger UI size), the selected unit's panel goes
      to the top, under the buttons. It stops short of the middle of the screen, where a followed unit is; its readouts

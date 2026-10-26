@@ -19,6 +19,7 @@ export class Overlay {
     this.canvas = canvas;
     this.g = canvas.getContext("2d");
     this.showLabels = true;
+    this.playersOnly = false;  // labels only for units players fly (and the selected and hovered ones)
     this.hover = -1;
     this.selected = -1;
     this.relative = -1;        // unit compared with the selected one (Shift + hover)
@@ -103,12 +104,13 @@ export class Overlay {
     // Labels for aircraft and ships. The selected and hovered units go first, then players, then AI aircraft, then
     // ships, nearest first within each. A label that would overlap one already placed tries the unit's other
     // corners and is left out if none is free, so a crowded fleet shows a few readable names instead of a smear.
+    // PLAYERS (Tomo, 10-26) keeps just the players' names.
     if (this.showLabels) {
       const order = [];
       for (let j = 0; j < this.n; j++) {
         if (!this.front[j]) continue;
         const i = live.idx[j];
-        if (LABEL_KINDS.has(live.kind[j]) || i === this.selected || i === this.hover) order.push(j);
+        if (i === this.selected || i === this.hover || (this.playersOnly ? o.pilot[i] : LABEL_KINDS.has(live.kind[j]))) order.push(j);
       }
       const rank = (j) => {
         const i = live.idx[j];

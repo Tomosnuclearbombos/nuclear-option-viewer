@@ -116,8 +116,8 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
     its radar found (an id is never in both).
   - `TrackedBy=<Coalition>;<Coalition>` on aircraft, ships and ground vehicles: the sides whose data link has it now.
   The viewer draws lock lines red, radar lines lemon yellow solid, sight lines deep orange dotted and passive lines
-  light grey dashed (Tomo's colours, 10-26), with a colour key in Settings; the unit panel shows DATA LINK (n RADARS,
-  m BY SIGHT) and DETECTED BY.
+  light grey dashed (Tomo's colours, 10-26), with a colour key in Settings; the unit panel shows DATA LINK with a RADAR
+  row and a SIGHT row under it naming what sees the unit.
 - **Types seen:**
   - Air+FixedWing / Air+Rotorcraft.
   - Ground+... (Vehicle, Tank, AntiAircraft, Sensor, Static+Building).

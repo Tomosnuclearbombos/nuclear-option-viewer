@@ -13,7 +13,7 @@ const KIND_NAME = {
   [KIND.SHELL]: "SHELL", [KIND.SHIP]: "SHIP", [KIND.GROUND]: "GROUND UNIT", [KIND.BUILDING]: "BUILDING",
 };
 const SIDE_CLASS = { Boscali: "bdf", Primeva: "pala" };
-const WIDE = new Set(["LOCK/S", "DATA LINK", "DETECTED BY"]);   // rows with a whole line of their own
+const WIDE = new Set(["LOCK/S", "DATA LINK", "DETECTED BY"]);   // rows with a whole line of their own, as are the radar and sight rows
 
 export class Inspector {
   constructor(root) {
@@ -23,6 +23,8 @@ export class Inspector {
     this.rows = root.querySelector("#insp-rows");
     this.status = root.querySelector("#insp-status");
     this.follow = root.querySelector("#insp-follow");
+    this.min = root.querySelector("#insp-min");
+    this.small = false;
     this.i = -1;
     this.rp = null;
     this.pos = new Float64Array(7);
@@ -53,6 +55,15 @@ export class Inspector {
     }
   }
 
+  // LESS: just the name and plane (Tomo, 10-26: "a way to minimise this"); MORE brings the rest back
+  setSmall(on) {
+    this.small = on;
+    this.root.classList.toggle("small", on);
+    this.min.textContent = on ? "MORE" : "LESS";
+    this.min.title = on ? "Show everything" : "Show just the name and plane";
+    this.min.setAttribute("aria-expanded", String(!on));
+  }
+
   show(i) {
     this.i = i;
     this.root.hidden = i < 0;
@@ -68,7 +79,7 @@ export class Inspector {
     if (side === this.side) return;
     this.side = side;
     const o = this.rp.o, i = this.i;
-    this.root.className = "plate inspector " + (SIDE_CLASS[side] || "neutral");
+    this.root.className = "plate inspector " + (SIDE_CLASS[side] || "neutral") + (this.small ? " small" : "");
     const bits = [];
     if (o.pilot[i]) bits.push(o.name[i]);
     bits.push(SIDE_NAME[side] || "NEUTRAL");
@@ -122,27 +133,20 @@ export class Inspector {
     // whether the enemy's data link has it (Tomo, 10-25), when the recording says (TrackedBy) and it's still there
     const tracked = here ? rp.trackedAt(i, t) : -1;
     const onLink = tracked < 0 || (tracked & ~sideBit(side)) !== 0;   // or the recording doesn't say
-    if (tracked >= 0) {
-      if (onLink) {
-        // and how many enemy radars and eyes have it (Tomo: "add to detected how many"); passive detections reach
-        // the data link too but aren't counted, so it can say DETECTED with none
-        const n = radar.length, m = sight.length, parts = [];
-        if (n) parts.push(`${n} ${n === 1 ? "RADAR" : "RADARS"}`);
-        if (m) parts.push(`${m} BY SIGHT`);
-        lines.push(["DATA LINK", parts.length ? `DETECTED (${parts.join(", ")})` : "DETECTED"]);
-      } else lines.push(["DATA LINK", "NOT DETECTED"]);
-    }
-    // and which they are, on recordings with radar or sight lists. Not under NOT DETECTED: each list is its unit's last
-    // full scan, so it can trail the data link by a scan (3 to 5 s on a corvette) when a target drops off.
-    if (onLink && (radar.length || sight.length)) {
-      const parts = [];
-      if (radar.length) parts.push("RADAR: " + nameList(o, radar));
-      if (sight.length) parts.push("SIGHT: " + nameList(o, sight));
-      lines.push(["DETECTED BY", parts.join("; ")]);
+    const seen = radar.length || sight.length;
+    if (tracked >= 0) lines.push(["DATA LINK", onLink ? "DETECTED" : "NOT DETECTED"]);
+    else if (seen) lines.push(["DETECTED BY", ""]);   // a missile or building: no data link in the recording
+    // and under it, the enemy radars and eyes that have it, a row each (Tomo, 10-26: "a neat list under data link").
+    // Passive detections reach the data link too but aren't listed, so it can say DETECTED with none under it. None
+    // under NOT DETECTED: each list is its unit's last full scan, so it can trail the data link by a scan (3 to 5 s on
+    // a corvette) when a target drops off.
+    if (onLink && seen) {
+      if (radar.length) lines.push(["RADAR", nameList(o, radar), "sub"]);
+      if (sight.length) lines.push(["SIGHT", nameList(o, sight), "sub"]);
     }
     // the lock and detection lists can be long: they get a whole line of their own, and wrap
-    this.rows.innerHTML = lines.map(([a, b]) =>
-      `<div class="row${WIDE.has(a) ? " wide" : ""}${a === "DETECTED BY" ? " by" : ""}"><span class="lbl">${a} :</span> <span>${esc(b)}</span></div>`).join("");
+    this.rows.innerHTML = lines.map(([a, b, c]) =>
+      `<div class="row${WIDE.has(a) || c ? " wide" : ""}${c ? " " + c : ""}"><span class="lbl">${a} :</span> <span>${esc(b)}</span></div>`).join("");
   }
 
   // the enemy units among holders (records with a list in series g) whose list has unit i at t, alive and not wrecks;

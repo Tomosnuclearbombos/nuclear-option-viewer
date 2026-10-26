@@ -30,7 +30,8 @@ export const SETTINGS = {
   models: ["detailed", "simple"],
   scenery: ["on", "off"],
   effects: ["on", "off"],
-  labels: ["on", "off"],
+  panel: ["full", "small"],                // the selected unit's panel: everything, or just the name and plane (Tomo, 10-26)
+  labels: ["on", "players", "off"],        // on: every aircraft and ship; players: only the units players fly (Tomo, 10-26)
   trails: ["on", "off"],
   curtains: ["off", "on"],
 };
