@@ -1,11 +1,12 @@
 // Radar, sight and passive lines, from what the recorder says each unit's sensors have (agreed 10-25 for the next
 // NOBlackBox build, sight 10-26):
 //  - radar lines, solid lemon yellow: a radar to each aircraft and missile it sees (RadarDetects, its last full scan);
-//  - sight lines, dotted orange: a unit to each enemy it sees by eye and not by radar (SightDetects, its last full scan);
+//  - sight lines, dotted light blue: a unit to each enemy it sees by eye and not by radar (SightDetects, its last full scan);
 //  - passive lines, dashed light grey: an aircraft's passive receiver to each radar that pinged it in the last 4 s
 //    (PassiveTracks).
 // Tomo's colours (10-26): "grey for passive, yellow for detected, red for locked (plane or missile) and then sight lines
-// can be orange". The yellow is a lemon yellow and the orange a deep one, both well apart from PALA's amber (#FFB800, its
+// can be orange", then sight the game's light blue (Tomo, 10-26: "In game the visual range is a lighter blue circle"; the
+// map's range circle is Color.cyan, MapToolTip). The yellow is a lemon yellow, well apart from PALA's amber (#FFB800, its
 // trails and labels), and each kind has its own pattern too, so a line reads by colour and pattern. Lines of different
 // kinds can lie on each other: a receiver is pinged by the radar that sees it, so the passive lines are drawn over the
 // radar lines; sight lines come in thick bundles (every ground unit near a front), so they are drawn under them. Each is
@@ -21,7 +22,7 @@ import { recordsById } from "./locks.js";
 // each kind's look: colour, dash and gap (CSS pixels, measured on screen so they read the same at any zoom; none:
 // solid) and draw order (over the explosions, under the lock lines)
 export const RADAR = { color: "#fff23a", order: 5 };                        // a radar to what it sees
-export const SIGHT = { color: "#ff6a00", dash: 4, gap: 4, order: 4.5 };     // a unit to what it sees by eye
+export const SIGHT = { color: "#00ffff", dash: 4, gap: 4, order: 4.5 };     // a unit to what it sees by eye
 export const PASSIVE = { color: "#d4d8dc", dash: 12, gap: 8, order: 5.5 };  // a receiver to the radars it picks up
 
 // whether unit i is there at t: in the recording and not a wreck

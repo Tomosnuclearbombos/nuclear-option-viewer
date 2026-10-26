@@ -121,7 +121,7 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
 .line-key .swatch { flex: 0 0 34px; height: 0; border-top: 2px solid; }
 .line-key .locked { border-top-color: #ff3b30; }
 .line-key .radar { border-top-color: #fff23a; }
-.line-key .sight { border-top: 2px dotted #ff6a00; }
+.line-key .sight { border-top: 2px dotted #00ffff; }
 .line-key .passive { border-top: 2px dashed #d4d8dc; }
 .live-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 /* a narrow plate (a big UI size on a phone): the big keys wrap rather than stick out of it */
