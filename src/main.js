@@ -289,7 +289,7 @@ if (viewer) viewer.onFrame = (now) => {
   ranges.update(t);
   // the lines: one SELECTED / ALL / OFF for them all, and each kind on or off (Tomo, 10-26)
   const lines = (k) => (settings[k] === "on" ? settings.lines : "off");
-  lockLines.update(t, settings.lines, state.sel, viewer, settings.lineSelLock === "on", settings.lineLocked === "on", settings.lineLocking === "on");
+  lockLines.update(t, settings.lines, state.sel, viewer, settings.lineLocking === "on", settings.lineLocked === "on");
   radarLines.update(t, lines("lineRadar"), state.sel, viewer);
   sightLines.update(t, lines("lineSight"), state.sel, viewer);
   passiveLines.update(t, lines("linePassive"), state.sel, viewer);

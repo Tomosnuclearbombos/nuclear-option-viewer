@@ -5,7 +5,7 @@
 //
 // Dashes are counted in pixels on screen from an anchor point (one of the segment's ends) instead of in metres along
 // the line: a line tens of km long, seen from close to one end, would otherwise be one long dash near the camera and a
-// shimmer far away. phase shifts the pattern along: the lock lines' red dashes sit in the green ones' gaps.
+// shimmer far away. phase shifts the pattern along, so kinds of line on the same two units fit into each other's gaps.
 
 import * as THREE from "three";
 

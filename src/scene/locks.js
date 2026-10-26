@@ -1,22 +1,21 @@
 // Lock lines: a line from a unit to each target in its recorded lock list (LOCK/S in its panel), apart from the side
-// colours (Tomo, 10-22). Three kinds, each a toggle (Tomo, 10-26): magenta is what the selected unit has locked ("what
-// the target following has locked onto ... should be a different colour"), red is an enemy's lock on the selected unit,
-// and green is any other unit's lock on its target. For a missile that is the target it's guiding to. For an aircraft
-// it is the recorder's LockedTarget list, which is a player's picked targets or an AI's planned shots, not a
+// colours (Tomo, 10-22). Two kinds, each a toggle (Tomo, 10-26): green is what a unit has locked ("we need to see what
+// units have locked onto (green)"), and red is a lock on the selected unit, followed or not ("what's locked onto it ...
+// it should be visible all the time"). For a missile that is the target it's guiding to. For an aircraft it is the
+// recorder's LockedTarget list, which is a player's picked targets or an AI's planned shots, not a
 // radar lock (Game expert, 2026-10-20), and older recordings only hold it when two or more are picked.
 //
-// All are dashed, the dash as long as the gap, counted on screen from the same end of the line, and red sits in the
-// others' gaps: the selected unit and an enemy locked on each other draw one line, magenta and red in turn (Tomo, 10-26:
-// "dashed in the opposite so the lines merge perfectly").
+// Both are dashed, the dash as long as the gap, counted on screen from the same end of the line, and red sits in green's
+// gaps: the selected unit and an enemy locked on each other draw one line, green and red in turn (Tomo, 10-26: "dashed
+// in the opposite so the lines merge perfectly").
 //
 // Drawn over everything (no depth test), so a line to a target behind a hill still shows.
 
 import { LineBatch, inFront } from "./fatlines.js";
 
 const DASH = 10;   // CSS pixels on, then off
-const MINE = { color: "#ff40ff", dash: DASH, gap: DASH, order: 6, opacity: 0.9 };                  // the selected unit's lock
-const LOCKED = { color: "#ff3b30", dash: DASH, gap: DASH, phase: DASH, order: 6, opacity: 0.9 };   // a lock on it
-const LOCKING = { color: "#00ff00", dash: DASH, gap: DASH, order: 6, opacity: 0.9 };                // any other lock
+const LOCKING = { color: "#00ff00", dash: DASH, gap: DASH, order: 6, opacity: 0.9 };                // a unit's lock
+const LOCKED = { color: "#ff3b30", dash: DASH, gap: DASH, phase: DASH, order: 6, opacity: 0.9 };   // a lock on the selected unit
 
 // every target in unit i's recorded lock list at time t, as record indices (one per slot, so a target can be there
 // twice). byId maps a recorded id to its records (ids are reused after a unit is removed).
@@ -60,9 +59,8 @@ export class LockLines {
     this.ends = new Float64Array(6);
     this.targets = [];
     this.width = 1;   // CSS pixels (the line width setting)
-    this.mine = new LineBatch(scene, MINE);
-    this.red = new LineBatch(scene, LOCKED);
     this.green = new LineBatch(scene, LOCKING);
+    this.red = new LineBatch(scene, LOCKED);
   }
 
   setReplay(rp) {
@@ -71,16 +69,16 @@ export class LockLines {
     this.holders = [];   // records with a lock list at all
     for (let i = 0; i < rp.count; i++) if (rp.locks.count[i]) this.holders.push(i);
     const cap = Math.max(64, Math.min(4096, this.holders.length * 2));
-    for (const s of [this.mine, this.red, this.green]) s.reserve(cap);
+    for (const s of [this.green, this.red]) s.reserve(cap);
   }
 
-  // mode: "selected" (what the selected unit has locked, and what has locked it), "all" or "off"; mine, enemy and other:
-  // whether the magenta, red and green lines are on; viewer for the camera and the screen
-  update(t, mode, selected, viewer, mine = true, enemy = true, other = true) {
+  // mode: "selected" (what the selected unit has locked, and what has locked it), "all" or "off"; locking and locked:
+  // whether the green and the red lines are on; viewer for the camera and the screen
+  update(t, mode, selected, viewer, locking = true, locked = true) {
     if (!this.rp) return;
     const rp = this.rp;
     this.cam = viewer.camera;
-    for (const s of [this.mine, this.red, this.green]) s.begin();
+    for (const s of [this.green, this.red]) s.begin();
     // only: just the line to that record (what has locked the selected unit), or -1 for all of them
     const draw = (i, only) => {
       if (!rp.alive(i, t)) return;
@@ -88,16 +86,16 @@ export class LockLines {
       if (!targets.length || (only >= 0 && !targets.includes(only)) || !rp.poseAt(i, t, this.a)) return;
       for (const j of targets) {
         if ((only >= 0 && j !== only) || !rp.poseAt(j, t, this.b)) continue;
-        const s = i === selected ? (mine ? this.mine : null) : j === selected ? (enemy ? this.red : null) : other ? this.green : null;
+        const s = j === selected && i !== selected ? (locked ? this.red : null) : locking ? this.green : null;
         if (s) this.put(s, i, j);
       }
     };
     if (mode === "all") for (const i of this.holders) draw(i, -1);
     else if (mode === "selected" && selected >= 0) {
-      if (mine && rp.locks.count[selected]) draw(selected, -1);
-      if (enemy) for (const i of this.holders) if (i !== selected) draw(i, selected);
+      if (locking && rp.locks.count[selected]) draw(selected, -1);
+      if (locked) for (const i of this.holders) if (i !== selected) draw(i, selected);
     }
-    for (const s of [this.mine, this.red, this.green]) s.end(viewer, this.width);
+    for (const s of [this.green, this.red]) s.end(viewer, this.width);
   }
 
   // one segment into batch s, from unit i (at this.a) to unit j (at this.b)

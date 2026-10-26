@@ -1,17 +1,17 @@
 // Radar, sight and passive lines, from what the recorder says each unit's sensors have (agreed 10-25 for the next
 // NOBlackBox build, sight 10-26):
-//  - radar lines, solid lemon yellow: a radar to each aircraft and missile it sees (RadarDetects, its last full scan);
-//  - sight lines, dotted light blue: a unit to each enemy it sees by eye and not by radar (SightDetects, its last full scan);
-//  - passive lines, dashed light grey: an aircraft's passive receiver to each radar that pinged it in the last 4 s
+//  - radar lines, lemon yellow: a radar to each aircraft and missile it sees (RadarDetects, its last full scan);
+//  - sight lines, light blue: a unit to each enemy it sees by eye and not by radar (SightDetects, its last full scan);
+//  - passive lines, light grey: an aircraft's passive receiver to each radar that pinged it in the last 4 s
 //    (PassiveTracks).
 // Tomo's colours (10-26): "grey for passive, yellow for detected, red for locked (plane or missile) and then sight lines
 // can be orange", then sight the game's light blue (Tomo, 10-26: "In game the visual range is a lighter blue circle"; the
 // map's range circle is Color.cyan, MapToolTip). The yellow is a lemon yellow, well apart from PALA's amber (#FFB800, its
-// trails and labels), and each kind has its own pattern too, so a line reads by colour and pattern. Lines of different
-// kinds can lie on each other: a receiver is pinged by the radar that sees it, so the passive lines are drawn over the
-// radar lines; sight lines come in thick bundles (every ground unit near a front), so they are drawn under them. Where a
-// radar line goes to a unit, no sight lines go to it: radar comes first (Tomo, 10-26: "a unit that has seen and detected
-// by radar should just show the radar line"). Each is a setting: SELECTED, ALL or OFF. SELECTED is every line to and
+// trails and labels). Lines of different kinds can lie on each other (a receiver is pinged by the radar that sees it), so
+// all three are dashed alike, each a third of the way along, and fill each other's gaps. Sight lines come in thick
+// bundles (every ground unit near a front), so they are drawn under the others. Where a radar line goes to a unit, no
+// sight lines go to it: radar comes first (Tomo, 10-26: "a unit that has seen and detected by radar should just show
+// the radar line"). Each is a setting: SELECTED, ALL or OFF. SELECTED is every line to and
 // from the selected unit: what it detects or hears, and what detects or hears it (for radar and sight, the enemy only,
 // as the unit panel counts them). It was only what detects the selected unit (10-25), which left a radar's own lines
 // on ALL only (Tomo, 10-26: "it only shows detected by radar when all is toggled on").
@@ -22,11 +22,14 @@
 import { recordsById } from "./locks.js";
 import { LineBatch, inFront } from "./fatlines.js";
 
-// each kind's look: colour, dash and gap (CSS pixels, measured on screen so they read the same at any zoom; none:
-// solid) and draw order (over the explosions, under the lock lines)
-export const RADAR = { color: "#fff23a", order: 5 };                        // a radar to what it sees
-export const SIGHT = { color: "#00ffff", dash: 4, gap: 4, order: 4.5 };     // a unit to what it sees by eye
-export const PASSIVE = { color: "#d4d8dc", dash: 12, gap: 8, order: 5.5 };  // a receiver to the radars it picks up
+// each kind's look: colour, dash, gap and phase (CSS pixels, measured on screen so they read the same at any zoom) and
+// draw order (over the explosions, under the lock lines). One pattern for all three, each a third of the way along
+// the next, so lines on the same two units fit into each other's gaps (Tomo, 10-26: "the yellow, blue, and grey dashed
+// detection forms should fit perfectly in each other too").
+const DASH = 10;
+export const RADAR = { color: "#fff23a", dash: DASH, gap: 2 * DASH, order: 5 };                        // a radar to what it sees
+export const SIGHT = { color: "#00ffff", dash: DASH, gap: 2 * DASH, phase: 2 * DASH, order: 4.5 };     // a unit to what it sees by eye
+export const PASSIVE = { color: "#d4d8dc", dash: DASH, gap: 2 * DASH, phase: DASH, order: 5.5 };      // a receiver to the radars it picks up
 
 // whether unit i is there at t: in the recording and not a wreck
 function there(rp, i, t) { return rp.alive(i, t) && rp.visibleAt(i, t); }
