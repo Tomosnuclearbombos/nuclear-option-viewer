@@ -16,7 +16,7 @@ export const SETTINGS = {
   sliders: ["off", "on"],                  // the camera sliders over the view
   lines: ["off", "selected", "all"],       // the lock and detection lines: the selected unit's, everyone's, or none
   lineLocking: ["on", "off"],              // ... which: what a unit has locked,
-  lineLocked: ["on", "off"],               // a lock on the selected unit,
+  lineLocked: ["on", "off"],               // a lock with the unit's radar on its target,
   lineRadar: ["on", "off"],                // detected by radar,
   lineSight: ["on", "off"],                // detected by eye,
   linePassive: ["on", "off"],              // and a radar's signal heard

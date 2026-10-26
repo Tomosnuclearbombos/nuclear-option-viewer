@@ -1,21 +1,26 @@
 // Lock lines: a line from a unit to each target in its recorded lock list (LOCK/S in its panel), apart from the side
-// colours (Tomo, 10-22). Two kinds, each a toggle (Tomo, 10-26): green is what a unit has locked ("we need to see what
-// units have locked onto (green)"), and red is a lock on the selected unit, followed or not ("what's locked onto it ...
-// it should be visible all the time"). For a missile that is the target it's guiding to. For an aircraft it is the
+// colours (Tomo, 10-22). Two kinds, each a toggle: green is what a unit has locked ("we need to see what units have
+// locked onto (green)", 10-26), and red is a lock with the unit's radar on the target too, its radar list having it
+// then (Tomo, 10-27: "if someone has a lock on you and radar on the line goes red ... the green line changes to a red
+// line"). The game itself only turns its warning red for a ground or ship radar (Aircraft.RpcGetRadarWarning skips
+// aircraft), and only aircraft and missiles carry a lock list in the recording, so these reds are a jet's or a missile's
+// radar locks. For a missile the lock is the target it's guiding to. For an aircraft it is the
 // recorder's LockedTarget list, which is a player's picked targets or an AI's planned shots, not a
 // radar lock (Game expert, 2026-10-20), and older recordings only hold it when two or more are picked.
 //
 // Both are dashed, the dash as long as the gap, counted on screen from the same end of the line, and red sits in green's
-// gaps: the selected unit and an enemy locked on each other draw one line, green and red in turn (Tomo, 10-26: "dashed
-// in the opposite so the lines merge perfectly").
+// gaps: two units locked on each other, one with radar and one without, draw one line, green and red in turn (Tomo,
+// 10-26: "dashed in the opposite so the lines merge perfectly"). Red sits where the radar lines' dashes do, so a radar
+// line under a radar lock turns red, as the game's warning does.
 //
 // Drawn over everything (no depth test), so a line to a target behind a hill still shows.
 
 import { LineBatch, inFront } from "./fatlines.js";
+import { holds } from "./detects.js";
 
 const DASH = 10;   // CSS pixels on, then off
 const LOCKING = { color: "#00ff00", dash: DASH, gap: DASH, order: 6, opacity: 0.9 };                // a unit's lock
-const LOCKED = { color: "#ff3b30", dash: DASH, gap: DASH, phase: DASH, order: 6, opacity: 0.9 };   // a lock on the selected unit
+const LOCKED = { color: "#ff3b30", dash: DASH, gap: DASH, phase: DASH, order: 6, opacity: 0.9 };   // a lock with radar on
 
 // every target in unit i's recorded lock list at time t, as record indices (one per slot, so a target can be there
 // twice). byId maps a recorded id to its records (ids are reused after a unit is removed).
@@ -73,7 +78,8 @@ export class LockLines {
   }
 
   // mode: "selected" (what the selected unit has locked, and what has locked it), "all" or "off"; locking and locked:
-  // whether the green and the red lines are on; viewer for the camera and the screen
+  // whether the green (no radar on the target) and the red (radar on it) lines are on; viewer for the camera and the
+  // screen
   update(t, mode, selected, viewer, locking = true, locked = true) {
     if (!this.rp) return;
     const rp = this.rp;
@@ -86,17 +92,20 @@ export class LockLines {
       if (!targets.length || (only >= 0 && !targets.includes(only)) || !rp.poseAt(i, t, this.a)) return;
       for (const j of targets) {
         if ((only >= 0 && j !== only) || !rp.poseAt(j, t, this.b)) continue;
-        const s = j === selected && i !== selected ? (locked ? this.red : null) : locking ? this.green : null;
+        const s = holds(rp, rp.radarDetects, i, j, t, this.byId) ? (locked ? this.red : null) : locking ? this.green : null;
         if (s) this.put(s, i, j);
       }
     };
     if (mode === "all") for (const i of this.holders) draw(i, -1);
     else if (mode === "selected" && selected >= 0) {
-      if (locking && rp.locks.count[selected]) draw(selected, -1);
-      if (locked) for (const i of this.holders) if (i !== selected) draw(i, selected);
+      if (!locking && !locked) return this.finish(viewer);
+      if (rp.locks.count[selected]) draw(selected, -1);
+      for (const i of this.holders) if (i !== selected) draw(i, selected);
     }
-    for (const s of [this.green, this.red]) s.end(viewer, this.width);
+    this.finish(viewer);
   }
+
+  finish(viewer) { for (const s of [this.green, this.red]) s.end(viewer, this.width); }
 
   // one segment into batch s, from unit i (at this.a) to unit j (at this.b)
   put(s, i, j) {
