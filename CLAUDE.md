@@ -121,8 +121,8 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   - `TrackedBy=<Coalition>;<Coalition>` on aircraft, ships and ground vehicles: the sides whose data link has it now.
   The viewer draws lock lines dashed: green for what a unit has locked, red for a lock on the selected unit (in green's
   gaps, so a two way lock is one line). Radar lines lemon yellow, sight lines light blue (the game's visual range cyan)
-  and passive lines light grey, all three dashed alike, each a third along, so they fill each other's gaps (Tomo's
-  colours, 10-26); no grey back along a yellow line (10-27, as in the game's warning lines), with a colour key in Settings; the unit panel shows DATA LINK with a RADAR
+  and passive lines light grey, with the same dash, also in green's gaps (Tomo, 10-26 and 10-27); no grey back along a
+  yellow line, as in the game's warning lines; with a colour key in Settings; the unit panel shows DATA LINK with a RADAR
   row and a SIGHT row under it naming what sees the unit.
 - **Types seen:**
   - Air+FixedWing / Air+Rotorcraft.
