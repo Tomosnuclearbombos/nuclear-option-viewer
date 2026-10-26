@@ -24,7 +24,7 @@ const STEPS = [
   { title: "LABELS, TRAILS AND CURTAINS", panel: "settings", target: '[data-set="labels"]', group: true, side: "left",
     text: "Names, where units have been, and how high they fly." },
   { title: "LOCK LINES", panel: "settings", target: '[data-set="lockLines"]', group: true, side: "left",
-    text: "Red line from a missile or plane to its target." },
+    text: "Green is what a unit has locked. Red is what has locked the unit you picked." },
   { title: "RADAR, SIGHT AND PASSIVE", panel: "settings", target: '[data-set="radarLines"]', group: true, side: "left",
     text: "Who can see who. Colours are in the key below." },
   { title: "MAP", panel: "settings", target: '[data-set="map"]', group: true, side: "left",

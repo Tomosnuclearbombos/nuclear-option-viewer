@@ -9,9 +9,12 @@
 // map's range circle is Color.cyan, MapToolTip). The yellow is a lemon yellow, well apart from PALA's amber (#FFB800, its
 // trails and labels), and each kind has its own pattern too, so a line reads by colour and pattern. Lines of different
 // kinds can lie on each other: a receiver is pinged by the radar that sees it, so the passive lines are drawn over the
-// radar lines; sight lines come in thick bundles (every ground unit near a front), so they are drawn under them. Each is
-// a setting: SELECTED, ALL or OFF. SELECTED is the enemy units that see the selected unit (radar and sight, as the unit
-// panel counts them), or the selected unit's own list and every unit whose list has it (passive).
+// radar lines; sight lines come in thick bundles (every ground unit near a front), so they are drawn under them. Where a
+// radar line goes to a unit, no sight lines go to it: radar comes first (Tomo, 10-26: "a unit that has seen and detected
+// by radar should just show the radar line"). Each is a setting: SELECTED, ALL or OFF. SELECTED is every line to and
+// from the selected unit: what it detects or hears, and what detects or hears it (for radar and sight, the enemy only,
+// as the unit panel counts them). It was only what detects the selected unit (10-25), which left a radar's own lines
+// on ALL only (Tomo, 10-26: "it only shows detected by radar when all is toggled on").
 //
 // Drawn over everything (no depth test), like the lock lines. A wreck that stays in the recording (a destroyed radar
 // station, Visible=0) has none.
@@ -58,34 +61,38 @@ export function holds(rp, g, h, j, t, byId) {
 
 // LineDashedMaterial with its dashes counted in pixels on screen from an anchor point (a per vertex attribute, the same
 // at both ends of a segment) instead of in metres along the line: a line tens of km long, seen from a camera close to
-// one end, would otherwise be one long dash near the camera and a shimmer far away
-function screenDashed(opts, view) {
+// one end, would otherwise be one long dash near the camera and a shimmer far away. phase ({ value } in pixels) shifts
+// the pattern along: the lock lines' red dashes sit in the green ones' gaps.
+export function screenDashed(opts, view, phase = { value: 0 }) {
   const m = new THREE.LineDashedMaterial(opts);
   m.onBeforeCompile = (sh) => {
     sh.uniforms.view = view;
+    sh.uniforms.phase = phase;
     sh.vertexShader = sh.vertexShader
       .replace("attribute float lineDistance;", "attribute vec3 anchor;")
       .replace("varying float vLineDistance;", "varying vec4 vAnchor;")
       .replace("vLineDistance = scale * lineDistance;", "vAnchor = projectionMatrix * modelViewMatrix * vec4( anchor, 1.0 );");
     sh.fragmentShader = sh.fragmentShader
-      .replace("varying float vLineDistance;", "varying vec4 vAnchor;\nuniform vec2 view;")
+      .replace("varying float vLineDistance;", "varying vec4 vAnchor;\nuniform vec2 view;\nuniform float phase;")
       .replace("if ( mod( vLineDistance, totalSize ) > dashSize ) {",
-        "float vLineDistance = distance( gl_FragCoord.xy, ( vAnchor.xy / vAnchor.w * 0.5 + 0.5 ) * view );\n\tif ( mod( vLineDistance, totalSize ) > dashSize ) {");
+        "float vLineDistance = distance( gl_FragCoord.xy, ( vAnchor.xy / vAnchor.w * 0.5 + 0.5 ) * view ) + phase;\n\tif ( mod( vLineDistance, totalSize ) > dashSize ) {");
   };
   m.customProgramCacheKey = () => "nov-screen-dash";
   return m;
 }
 
 export class DetectLines {
-  // key: the series drawn, "radarDetects", "sightDetects" or "passiveTracks"; look: RADAR, SIGHT or PASSIVE; seenOnly:
-  // with "selected", only the lines to the selected unit, from what detects it, not its own list (Tomo, 10-26:
-  // "selected unit only (show only what that unit is being detected by)")
-  constructor(scene, key, look, seenOnly = false) {
+  // key: the series drawn, "radarDetects", "sightDetects" or "passiveTracks"; look: RADAR, SIGHT or PASSIVE; enemyOnly:
+  // with "selected", only the enemy's lines to the selected unit; under: the lines that come first (the radar lines,
+  // for the sight lines), updated before these each frame
+  constructor(scene, key, look, enemyOnly = false, under = null) {
     this.scene = scene;
     this.key = key;
     this.look = look;
     this.dashed = !!look.dash;
-    this.seenOnly = seenOnly;
+    this.enemyOnly = enemyOnly;
+    this.under = under;
+    this.frame = 0;
     this.cap = 0;
     this.n = 0;
     this.lines = null;
@@ -108,6 +115,7 @@ export class DetectLines {
     this.when = new Float64Array(rp.count).fill(NaN);
     this.here = new Uint8Array(rp.count);
     this.xyz = new Float32Array(rp.count * 3);
+    this.hit = new Uint32Array(rp.count);   // the frame each unit last had a line to it (for the lines under these)
     // a bigger buffer from the last replay is kept: a live rebuild would otherwise miss lines for a few frames while it
     // grew back
     const cap = Math.max(64, Math.min(4096, this.holders.length * 4));
@@ -127,13 +135,14 @@ export class DetectLines {
     this.scene.add(this.lines);
   }
 
-  // mode: "selected" (the lines to the selected unit, and from it unless seenOnly), "all" or "off"; viewer for the camera
+  // mode: "selected" (the lines to and from the selected unit), "all" or "off"; viewer for the camera
   // and the screen
   update(t, mode, selected, viewer) {
     if (!this.lines) return;
     if (this.full) { this.grow(this.cap * 2); this.full = false; }   // ran out of room last frame
     const rp = this.rp, g = this.g, geo = this.lines.geometry;
     this.n = 0;
+    this.frame++;
     if (this.dashed) {
       const r = viewer.renderer, m = this.lines.material;
       r.getDrawingBufferSize(this.view.value);
@@ -144,10 +153,10 @@ export class DetectLines {
     if (mode === "all") {
       for (const h of this.holders) if (this.spot(h, t)) this.from(h, t);
     } else if (mode === "selected" && selected >= 0 && this.spot(selected, t)) {
-      if (!this.seenOnly && g.count[selected]) this.from(selected, t);
+      if (g.count[selected]) this.from(selected, t);
       // and every unit whose list has it; for what detects it, the enemy only, as the unit panel counts them (a base's
       // building keeps its list for a scan after it changes hands)
-      const side = this.seenOnly ? rp.sideAt(selected, t) : null;
+      const side = this.enemyOnly ? rp.sideAt(selected, t) : null;
       for (const h of this.holders) {
         if (h !== selected && rp.alive(h, t) && holds(rp, g, h, selected, t, this.byId) && (side === null || rp.sideAt(h, t) !== side) && this.spot(h, t)) this.put(h, selected);
       }
@@ -181,9 +190,12 @@ export class DetectLines {
     return this.here[r] === 1;
   }
 
-  // one segment, from unit i to unit j (both spotted this frame)
+  // one segment, from unit i to unit j (both spotted this frame), unless the lines under these go to j this frame
   put(i, j) {
+    const u = this.under;
+    if (u && u.hit[j] === u.frame && u.rp === this.rp) return;
     if (this.n >= this.cap) { this.full = true; return; }
+    this.hit[j] = this.frame;
     const P = this.xyz, a = i * 3, b = j * 3;
     const geo = this.lines.geometry, p = geo.attributes.position.array, o = this.n * 6;
     p[o] = P[a]; p[o + 1] = P[a + 1]; p[o + 2] = P[a + 2];

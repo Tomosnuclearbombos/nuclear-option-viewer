@@ -47,7 +47,7 @@ try {
   ranges = new Ranges(viewer.scene);
   lockLines = new LockLines(viewer.scene);
   radarLines = new DetectLines(viewer.scene, "radarDetects", RADAR, true);
-  sightLines = new DetectLines(viewer.scene, "sightDetects", SIGHT, true);
+  sightLines = new DetectLines(viewer.scene, "sightDetects", SIGHT, true, radarLines);   // radar comes first
   passiveLines = new DetectLines(viewer.scene, "passiveTracks", PASSIVE);
   trails = new Trails(viewer.scene);
   overlay = new Overlay($("overlay"));
@@ -287,7 +287,7 @@ if (viewer) viewer.onFrame = (now) => {
   if (settings.effects === "on") blasts.update(rp, t, units.booms, units.nBooms, viewer.camera, viewer.height);
   else if (blasts.mesh) blasts.mesh.count = 0;
   ranges.update(t);
-  lockLines.update(t, settings.lockLines, state.sel);
+  lockLines.update(t, settings.lockLines, state.sel, viewer);
   radarLines.update(t, settings.radarLines, state.sel, viewer);
   sightLines.update(t, settings.sightLines, state.sel, viewer);
   passiveLines.update(t, settings.passiveLines, state.sel, viewer);

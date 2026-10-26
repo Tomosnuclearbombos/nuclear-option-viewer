@@ -198,7 +198,7 @@
           <button class="key small" type="button" data-val="off">OFF</button>
         </div>
       </div>
-      <p class="set-note prose">A line from a unit to everything in its LOCK/S list: from a missile to the target it's flying at, from a plane to the targets its pilot picked. Selected shows the lines of the unit you've picked, all shows everyone's.</p>
+      <p class="set-note prose">Green is what a unit has locked, red is what has locked the unit you've picked. Selected shows just that unit's, all shows everyone's.</p>
     </div>
     <div class="set-group">
       <div class="set-row" data-set="radarLines" role="group" aria-label="Radar lines">
@@ -225,8 +225,9 @@
           <button class="key small" type="button" data-val="off">OFF</button>
         </div>
       </div>
-      <p class="set-note prose">For radar and sight, Selected shows what can see the unit you've picked. For passive, it shows the unit you've picked and the radars it hears. All shows everything.</p>
+      <p class="set-note prose">Selected shows the lines to and from the unit you've picked, all shows everything. Where radar has a unit, its sight lines don't show.</p>
       <ul class="line-key" aria-label="Line colours">
+        <li><span class="swatch locking"></span>Has locked a target</li>
         <li><span class="swatch locked"></span>Locked by a unit</li>
         <li><span class="swatch radar"></span>Detected by radar</li>
         <li><span class="swatch sight"></span>Detected by visual</li>
