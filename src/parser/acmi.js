@@ -153,9 +153,10 @@ export class AcmiParser {
     // what each radar sees (RadarDetects), each unit sees by eye (SightDetects) and each passive receiver picks up
     // (PassiveTracks): per change, a run of ids in one shared list (at, n); and which sides' data link has each unit
     // (TrackedBy), per change a sideBit mask. Written only when they change, an empty value clearing them (agreed 10-25
-    // for the next NOBlackBox build; SightDetects 10-26).
+    // for the next NOBlackBox build; SightDetects 10-26). RadarLockedBy (recorder 26a867efbafa, 10-27): on an aircraft,
+    // the radars whose latest warning to it in the last 4 s was red, the game's lock warning.
     const ids = () => ({ rec: new Grow(Uint32Array, 256), t: new Grow(Float32Array, 256), at: new Grow(Uint32Array, 256), n: new Grow(Uint16Array, 256), ids: new Grow(Float64Array, 256) });
-    this.radarDetects = ids(); this.sightDetects = ids(); this.passiveTracks = ids();
+    this.radarDetects = ids(); this.sightDetects = ids(); this.passiveTracks = ids(); this.radarLockedBy = ids();
     this.trackedBy = { rec: new Grow(Uint32Array, 256), t: new Grow(Float32Array, 256), sides: new Grow(Uint8Array, 256) };
 
     this.events = [];        // { t, kind, ids:[...], text }
@@ -320,6 +321,7 @@ export class AcmiParser {
       case "RadarDetects": this.idList(this.radarDetects, r, b, s, e); return;
       case "SightDetects": this.idList(this.sightDetects, r, b, s, e); return;
       case "PassiveTracks": this.idList(this.passiveTracks, r, b, s, e); return;
+      case "RadarLockedBy": this.idList(this.radarLockedBy, r, b, s, e); return;
       case "TrackedBy": this.sides(r, b, s, e); return;
       case "Armed": { const v = readNumber(b, s, e); if (v === v) this.recArmed[r] = v ? 1 : 0; return; }
       case "EngagementRange": { const v = readNumber(b, s, e); if (v === v) this.recRange[r] = v; return; }
@@ -513,6 +515,7 @@ export class AcmiParser {
       radarDetects: idSeries(this.radarDetects, "radarDetects"),
       sightDetects: idSeries(this.sightDetects, "sightDetects"),
       passiveTracks: idSeries(this.passiveTracks, "passiveTracks"),
+      radarLockedBy: idSeries(this.radarLockedBy, "radarLockedBy"),
       trackedBy: groupByRecord(N, T.rec.done(), { t: T.t.done(), sides: T.sides.done() }, "trackedBy", none),
       events: this.events,
     };
@@ -571,6 +574,6 @@ export function transferables(result) {
     for (const k in o) walk(o[k]);
   };
   walk(result.objects); walk(result.samples); walk(result.channels); walk(result.locks);
-  walk(result.radarDetects); walk(result.sightDetects); walk(result.passiveTracks); walk(result.trackedBy);
+  walk(result.radarDetects); walk(result.sightDetects); walk(result.passiveTracks); walk(result.radarLockedBy); walk(result.trackedBy);
   return [...new Set(out)];
 }

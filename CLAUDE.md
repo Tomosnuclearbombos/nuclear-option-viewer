@@ -118,9 +118,12 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   - `PassiveTracks=<id>;<id>` on aircraft with a passive receiver: the emitters that pinged it in the last 4 s.
   - `SightDetects=<id>;<id>` on every unit with eyes (10-26, recorder c37808c666f1): what it sees by eye, minus what
     its radar found (an id is never in both).
+  - `RadarLockedBy=<id>;<id>` on every aircraft (10-27, recorder 26a867efbafa, not on the servers yet): the radars whose
+    latest warning to it in the last 4 s was red, the game's lock warning (a jet counts when a weapon of it is aimed).
   - `TrackedBy=<Coalition>;<Coalition>` on aircraft, ships and ground vehicles: the sides whose data link has it now.
-  The viewer draws lock lines dashed: green for what a unit has locked, red when its radar list has the target too
-  (Tomo 10-27: "the green line changes to a red line"; in green's gaps, over the radar line's dashes). Radar lines lemon yellow, sight lines light blue (the game's visual range cyan)
+  The viewer draws lock lines dashed: green for what a unit has locked, red for a radar lock (Tomo 10-27: "the green
+  line changes to a red line"): from RadarLockedBy where the file has it (held 4 s against blinking), else a lock
+  whose unit's radar list has the target too; in green's gaps, over the radar line's dashes. Radar lines lemon yellow, sight lines light blue (the game's visual range cyan)
   and passive lines light grey, with the same dash, also in green's gaps (Tomo, 10-26 and 10-27); no grey back along a
   yellow line, as in the game's warning lines; with a colour key in Settings; the unit panel shows DATA LINK with a RADAR
   row and a SIGHT row under it naming what sees the unit.

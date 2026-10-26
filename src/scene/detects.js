@@ -38,7 +38,7 @@ function there(rp, i, t) { return rp.alive(i, t) && rp.visibleAt(i, t); }
 
 // whether record r is the unit its id meant in a list written at tc (recs: the records with that id): r was there then,
 // or no unit had the id then (its first line came after the list). Ids are reused after a unit is removed.
-function meant(rp, recs, r, tc) {
+export function meant(rp, recs, r, tc) {
   if (rp.o.t0[r] <= tc) return true;
   for (const q of recs) if (rp.alive(q, tc)) return false;
   return true;
@@ -46,7 +46,7 @@ function meant(rp, recs, r, tc) {
 
 // the change of series g (rp.radarDetects, rp.sightDetects or rp.passiveTracks) in force for record i at t, or -1 if
 // none yet
-function changeAt(g, i, t) {
+export function changeAt(g, i, t) {
   const n = g.count[i];
   if (!n) return -1;
   const a = g.start[i];

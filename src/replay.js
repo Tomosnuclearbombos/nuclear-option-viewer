@@ -21,6 +21,7 @@ export class Replay {
     this.radarDetects = r.radarDetects;
     this.sightDetects = r.sightDetects;
     this.passiveTracks = r.passiveTracks;
+    this.radarLockedBy = r.radarLockedBy;
     this.trackedBy = r.trackedBy;
     this.events = r.events;
     const N = this.o.count;
