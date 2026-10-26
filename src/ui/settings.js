@@ -6,18 +6,21 @@
 
 const STORE = "nov.settings.v1";
 
-// each setting's allowed values, the first being the default. A browser new to the viewer starts with the extra
-// lines off (Tomo, 10-26: "by default keep most of the additional settings off").
+// each setting's allowed values, the first being the default. A browser new to the viewer starts with the lines off
+// (Tomo, 10-26: "by default keep most of the additional settings off").
 export const SETTINGS = {
   map: ["terrain", "tactical", "empty"],
   units: ["focus", "real"],
   focusSize: ["100", "80", "50", "25"],    // how big focus mode keeps far units, in percent
   ui: ["100", "80", "90", "120", "140"],   // size of the panels and keys, in percent
   sliders: ["off", "on"],                  // the camera sliders over the view
-  lockLines: ["off", "selected", "all"],   // lines from units to what they have locked
-  radarLines: ["off", "selected", "all"],  // lines from radars to what they see
-  sightLines: ["off", "selected", "all"],  // lines from units to what they see by eye
-  passiveLines: ["off", "selected", "all"], // lines from passive receivers to the radars they pick up
+  lines: ["off", "selected", "all"],       // the lock and detection lines: the selected unit's, everyone's, or none
+  lineLocking: ["on", "off"],              // ... which: what a unit has locked,
+  lineLocked: ["on", "off"],               // what has locked the selected unit,
+  lineRadar: ["on", "off"],                // detected by radar,
+  lineSight: ["on", "off"],                // detected by eye,
+  linePassive: ["on", "off"],              // and a radar's signal heard
+  lineWidth: ["thin", "medium", "thick"],
   ranges: ["off", "on"],                   // radar and sight range domes
   rangePlanes: ["on", "off"],              // ... for planes and helicopters,
   rangeShips: ["on", "off"],               // ships,
@@ -59,6 +62,15 @@ export function loadSettings() {
     const saved = JSON.parse(localStorage.getItem(STORE) || "{}");
     if (saved && typeof saved === "object") {
       for (const [k, vals] of Object.entries(SETTINGS)) if (vals.includes(saved[k])) s[k] = saved[k];
+      // Each kind of line had its own SELECTED / ALL / OFF until 10-26 (Tomo: "instead of the specific types of
+      // detection you can just toggle which lines you want on and off"): the busiest of them is the one for all now,
+      // and the kinds that were off stay off.
+      const OLD = { lockLines: ["lineLocking", "lineLocked"], radarLines: ["lineRadar"], sightLines: ["lineSight"], passiveLines: ["linePassive"] };
+      if (!("lines" in saved) && Object.keys(OLD).some((k) => k in saved)) {
+        const was = Object.keys(OLD).map((k) => saved[k]);
+        s.lines = was.includes("all") ? "all" : was.includes("selected") ? "selected" : "off";
+        if (s.lines !== "off") for (const [k, keys] of Object.entries(OLD)) for (const n of keys) s[n] = saved[k] === "off" ? "off" : "on";
+      }
     }
   } catch { /* storage blocked or garbled: the defaults */ }
   return s;

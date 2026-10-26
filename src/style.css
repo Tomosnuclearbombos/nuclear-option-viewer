@@ -115,9 +115,16 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
 .error { margin: 0; color: var(--alert); font-size: 15px; }
 .live-row { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--green-line); }
 .live-head { margin: 0 0 10px; font: 400 14px/1.3 var(--mono); letter-spacing: 0.04em; color: var(--green); text-shadow: var(--glow); }
-/* the line colour key in Settings: each line's colour and pattern (src/scene/locks.js and detects.js) */
-.line-key { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; font-size: 12px; color: var(--green); }
-.line-key li { display: flex; align-items: center; gap: 10px; }
+/* the line colour key in Settings: each line's colour and pattern (src/scene/locks.js and detects.js), each a toggle */
+.line-key { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 12px; }
+.line-toggle {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 3px 6px; text-align: left; cursor: pointer;
+  background: none; border: 1px solid transparent; border-radius: 2px; color: var(--green);
+}
+.line-toggle:hover { border-color: var(--green-faint); }
+.line-toggle:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.line-toggle.off { color: var(--off); text-decoration: line-through; }
+.line-toggle.off .swatch { opacity: 0.3; }
 .line-key .swatch { flex: 0 0 34px; height: 0; border-top: 2px solid; }
 .line-key .locking { border-top: 2px dashed #00ff00; }
 .line-key .locked { border-top: 2px dashed #ff3b30; }

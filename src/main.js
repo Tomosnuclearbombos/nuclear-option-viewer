@@ -287,10 +287,12 @@ if (viewer) viewer.onFrame = (now) => {
   if (settings.effects === "on") blasts.update(rp, t, units.booms, units.nBooms, viewer.camera, viewer.height);
   else if (blasts.mesh) blasts.mesh.count = 0;
   ranges.update(t);
-  lockLines.update(t, settings.lockLines, state.sel, viewer);
-  radarLines.update(t, settings.radarLines, state.sel, viewer);
-  sightLines.update(t, settings.sightLines, state.sel, viewer);
-  passiveLines.update(t, settings.passiveLines, state.sel, viewer);
+  // the lines: one SELECTED / ALL / OFF for them all, and each kind on or off (Tomo, 10-26)
+  const lines = (k) => (settings[k] === "on" ? settings.lines : "off");
+  lockLines.update(t, settings.lines, state.sel, viewer, settings.lineLocking === "on", settings.lineLocked === "on");
+  radarLines.update(t, lines("lineRadar"), state.sel, viewer);
+  sightLines.update(t, lines("lineSight"), state.sel, viewer);
+  passiveLines.update(t, lines("linePassive"), state.sel, viewer);
   overlay.project(units.live, viewer.camera);
   trails.update(t, units.live, viewer.groundAt);
   overlay.draw(rp, hoverInfo, rangeInfo, t);
@@ -464,6 +466,7 @@ function toggleSettings(show) {
 $("settings-btn").addEventListener("click", () => toggleSettings());
 
 // ---- settings --------------------------------------------------------------------------------------------
+const LINE_WIDTH = { thin: 1, medium: 2, thick: 3.5 };   // the lock and detection lines, in CSS pixels
 // puts one setting into effect; every one applies straight away except smooth edges (next time the page opens)
 function applySetting(key, value) {
   if (key === "ui") {
@@ -496,6 +499,7 @@ function applySetting(key, value) {
       break;
     case "scenery": scenery.setShown(on && settings.map !== "empty"); break;
     case "effects": units.effects = on; break;
+    case "lineWidth": for (const l of [lockLines, radarLines, sightLines, passiveLines]) l.width = LINE_WIDTH[value]; break;
     case "labels": overlay.showLabels = value !== "off"; overlay.playersOnly = value === "players"; break;
     case "trails": trails.showTrails = on; break;
     case "curtains": trails.showCurtains = on; break;

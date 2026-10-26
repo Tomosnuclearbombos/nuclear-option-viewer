@@ -11,12 +11,11 @@
 //
 // Drawn over everything (no depth test), so a line to a target behind a hill still shows.
 
-import * as THREE from "three";
-import { screenDashed } from "./detects.js";
+import { LineBatch, inFront } from "./fatlines.js";
 
-const DASH = 10;                // CSS pixels on, then off
-const LOCKING = "#00ff00";      // a unit to what it has locked
-const LOCKED = "#ff3b30";       // a unit to the selected unit, which it has locked
+const DASH = 10;   // CSS pixels on, then off
+const LOCKING = { color: "#00ff00", dash: DASH, gap: DASH, order: 6, opacity: 0.9 };                // to what it has locked
+const LOCKED = { color: "#ff3b30", dash: DASH, gap: DASH, phase: DASH, order: 6, opacity: 0.9 };   // to the selected unit
 
 // every target in unit i's recorded lock list at time t, as record indices (one per slot, so a target can be there
 // twice). byId maps a recorded id to its records (ids are reused after a unit is removed).
@@ -56,14 +55,12 @@ export function recordsById(rp) {
 
 export class LockLines {
   constructor(scene) {
-    this.scene = scene;
     this.a = new Float64Array(7); this.b = new Float64Array(7);
+    this.ends = new Float64Array(6);
     this.targets = [];
-    this.view = { value: new THREE.Vector2(1, 1) };   // the drawing buffer's size, for the dashes
-    this.phase = { value: 0 };                          // red's dashes start one dash along
-    const opts = (c) => ({ color: new THREE.Color(c), transparent: true, opacity: 0.9, depthTest: false, depthWrite: false });
-    this.green = { material: screenDashed(opts(LOCKING), this.view), cap: 0, n: 0, lines: null, full: false };
-    this.red = { material: screenDashed(opts(LOCKED), this.view, this.phase), cap: 0, n: 0, lines: null, full: false };
+    this.width = 1;   // CSS pixels (the line width setting)
+    this.green = new LineBatch(scene, LOCKING);
+    this.red = new LineBatch(scene, LOCKED);
   }
 
   setReplay(rp) {
@@ -72,36 +69,17 @@ export class LockLines {
     this.holders = [];   // records with a lock list at all
     for (let i = 0; i < rp.count; i++) if (rp.locks.count[i]) this.holders.push(i);
     const cap = Math.max(64, Math.min(4096, this.holders.length * 2));
-    for (const s of [this.green, this.red]) if (cap > s.cap) this.grow(s, cap);
+    this.green.reserve(cap); this.red.reserve(cap);
   }
 
-  grow(s, cap) {
-    if (s.lines) { this.scene.remove(s.lines); s.lines.geometry.dispose(); }
-    s.cap = cap;
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(cap * 6), 3).setUsage(THREE.DynamicDrawUsage));
-    g.setAttribute("anchor", new THREE.BufferAttribute(new Float32Array(cap * 6), 3).setUsage(THREE.DynamicDrawUsage));
-    g.setDrawRange(0, 0);
-    s.lines = new THREE.LineSegments(g, s.material);
-    s.lines.frustumCulled = false;
-    s.lines.renderOrder = 6;
-    this.scene.add(s.lines);
-  }
-
-  // mode: "selected" (what the selected unit has locked, and what has locked it), "all" or "off"; viewer for the camera
-  // and the screen
-  update(t, mode, selected, viewer) {
-    if (!this.green.lines) return;
-    const r = viewer.renderer, px = DASH * r.getPixelRatio();
-    r.getDrawingBufferSize(this.view.value);
-    this.phase.value = px;
-    this.cam = viewer.camera;
-    for (const s of [this.green, this.red]) {
-      if (s.full) { this.grow(s, s.cap * 2); s.full = false; }   // ran out of room last frame
-      s.material.dashSize = s.material.gapSize = px;
-      s.n = 0;
-    }
+  // mode: "selected" (what the selected unit has locked, and what has locked it), "all" or "off"; locking and locked:
+  // whether the green and the red lines are on (in ALL, a lock on the selected unit is green when red is off); viewer
+  // for the camera and the screen
+  update(t, mode, selected, viewer, locking = true, locked = true) {
+    if (!this.rp) return;
     const rp = this.rp;
+    this.cam = viewer.camera;
+    this.green.begin(); this.red.begin();
     // only: just the line to that record (what has locked the selected unit), or -1 for all of them
     const draw = (i, only) => {
       if (!rp.alive(i, t)) return;
@@ -109,38 +87,26 @@ export class LockLines {
       if (!targets.length || (only >= 0 && !targets.includes(only)) || !rp.poseAt(i, t, this.a)) return;
       for (const j of targets) {
         if ((only >= 0 && j !== only) || !rp.poseAt(j, t, this.b)) continue;
-        this.put(j === selected && i !== selected ? this.red : this.green, i, j);
+        const s = j === selected && i !== selected && locked ? this.red : locking ? this.green : null;
+        if (s) this.put(s, i, j);
       }
     };
     if (mode === "all") for (const i of this.holders) draw(i, -1);
     else if (mode === "selected" && selected >= 0) {
-      if (rp.locks.count[selected]) draw(selected, -1);
-      for (const i of this.holders) if (i !== selected) draw(i, selected);
+      if (locking && rp.locks.count[selected]) draw(selected, -1);
+      if (locked) for (const i of this.holders) if (i !== selected) draw(i, selected);
     }
-    for (const s of [this.green, this.red]) {
-      const geo = s.lines.geometry;
-      geo.setDrawRange(0, s.n * 2);
-      geo.attributes.position.needsUpdate = true;
-      geo.attributes.anchor.needsUpdate = true;
-      s.lines.visible = s.n > 0;
-    }
+    this.green.end(viewer, this.width); this.red.end(viewer, this.width);
   }
 
   // one segment into batch s, from unit i (at this.a) to unit j (at this.b)
   put(s, i, j) {
-    if (s.n >= s.cap) { s.full = true; return; }
-    const a = this.a, b = this.b, o = s.n * 6, geo = s.lines.geometry;
-    geo.attributes.position.array.set([a[0], a[1], a[2], b[0], b[1], b[2]], o);
+    const E = this.ends, a = this.a, b = this.b;
+    E[0] = a[0]; E[1] = a[1]; E[2] = a[2]; E[3] = b[0]; E[4] = b[1]; E[5] = b[2];
     // the dashes count from the end with the lower record, whichever unit has the lock, so a lock each way lines up;
     // from the other end when that one is behind the camera
-    let p = i < j ? a : b;
-    if (!this.inFront(p)) p = p === a ? b : a;
-    geo.attributes.anchor.array.set([p[0], p[1], p[2], p[0], p[1], p[2]], o);
-    s.n++;
-  }
-
-  inFront(p) {
-    const e = this.cam.matrixWorldInverse.elements;
-    return e[2] * p[0] + e[6] * p[1] + e[10] * p[2] + e[14] < -this.cam.near;
+    let p = i < j ? 0 : 3;
+    if (!inFront(this.cam, E, p)) p = 3 - p;
+    s.add(E, 0, E, 3, E, p);
   }
 }

@@ -19,8 +19,8 @@
 // Drawn over everything (no depth test), like the lock lines. A wreck that stays in the recording (a destroyed radar
 // station, Visible=0) has none.
 
-import * as THREE from "three";
 import { recordsById } from "./locks.js";
+import { LineBatch, inFront } from "./fatlines.js";
 
 // each kind's look: colour, dash and gap (CSS pixels, measured on screen so they read the same at any zoom; none:
 // solid) and draw order (over the explosions, under the lock lines)
@@ -59,50 +59,23 @@ export function holds(rp, g, h, j, t, byId) {
   return false;
 }
 
-// LineDashedMaterial with its dashes counted in pixels on screen from an anchor point (a per vertex attribute, the same
-// at both ends of a segment) instead of in metres along the line: a line tens of km long, seen from a camera close to
-// one end, would otherwise be one long dash near the camera and a shimmer far away. phase ({ value } in pixels) shifts
-// the pattern along: the lock lines' red dashes sit in the green ones' gaps.
-export function screenDashed(opts, view, phase = { value: 0 }) {
-  const m = new THREE.LineDashedMaterial(opts);
-  m.onBeforeCompile = (sh) => {
-    sh.uniforms.view = view;
-    sh.uniforms.phase = phase;
-    sh.vertexShader = sh.vertexShader
-      .replace("attribute float lineDistance;", "attribute vec3 anchor;")
-      .replace("varying float vLineDistance;", "varying vec4 vAnchor;")
-      .replace("vLineDistance = scale * lineDistance;", "vAnchor = projectionMatrix * modelViewMatrix * vec4( anchor, 1.0 );");
-    sh.fragmentShader = sh.fragmentShader
-      .replace("varying float vLineDistance;", "varying vec4 vAnchor;\nuniform vec2 view;\nuniform float phase;")
-      .replace("if ( mod( vLineDistance, totalSize ) > dashSize ) {",
-        "float vLineDistance = distance( gl_FragCoord.xy, ( vAnchor.xy / vAnchor.w * 0.5 + 0.5 ) * view ) + phase;\n\tif ( mod( vLineDistance, totalSize ) > dashSize ) {");
-  };
-  m.customProgramCacheKey = () => "nov-screen-dash";
-  return m;
-}
-
 export class DetectLines {
   // key: the series drawn, "radarDetects", "sightDetects" or "passiveTracks"; look: RADAR, SIGHT or PASSIVE; enemyOnly:
   // with "selected", only the enemy's lines to the selected unit; under: the lines that come first (the radar lines,
   // for the sight lines), updated before these each frame
   constructor(scene, key, look, enemyOnly = false, under = null) {
-    this.scene = scene;
     this.key = key;
-    this.look = look;
     this.dashed = !!look.dash;
     this.enemyOnly = enemyOnly;
     this.under = under;
     this.frame = 0;
-    this.cap = 0;
-    this.n = 0;
-    this.lines = null;
-    this.full = false;
+    this.width = 1;   // CSS pixels (the line width setting)
     this.pose = new Float64Array(7);
-    this.view = { value: new THREE.Vector2(1, 1) };   // the drawing buffer's size, for the dashes
-    // one material for good: a new one for each replay (each live piece) would compile its shader again
-    const opts = { color: new THREE.Color(look.color), transparent: true, opacity: 0.85, depthTest: false, depthWrite: false };
-    this.material = this.dashed ? screenDashed(opts, this.view) : new THREE.LineBasicMaterial(opts);
+    // one batch for good: a new one for each replay (each live piece) would compile its shader again
+    this.batch = new LineBatch(scene, look);
   }
+
+  get n() { return this.batch.n; }
 
   setReplay(rp) {
     this.rp = rp;
@@ -118,38 +91,16 @@ export class DetectLines {
     this.hit = new Uint32Array(rp.count);   // the frame each unit last had a line to it (for the lines under these)
     // a bigger buffer from the last replay is kept: a live rebuild would otherwise miss lines for a few frames while it
     // grew back
-    const cap = Math.max(64, Math.min(4096, this.holders.length * 4));
-    if (cap > this.cap) this.grow(cap);
+    this.batch.reserve(Math.max(64, Math.min(4096, this.holders.length * 4)));
   }
 
-  grow(cap) {
-    if (this.lines) { this.scene.remove(this.lines); this.lines.geometry.dispose(); }
-    this.cap = cap;
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(cap * 6), 3).setUsage(THREE.DynamicDrawUsage));
-    if (this.dashed) g.setAttribute("anchor", new THREE.BufferAttribute(new Float32Array(cap * 6), 3).setUsage(THREE.DynamicDrawUsage));
-    g.setDrawRange(0, 0);
-    this.lines = new THREE.LineSegments(g, this.material);
-    this.lines.frustumCulled = false;
-    this.lines.renderOrder = this.look.order;
-    this.scene.add(this.lines);
-  }
-
-  // mode: "selected" (the lines to and from the selected unit), "all" or "off"; viewer for the camera
-  // and the screen
+  // mode: "selected" (the lines to and from the selected unit), "all" or "off"; viewer for the camera and the screen
   update(t, mode, selected, viewer) {
-    if (!this.lines) return;
-    if (this.full) { this.grow(this.cap * 2); this.full = false; }   // ran out of room last frame
-    const rp = this.rp, g = this.g, geo = this.lines.geometry;
-    this.n = 0;
+    if (!this.rp) return;
+    const rp = this.rp, g = this.g;
+    this.batch.begin();
     this.frame++;
-    if (this.dashed) {
-      const r = viewer.renderer, m = this.lines.material;
-      r.getDrawingBufferSize(this.view.value);
-      m.dashSize = this.look.dash * r.getPixelRatio();
-      m.gapSize = this.look.gap * r.getPixelRatio();
-      this.cam = viewer.camera;
-    }
+    this.cam = viewer.camera;
     if (mode === "all") {
       for (const h of this.holders) if (this.spot(h, t)) this.from(h, t);
     } else if (mode === "selected" && selected >= 0 && this.spot(selected, t)) {
@@ -161,10 +112,7 @@ export class DetectLines {
         if (h !== selected && rp.alive(h, t) && holds(rp, g, h, selected, t, this.byId) && (side === null || rp.sideAt(h, t) !== side) && this.spot(h, t)) this.put(h, selected);
       }
     }
-    geo.setDrawRange(0, this.n * 2);
-    geo.attributes.position.needsUpdate = true;
-    if (this.dashed) geo.attributes.anchor.needsUpdate = true;
-    this.lines.visible = this.n > 0;
+    this.batch.end(viewer, this.width);
   }
 
   // a line from unit h to each unit in its list at t: each id is the unit it meant when the list was written, and
@@ -194,26 +142,12 @@ export class DetectLines {
   put(i, j) {
     const u = this.under;
     if (u && u.hit[j] === u.frame && u.rp === this.rp) return;
-    if (this.n >= this.cap) { this.full = true; return; }
     this.hit[j] = this.frame;
     const P = this.xyz, a = i * 3, b = j * 3;
-    const geo = this.lines.geometry, p = geo.attributes.position.array, o = this.n * 6;
-    p[o] = P[a]; p[o + 1] = P[a + 1]; p[o + 2] = P[a + 2];
-    p[o + 3] = P[b]; p[o + 4] = P[b + 1]; p[o + 5] = P[b + 2];
-    if (this.dashed) {
-      // The dashes count from the same end whichever unit's list the line came from, so two units in each other's
-      // lists draw one pattern; from the other end when that one is behind the camera.
-      let s = i < j ? a : b;
-      if (!this.inFront(s)) s = s === a ? b : a;
-      const A = geo.attributes.anchor.array;
-      A[o] = A[o + 3] = P[s]; A[o + 1] = A[o + 4] = P[s + 1]; A[o + 2] = A[o + 5] = P[s + 2];
-    }
-    this.n++;
-  }
-
-  // whether the point at xyz[s] is in front of the camera
-  inFront(s) {
-    const e = this.cam.matrixWorldInverse.elements, P = this.xyz;
-    return e[2] * P[s] + e[6] * P[s + 1] + e[10] * P[s + 2] + e[14] < -this.cam.near;
+    // The dashes count from the same end whichever unit's list the line came from, so two units in each other's lists
+    // draw one pattern; from the other end when that one is behind the camera.
+    let s = i < j ? a : b;
+    if (this.dashed && !inFront(this.cam, P, s)) s = s === a ? b : a;
+    this.batch.add(P, a, P, b, P, s);
   }
 }
