@@ -125,13 +125,13 @@ a:focus-visible, .key:focus-visible, .key:focus-within { outline: 2px solid var(
 .line-toggle:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
 .line-toggle.off { color: var(--off); text-decoration: line-through; }
 .line-toggle.off .swatch { opacity: 0.3; }
-/* each swatch is its line's real dash pattern, so the key shows how they fit into each other's gaps */
-.line-key .swatch { flex: 0 0 60px; height: 2px; background-repeat: repeat-x; }
-.line-key .locking { background-image: linear-gradient(90deg, #00ff00 50%, transparent 50%); background-size: 20px 2px; }
-.line-key .locked { background-image: linear-gradient(90deg, transparent 50%, #ff3b30 50%); background-size: 20px 2px; }
-.line-key .radar { background-image: linear-gradient(90deg, transparent 50%, #fff23a 50%); background-size: 20px 2px; }
-.line-key .sight { background-image: linear-gradient(90deg, transparent 50%, #00ffff 50%); background-size: 20px 2px; }
-.line-key .passive { background-image: linear-gradient(90deg, transparent 50%, #d4d8dc 50%); background-size: 20px 2px; }
+/* each swatch is its line's dash, all starting at the same point so the key lines up; beside the first line of its words */
+.line-key .swatch { flex: 0 0 60px; height: 2px; margin-top: calc(0.675em - 1px); align-self: flex-start; background-repeat: repeat-x; background-size: 20px 2px; }
+.line-key .locking { background-image: linear-gradient(90deg, #00ff00 50%, transparent 50%); }
+.line-key .locked { background-image: linear-gradient(90deg, #ff3b30 50%, transparent 50%); }
+.line-key .radar { background-image: linear-gradient(90deg, #fff23a 50%, transparent 50%); }
+.line-key .sight { background-image: linear-gradient(90deg, #00ffff 50%, transparent 50%); }
+.line-key .passive { background-image: linear-gradient(90deg, #d4d8dc 50%, transparent 50%); }
 .live-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 /* a narrow plate (a big UI size on a phone): the big keys wrap rather than stick out of it */
 @container start (max-width: 240px) { .key.big { max-width: 100%; white-space: normal; } }
