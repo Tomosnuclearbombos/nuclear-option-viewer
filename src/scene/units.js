@@ -20,6 +20,7 @@ export const SIDE = {
   neutral: new THREE.Color("#808080"),   // the game's neutral map icon grey
 };
 // the game's colours for a selected unit in spectator mode (Faction.selectedColor)
+const MARKED = new THREE.Color("#ffffff");   // what the selected unit has locked
 export const SELECTED = {
   Boscali: new THREE.Color("#00ffff"),
   Primeva: new THREE.Color("#ff0000"),
@@ -108,6 +109,7 @@ export class Units {
     this.tail = new Float64Array(7);
     this.surfaceAt = null;   // (x, sceneZ) -> drawn ground height; ground units are lifted onto it
     this.selected = -1;      // record index drawn in the selected colour
+    this.marked = [];        // records drawn white: what the selected unit has locked (Tomo, 10-28)
     this.focus = true;       // keep a minimum size on screen (false = real size)
     this.focusScale = 1;     // how big that minimum is: 1, 0.8, 0.5 or 0.25 (the focus size setting)
     this.modelsOn = true;    // the detailed models (false = the simple shapes, lighter on a slow PC)
@@ -315,7 +317,8 @@ export class Units {
       m.compose(p, q, s);
       const n = counts[sk]++;
       mesh.setMatrixAt(n, m);
-      if (this.sideMoves[i]) {
+      if (i !== sel && this.marked.length && this.marked.includes(i)) mesh.setColorAt(n, MARKED);
+      else if (this.sideMoves[i]) {
         const side = rp.sideAt(i, t);
         mesh.setColorAt(n, i === sel ? SELECTED[side] || SELECTED.neutral : SIDE[side] || SIDE.neutral);
       } else mesh.setColorAt(n, i === sel ? this.selColorOf[i] : this.colorOf[i]);

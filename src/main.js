@@ -283,13 +283,15 @@ if (viewer) viewer.onFrame = (now) => {
   if (cameraMan.follow >= 0 || cameraMan.gyro) viewer.keepAboveGround();   // the camera moved: keep it above the hills
   if (camSliders) camSliders.update();
   viewer.camera.updateMatrixWorld();
+  // what the selected unit has locked shows white (Tomo, 10-28)
+  units.marked = state.sel >= 0 ? lockLines.targetsOf(state.sel, t) : NO_MARKS;
   units.update(t, viewer.camera, viewer.height);
   if (settings.effects === "on") blasts.update(rp, t, units.booms, units.nBooms, viewer.camera, viewer.height);
   else if (blasts.mesh) blasts.mesh.count = 0;
   ranges.update(t);
   // the lines: one SELECTED / ALL / OFF for them all, and each kind on or off (Tomo, 10-26)
   const lines = (k) => (settings[k] === "on" ? settings.lines : "off");
-  lockLines.update(t, settings.lines, state.sel, viewer, settings.lineLocking === "on", settings.lineLocked === "on", settings.lineOnIt === "on");
+  lockLines.update(t, settings.lines, state.sel, viewer, settings.lineLocking === "on", settings.lineLocked === "on", settings.lineMine === "on");
   radarLines.update(t, lines("lineRadar"), state.sel, viewer);
   sightLines.update(t, lines("lineSight"), state.sel, viewer);
   passiveLines.update(t, lines("linePassive"), state.sel, viewer);
@@ -360,6 +362,7 @@ $("slower").addEventListener("click", () => changeSpeed(-1));
 $("faster").addEventListener("click", () => changeSpeed(1));
 
 // ---- keys -------------------------------------------------------------------------------------------------
+const NO_MARKS = [];
 const MOVE_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
   "KeyQ", "KeyE", "PageUp", "PageDown", "ShiftLeft", "ShiftRight"]);
 

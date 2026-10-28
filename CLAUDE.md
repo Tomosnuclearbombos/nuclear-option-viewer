@@ -121,8 +121,8 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   - `RadarLockedBy=<id>;<id>` on every aircraft (10-27, recorder 26a867efbafa, not on the servers yet): the radars whose
     latest warning to it in the last 4 s was red, the game's lock warning (a jet counts when a weapon of it is aimed).
   - `TrackedBy=<Coalition>;<Coalition>` on aircraft, ships and ground vehicles: the sides whose data link has it now.
-  The viewer draws lock lines (Tomo 10-28: the selected unit's own locks solid green, or solid red for a radar lock;
-  locks on it white dashes, or red dashes for a radar lock; other units' locks dashed): green for what a unit has locked, red for a radar lock (Tomo 10-27: "the green
+  The viewer draws lock lines (Tomo 10-28: the selected unit's own locks solid white, or solid red for a radar lock,
+  and what it has locked drawn white; locks on it green dashes, or red dashes for a radar lock; other units' locks dashed): green for what a unit has locked, red for a radar lock (Tomo 10-27: "the green
   line changes to a red line"): from RadarLockedBy where the file has it (held 4 s against blinking), else a lock
   whose unit's radar list has the target too; in green's gaps, over the radar line's dashes. Radar lines lemon yellow, sight lines light blue (the game's visual range cyan)
   and passive lines mid grey (#8a9096, darker 10-28 to keep apart from the white), with the same dash, also in green's gaps (Tomo, 10-26 and 10-27); no grey back along a
