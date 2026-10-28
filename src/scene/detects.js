@@ -31,7 +31,7 @@ import { LineBatch, inFront } from "./fatlines.js";
 const DASH = 10;   // as the lock lines (src/scene/locks.js), a dash along so they sit in green's gaps
 export const RADAR = { color: "#fff23a", dash: DASH, gap: DASH, phase: DASH, order: 5 };     // a radar to what it sees
 export const SIGHT = { color: "#00ffff", dash: DASH, gap: DASH, phase: DASH, order: 4.5 };   // a unit to what it sees by eye
-export const PASSIVE = { color: "#d4d8dc", dash: DASH, gap: DASH, phase: DASH, order: 4.8 }; // a receiver to the radars it hears
+export const PASSIVE = { color: "#8a9096", dash: DASH, gap: DASH, phase: DASH, order: 4.8 }; // a receiver to the radars it hears
 
 // whether unit i is there at t: in the recording and not a wreck
 function there(rp, i, t) { return rp.alive(i, t) && rp.visibleAt(i, t); }

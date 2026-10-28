@@ -17,6 +17,7 @@ export const SETTINGS = {
   lines: ["off", "selected", "all"],       // the lock and detection lines: the selected unit's, everyone's, or none
   lineLocking: ["on", "off"],              // ... which: what a unit has locked,
   lineLocked: ["on", "off"],               // a lock with the unit's radar on its target,
+  lineOnIt: ["on", "off"],                 // a lock on the selected unit,
   lineRadar: ["on", "off"],                // detected by radar,
   lineSight: ["on", "off"],                // detected by eye,
   linePassive: ["on", "off"],              // and a radar's signal heard
@@ -65,7 +66,7 @@ export function loadSettings() {
       // Each kind of line had its own SELECTED / ALL / OFF until 10-26 (Tomo: "instead of the specific types of
       // detection you can just toggle which lines you want on and off"): the busiest of them is the one for all now,
       // and the kinds that were off stay off.
-      const OLD = { lockLines: ["lineLocking", "lineLocked"], radarLines: ["lineRadar"], sightLines: ["lineSight"], passiveLines: ["linePassive"] };
+      const OLD = { lockLines: ["lineLocking", "lineLocked", "lineOnIt"], radarLines: ["lineRadar"], sightLines: ["lineSight"], passiveLines: ["linePassive"] };
       if (!("lines" in saved) && Object.keys(OLD).some((k) => k in saved)) {
         const was = Object.keys(OLD).map((k) => saved[k]);
         s.lines = was.includes("all") ? "all" : was.includes("selected") ? "selected" : "off";

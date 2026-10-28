@@ -18,8 +18,14 @@ import { LineBatch, inFront } from "./fatlines.js";
 import { holds, changeAt, meant } from "./detects.js";
 
 const DASH = 10;   // CSS pixels on, then off
+// Which way a lock goes, for the selected unit (Tomo, 10-28: "I can't tell what the units locked and what it is locked
+// on by"): its own locks are solid, green or red for a radar lock; a lock on it is dashed, white or red for a radar
+// lock, drawn over a solid line so a lock each way shows both. Other units' locks (ALL) stay green or red dashes.
 const LOCKING = { color: "#00ff00", dash: DASH, gap: DASH, order: 6, opacity: 0.9 };                // a unit's lock
 const LOCKED = { color: "#ff3b30", dash: DASH, gap: DASH, phase: DASH, order: 6, opacity: 0.9 };   // a lock with radar on
+const ON_IT = { color: "#ffffff", dash: DASH, gap: DASH, order: 6, opacity: 0.95 };                // a lock on the selected unit
+const MINE = { color: "#00ff00", order: 5.9, opacity: 0.9 };                                       // the selected unit's lock
+const MINE_RADAR = { color: "#ff3b30", order: 5.9, opacity: 0.9 };                                 // ... with its radar on
 
 // every target in unit i's recorded lock list at time t, as record indices (one per slot, so a target can be there
 // twice). byId maps a recorded id to its records (ids are reused after a unit is removed).
@@ -71,6 +77,10 @@ export class LockLines {
     this.width = 1;   // CSS pixels (the line width setting)
     this.green = new LineBatch(scene, LOCKING);
     this.red = new LineBatch(scene, LOCKED);
+    this.white = new LineBatch(scene, ON_IT);
+    this.mine = new LineBatch(scene, MINE);
+    this.mineRed = new LineBatch(scene, MINE_RADAR);
+    this.batches = [this.green, this.red, this.white, this.mine, this.mineRed];
   }
 
   setReplay(rp) {
@@ -87,7 +97,7 @@ export class LockLines {
     // has the target too.
     this.fromRecorder = this.lockedBy.length > 0;
     const cap = Math.max(64, Math.min(4096, (this.holders.length + this.lockedBy.length) * 2));
-    for (const s of [this.green, this.red]) s.reserve(cap);
+    for (const s of this.batches) s.reserve(cap);
   }
 
   // whether unit i has a radar lock on unit j at t
@@ -111,14 +121,14 @@ export class LockLines {
     return out;
   }
 
-  // mode: "selected" (what the selected unit has locked, and what has locked it), "all" or "off"; locking and locked:
-  // whether the green (no radar lock) and the red (radar lock) lines are on; viewer for the camera and the screen
-  update(t, mode, selected, viewer, locking = true, locked = true) {
+  // mode: "selected" (what the selected unit has locked, and what has locked it), "all" or "off"; locking, locked and
+  // onIt: whether the green, the red and the white lines are on; viewer for the camera and the screen
+  update(t, mode, selected, viewer, locking = true, locked = true, onIt = true) {
     if (!this.rp) return;
     const rp = this.rp, N = rp.count;
     this.cam = viewer.camera;
     this.pairs.clear();
-    for (const s of [this.green, this.red]) s.begin();
+    for (const s of this.batches) s.begin();
     // only: just the line to that record (what has locked the selected unit), or -1 for all of them
     const draw = (i, only) => {
       if (!rp.alive(i, t)) return;
@@ -127,7 +137,7 @@ export class LockLines {
       for (const j of targets) {
         if ((only >= 0 && j !== only) || !rp.poseAt(j, t, this.b)) continue;
         this.pairs.add(i * N + j);
-        const s = this.radarLock(i, j, t) ? (locked ? this.red : null) : locking ? this.green : null;
+        const s = this.look(i, j, selected, this.radarLock(i, j, t), locking, locked, onIt);
         if (s) this.put(s, i, j);
       }
     };
@@ -136,19 +146,27 @@ export class LockLines {
       if (!locked || !this.fromRecorder || !rp.alive(j, t)) return;
       for (const i of this.lockersOf(j, t)) {
         if ((only >= 0 && i !== only) || this.pairs.has(i * N + j)) continue;
-        if (rp.poseAt(i, t, this.a) && rp.poseAt(j, t, this.b)) { this.pairs.add(i * N + j); this.put(this.red, i, j); }
+        if (rp.poseAt(i, t, this.a) && rp.poseAt(j, t, this.b)) { this.pairs.add(i * N + j); this.put(i === selected ? this.mineRed : this.red, i, j); }
       }
     };
     if (mode === "all") {
       for (const i of this.holders) draw(i, -1);
       for (const j of this.lockedBy) radar(j, -1);
-    } else if (mode === "selected" && selected >= 0 && (locking || locked)) {
+    } else if (mode === "selected" && selected >= 0 && (locking || locked || onIt)) {
       if (rp.locks.count[selected]) draw(selected, -1);
       for (const i of this.holders) if (i !== selected) draw(i, selected);
       if (rp.radarLockedBy.count[selected]) radar(selected, -1);
       for (const j of this.lockedBy) if (j !== selected) radar(j, selected);
     }
-    for (const s of [this.green, this.red]) s.end(viewer, this.width);
+    for (const s of this.batches) s.end(viewer, this.width);
+  }
+
+  // the batch for unit i's lock on unit j, or null when that kind is off
+  look(i, j, selected, radar, locking, locked, onIt) {
+    if (i === selected) return radar ? (locked ? this.mineRed : null) : locking ? this.mine : null;
+    if (radar) return locked ? this.red : null;
+    if (j === selected) return onIt ? this.white : null;
+    return locking ? this.green : null;
   }
 
   // one segment into batch s, from unit i (at this.a) to unit j (at this.b)
