@@ -199,12 +199,14 @@
         </div>
       </div>
       <ul class="line-key" aria-label="Which lines show">
-        <li><button class="line-toggle" type="button" data-toggle="lineLocking"><span class="swatch locking"></span>Target locked onto by unit</button></li>
-        <li><button class="line-toggle" type="button" data-toggle="lineLocked"><span class="swatch locked"></span>Enemy lock</button></li>
-        <li><button class="line-toggle" type="button" data-toggle="lineMine"><span class="swatch mine"></span>Locked by the selected unit</button></li>
-        <li><button class="line-toggle" type="button" data-toggle="lineRadar"><span class="swatch radar"></span>Detected by a radar</button></li>
-        <li><button class="line-toggle" type="button" data-toggle="lineSight"><span class="swatch sight"></span>Detected by visual</button></li>
-        <li><button class="line-toggle" type="button" data-toggle="linePassive"><span class="swatch passive"></span>Radar signal received but not detected</button></li>
+        <li class="line-head">OWN SENSORS</li>
+        <li><button class="line-toggle" type="button" data-toggle="lineMine"><span class="swatch mine"></span>Selected unit's lock</button></li>
+        <li><button class="line-toggle" type="button" data-toggle="linePassive"><span class="swatch passive"></span>Radar warning only</button></li>
+        <li class="line-head">ENEMY SENSORS</li>
+        <li><button class="line-toggle" type="button" data-toggle="lineLocking"><span class="swatch locking"></span>Lock (no radar)</button></li>
+        <li><button class="line-toggle" type="button" data-toggle="lineLocked"><span class="swatch locked"></span>Radar lock</button></li>
+        <li><button class="line-toggle" type="button" data-toggle="lineRadar"><span class="swatch radar"></span>Seen by radar</button></li>
+        <li><button class="line-toggle" type="button" data-toggle="lineSight"><span class="swatch sight"></span>Seen by optical</button></li>
       </ul>
       <div class="set-row" data-set="lineWidth" role="group" aria-label="Line width">
         <span class="set-lbl">LINE WIDTH</span>
