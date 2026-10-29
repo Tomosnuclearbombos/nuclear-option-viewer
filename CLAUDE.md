@@ -1,6 +1,6 @@
 # Nuclear Option Viewer — project notes
 
-A browser viewer for Nuclear Option replays (Tacview `.acmi` / `.zip.acmi` files recorded on Tomo's Nukes servers by
+A browser viewer for Nuclear Option replays (Tacview `.acmi` / `.zip.acmi` files recorded on Part-Time Airforce (PTA, was Tomo's Nukes) servers by
 our NOBlackBox fork). The point is **clarity**: the ACMI viewer and Tacview aren't made for Nuclear Option. This viewer
 shows the real map with terrain, Tomo's own 3D models, and labels and icons that stay readable. It should be better
 optimised than Tacview.
@@ -11,7 +11,7 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
 
 - **Name:** Nuclear Option Viewer.
 - **Hosting:** a static site on GitHub Pages. No server and no replay hosting: people download the `.zip.acmi` from the
-  GitHub release (repo `Tomosnuclearbombos/tomosnukes-replays`, one release per mission) and drag it into the viewer,
+  GitHub release (repo `Tomosnuclearbombos/pta-replays`, renamed from tomosnukes-replays 10-30, one release per mission) and drag it into the viewer,
   or watch it in Tacview. "Let's not overcook it." No pack/convert step: the viewer reads the raw file.
   Live mode (below) is the one thing served from elsewhere.
 - **Models:** Tomo's model kit on the gaming PC, `~/.local/share/tacview-no-models` (built 10-04/05 for Tacview).
