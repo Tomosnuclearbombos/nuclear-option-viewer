@@ -776,7 +776,7 @@ async function checkLiveKeys() {
     const title = await liveMatch(feed.url);
     b.disabled = !title;
     b.classList.toggle("off", !title);
-    b.title = title || `Nothing is being played on the ${feed.name} server right now`;
+    b.title = title || `Nothing is being played on ${feed.name} right now`;
   }));
 }
 for (const b of document.querySelectorAll("button[data-feed]")) {

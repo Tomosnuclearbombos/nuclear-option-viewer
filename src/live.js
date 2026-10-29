@@ -29,9 +29,9 @@ const MARK = new TextEncoder().encode("\n// nov-keyframe-end\n");
 // PvP missions kept off it; PvP and vanilla run 10 minutes behind (Tomo, 10-25)
 const LIVE_HOST = "https://vps-26413982.vps.ovh.ca";
 export const LIVE_FEEDS = {
-  pve: { url: LIVE_HOST + "/s2/current.json", name: "PvE" },
-  pvp: { url: LIVE_HOST + "/s1/current.json", name: "PvP" },
-  vanilla: { url: LIVE_HOST + "/s3/current.json", name: "vanilla" },
+  pve: { url: LIVE_HOST + "/s2/current.json", name: "PvE+" },
+  pvp: { url: LIVE_HOST + "/s1/current.json", name: "PvP+" },
+  vanilla: { url: LIVE_HOST + "/s3/current.json", name: "Vanilla" },
 };
 export const LIVE_PVE = LIVE_FEEDS.pve.url;
 const FRESH_S = 300;            // a feed not updated for this long has stopped (its publisher is down)
