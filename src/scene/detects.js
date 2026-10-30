@@ -23,6 +23,7 @@
 // Drawn over everything (no depth test), like the lock lines. A wreck that stays in the recording (a destroyed radar
 // station, Visible=0) has none.
 
+import { KIND } from "../parser/acmi.js";
 import { recordsById } from "./locks.js";
 import { LineBatch, inFront } from "./fatlines.js";
 
@@ -32,6 +33,14 @@ const DASH = 10;   // as the lock lines (src/scene/locks.js), a dash along so th
 export const RADAR = { color: "#fff23a", dash: DASH, gap: DASH, phase: DASH, order: 5 };     // a radar to what it sees
 export const SIGHT = { color: "#00ffff", dash: DASH, gap: DASH, phase: DASH, order: 4.5 };   // a unit to what it sees by eye
 export const PASSIVE = { color: "#8a9096", dash: DASH, gap: DASH, phase: DASH, order: 4.8 }; // a receiver to the radars it hears
+
+// Buildings that can't shoot keep no eyes here: a vehicle depot or a guard tower in the recording has a sight list, but
+// in the game it does nothing with it (Tomo, 10-30: "only drop things that can't shoot"). Gun and SAM emplacements, and
+// pillboxes, are buildings in the recording too, and they do aim by sight.
+const SHOOTS = /emplacement|pillbox|aaa|sam\b|gun|launcher|battery/i;
+export function sightCounts(rp, i) {
+  return rp.o.kind[i] !== KIND.BUILDING || SHOOTS.test(rp.o.name[i] || "");
+}
 
 // whether unit i is there at t: in the recording and not a wreck
 function there(rp, i, t) { return rp.alive(i, t) && rp.visibleAt(i, t); }
@@ -90,7 +99,7 @@ export class DetectLines {
     this.g = rp[this.key];
     this.byId = recordsById(rp);
     this.holders = [];   // records with a list at all
-    for (let i = 0; i < rp.count; i++) if (this.g.count[i]) this.holders.push(i);
+    for (let i = 0; i < rp.count; i++) if (this.g.count[i] && (this.key !== "sightDetects" || sightCounts(rp, i))) this.holders.push(i);
     // each unit's place, worked out once a frame however many lines it has (a ship can be in hundreds of sight lists):
     // the time it's for, whether it's there, and where
     this.when = new Float64Array(rp.count).fill(NaN);
@@ -113,7 +122,7 @@ export class DetectLines {
     if (mode === "all") {
       for (const h of this.holders) if (this.spot(h, t)) this.from(h, t);
     } else if (mode === "selected" && selected >= 0 && this.spot(selected, t)) {
-      if (g.count[selected]) this.from(selected, t);
+      if (g.count[selected] && (this.key !== "sightDetects" || sightCounts(rp, selected))) this.from(selected, t);
       // and every unit whose list has it; for what detects it, the enemy only, as the unit panel counts them (a base's
       // building keeps its list for a scan after it changes hands)
       const side = this.enemyOnly ? rp.sideAt(selected, t) : null;

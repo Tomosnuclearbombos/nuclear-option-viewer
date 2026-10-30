@@ -4,7 +4,7 @@
 import { KIND, CHANNELS, sideBit } from "../parser/acmi.js";
 import { labelOf, callSignOf } from "../scene/overlay.js";
 import { lockedTargets } from "../scene/locks.js";
-import { holds } from "../scene/detects.js";
+import { holds, sightCounts } from "../scene/detects.js";
 
 const CH = Object.fromEntries(CHANNELS.map((n, i) => [n, i]));
 const SIDE_NAME = { Boscali: "BDF", Primeva: "PALA" };
@@ -41,7 +41,7 @@ export class Inspector {
     this.radars = []; this.sights = [];
     for (let r = 0; r < rp.count; r++) {
       if (rp.radarDetects.count[r]) this.radars.push(r);
-      if (rp.sightDetects.count[r]) this.sights.push(r);
+      if (rp.sightDetects.count[r] && sightCounts(rp, r)) this.sights.push(r);
     }
     // records by recorded id (ids are reused after a unit is removed), for naming lock targets and reading the lists
     this.byId = new Map();
