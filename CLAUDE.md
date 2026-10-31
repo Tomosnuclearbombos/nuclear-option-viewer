@@ -47,7 +47,9 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   VANILLA SERVER (S3), both 10 minutes behind (Tomo, 10-25), with PvP shown; short links ?live=pve, pvp, vanilla.
 - **Servers:** S2 (PvE): about a minute behind, PvP missions never go out on it (--pvp-list). S1 (PvP) and S3 (vanilla),
   Tomo 10-25: 10 minutes behind (--delay 600, --no-pvp-check), the delay being the fairness guard. No feed for the arena
-  server (S4), which doesn't record.
+  server (S4), which doesn't record. Updated 10-31 (Tomo): all feeds about a minute behind (--delay 45); S4 Dogfight
+  Arena records (NOBlackBox on Arena) and has a feed too: unit nov-live-s4 on the PvP PC (/home/arena/tacview to
+  /srv/nov-live/s4, PvP shown), key DOGFIGHT ARENA, ?live=arena.
 - **Delay:** about a minute. The publisher holds every piece until it is 45 s old (enforced on the publishing side);
   the viewer plays 15 s behind the newest piece. In the player it just says LIVE, no delay wording (Tomo).
 - **Hosting:** his OVH VPS (Caddy) serves the pieces. Pieces are deleted about 10 minutes after the match ends; replays
