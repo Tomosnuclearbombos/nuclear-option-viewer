@@ -42,22 +42,20 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
 
 ## Live mode (Tomo, 2026-10-15)
 
-- **What:** people watch the match being played, from a link in the S2 new mission Discord alert ("Watch it live,
-  running with a minute delay: <link>") or the start page's PVE SERVER key. From Fri 30 Oct also PVP SERVER (S1) and
-  VANILLA SERVER (S3), both 10 minutes behind (Tomo, 10-25), with PvP shown; short links ?live=pve, pvp, vanilla.
-- **Servers:** S2 (PvE): about a minute behind, PvP missions never go out on it (--pvp-list). S1 (PvP) and S3 (vanilla),
-  Tomo 10-25: 10 minutes behind (--delay 600, --no-pvp-check), the delay being the fairness guard. No feed for the arena
-  server (S4), which doesn't record. Updated 10-31 (Tomo): all feeds about a minute behind (--delay 45); S4 Dogfight
-  Arena records (NOBlackBox on Arena) and has a feed too: unit nov-live-s4 on the PvP PC (/home/arena/tacview to
-  /srv/nov-live/s4, PvP shown), key DOGFIGHT ARENA, ?live=arena.
+- **What:** people watch the match being played, from a link in each server's new mission Discord alert ("Watch it
+  live, running with a minute delay: <link>") or the start page's keys under "Part-Time Airforce Live Servers:": PVE+
+  (S2), PVP+ (S1), VANILLA (S3), DOGFIGHT ARENA (S4); short links ?live=pve, pvp, vanilla, arena.
+- **Servers (as of 11-02):** all four about a minute behind (--delay 45) with PvP missions shown (--no-pvp-check): Tomo
+  10-31 "if it is only a minute I think it's fine", 11-02 "Remove the block" (S2's old --pvp-list block). Units, all on
+  the pinned runner ~/nov-live/pin-69ee594: nov-live-s1 and nov-live-s4 on the PvP PC (/home/container/tacview,
+  /home/arena/tacview), nov-live-s2 and nov-live-s3 on the PvE box (box changes go through Server Ops).
 - **Delay:** about a minute. The publisher holds every piece until it is 45 s old (enforced on the publishing side);
   the viewer plays 15 s behind the newest piece. In the player it just says LIVE, no delay wording (Tomo).
 - **Hosting:** his OVH VPS (Caddy) serves the pieces. Pieces are deleted about 10 minutes after the match ends; replays
   still go out as the GitHub release.
 - **Where it runs:** this repo has the publisher (tools/live_publish.py), its runner (tools/live_runner.py) and the
-  viewer side (src/live.js). Since 2026-10-17 the runner runs on the PvE box as the systemd user unit `nov-live-s2`,
-  owned by PvE OPs, from a copy pinned to a commit; a code change reaches it only when PvE OPs re-pins it. The
-  pieces are served from the VPS folder /srv/nov-live/s2 (ours). Design and format: docs/live-viewer.md; the shared
+  viewer side (src/live.js). The units run a copy pinned to a commit; a code change reaches them only when re-pinned.
+  The pieces are served from the VPS folders /srv/nov-live/s1..s4 (ours). Design and format: docs/live-viewer.md; the shared
   drive page how-it-works/viewer-and-live-feed.md.
 
 ## Plan (approved)
@@ -120,7 +118,7 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   - `PassiveTracks=<id>;<id>` on aircraft with a passive receiver: the emitters that pinged it in the last 4 s.
   - `SightDetects=<id>;<id>` on every unit with eyes (10-26, recorder c37808c666f1): what it sees by eye, minus what
     its radar found (an id is never in both).
-  - `RadarLockedBy=<id>;<id>` on every aircraft (10-27, recorder 26a867efbafa, not on the servers yet): the radars whose
+  - `RadarLockedBy=<id>;<id>` on every aircraft (10-27, recorder 26a867efbafa, on the servers from 10-27): the radars whose
     latest warning to it in the last 4 s was red, the game's lock warning (a jet counts when a weapon of it is aimed).
   - `TrackedBy=<Coalition>;<Coalition>` on aircraft, ships and ground vehicles: the sides whose data link has it now.
   The viewer draws lock lines (Tomo 10-28: the selected unit's own locks solid white, or solid red for a radar lock,
