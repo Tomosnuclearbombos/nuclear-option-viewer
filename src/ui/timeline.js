@@ -172,6 +172,15 @@ export class Timeline {
       g.stroke();
     }
 
+    // kills (as the FEED filters show them): short red ticks along the top, to find the fights (Tomo, 11-04)
+    if (this.marks && this.marks.length) {
+      g.fillStyle = "rgba(255, 59, 48, 0.9)";
+      for (const mt of this.marks) {
+        if (this.marksLive && mt > t) continue;   // live: nothing ahead of the playhead, as in the feed
+        g.fillRect(Math.round(xAt(clamp(mt - rp.tMin, 0, span))), top, 1, Math.min(6, gh));
+      }
+    }
+
     // hover: where a click would land, with its time over a cleared label row
     if (this.hoverX >= 0 && !this.dragging) {
       const f = clamp((this.hoverX - x0) / tw, 0, 1);

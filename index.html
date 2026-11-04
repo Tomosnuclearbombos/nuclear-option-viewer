@@ -40,6 +40,7 @@
     </section>
     <nav class="top-keys" aria-label="View">
       <button id="units-btn" class="key" type="button" aria-pressed="false" title="Unit list (U)">UNITS</button>
+      <button id="feed-btn" class="key" type="button" aria-expanded="false" aria-controls="feed" title="Chat and activity">FEED</button>
       <button id="settings-btn" class="key" type="button" aria-expanded="false" aria-controls="settings" title="Settings">SETTINGS</button>
       <button id="keys-btn" class="key" type="button" aria-expanded="false" aria-controls="keys" title="Controls (?)">KEYS</button>
       <label class="key">OPEN REPLAY<input id="file" type="file" accept=".acmi,.zip,.gz,application/zip"></label>
@@ -157,6 +158,47 @@
     <button id="tour-btn" class="key small tour-again" type="button">TAKE THE TOUR</button>
   </section>
 
+  <section id="feed" class="plate keys-panel feed-panel" hidden aria-label="Chat and activity">
+    <div class="feed-tabs">
+      <button class="key small" type="button" data-tab="act">ACTIVITY</button>
+      <button class="key small" type="button" data-tab="chat">CHAT</button>
+      <button class="key small feed-fbtn" type="button" data-toggle="feedFilters">FILTERS</button>
+    </div>
+    <div id="feed-act-view" class="feed-view">
+      <div class="feed-filters">
+        <div class="set-row"><span class="set-lbl">SHOW</span><div class="set-opts">
+          <button class="key small" type="button" data-toggle="evKill">KILLS</button>
+          <button class="key small" type="button" data-toggle="evCrash">CRASHES</button>
+          <button class="key small" type="button" data-toggle="evEject">EJECTS</button>
+          <button class="key small" type="button" data-toggle="evCapture">CAPTURES</button>
+          <button class="key small" type="button" data-toggle="evLaunch">LAUNCHES</button>
+          <button class="key small" type="button" data-toggle="evTakeoff">TAKEOFFS</button>
+          <button class="key small" type="button" data-toggle="evLanding">LANDINGS</button>
+        </div></div>
+        <div class="set-row"><span class="set-lbl">UNITS</span><div class="set-opts">
+          <button class="key small" type="button" data-toggle="fAir">AIR</button>
+          <button class="key small" type="button" data-toggle="fGround">GROUND</button>
+          <button class="key small" type="button" data-toggle="fBuilding">BUILDINGS</button>
+          <button class="key small" type="button" data-toggle="fSea">SEA</button>
+          <button class="key small" type="button" data-toggle="fWeapon">WEAPONS</button>
+        </div></div>
+        <div class="set-row"><span class="set-lbl">WHO</span><div class="set-opts">
+          <button class="key small" type="button" data-toggle="fBdf">BDF</button>
+          <button class="key small" type="button" data-toggle="fPala">PALA</button>
+          <button class="key small" type="button" data-toggle="fPlayers">PLAYERS ONLY</button>
+        </div></div>
+      </div>
+      <p id="feed-act-note" class="feed-note prose" hidden></p>
+      <div id="feed-act" class="feed-list" role="list"></div>
+    </div>
+    <div id="feed-chat-view" class="feed-view" hidden>
+      <p id="feed-chat-note" class="feed-note prose" hidden></p>
+      <div id="feed-chat" class="feed-list" role="list"></div>
+    </div>
+  </section>
+
+  <div id="chat-over" class="chat-over" hidden aria-label="Chat"></div>
+
   <section id="settings" class="plate keys-panel settings-panel" hidden aria-label="Settings">
     <h2 class="panel-title">SETTINGS</h2>
     <div class="set-group">
@@ -189,6 +231,30 @@
         </div>
       </div>
       <p class="set-note prose">On a keyboard, L, T and C switch labels, trails and curtains too. The gyro turns the view as you turn the phone.</p>
+    </div>
+    <div class="set-group">
+      <div class="set-row" data-set="chat" role="group" aria-label="Chat">
+        <span class="set-lbl">CHAT</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="on">ON</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <div class="set-row" data-set="ranks" role="group" aria-label="Player ranks in chat">
+        <span class="set-lbl">RANKS</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="on">SHOW</button>
+          <button class="key small" type="button" data-val="off">HIDE</button>
+        </div>
+      </div>
+      <div class="set-row" data-set="swears" role="group" aria-label="Swear filter">
+        <span class="set-lbl">SWEAR FILTER</span>
+        <div class="set-opts">
+          <button class="key small" type="button" data-val="on">ON</button>
+          <button class="key small" type="button" data-val="off">OFF</button>
+        </div>
+      </div>
+      <p class="set-note prose">What players type in all chat, shown in FEED and at the bottom left. Ranks are the ones they wear in game.</p>
     </div>
     <div class="set-group">
       <div class="set-row" data-set="lines" role="group" aria-label="Lines">

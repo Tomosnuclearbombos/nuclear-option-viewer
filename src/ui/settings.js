@@ -35,6 +35,17 @@ export const SETTINGS = {
   models: ["detailed", "simple"],
   scenery: ["on", "off"],
   effects: ["on", "off"],
+  chat: ["on", "off"],                     // players' chat, in FEED and the overlay (Tomo, 11-04)
+  ranks: ["on", "off"],                    // ... with the rank each wears in game,
+  swears: ["on", "off"],                   // ... and everyday swearing starred out
+  feedTab: ["act", "chat"],                // the FEED panel's tab,
+  feedFilters: ["on", "off"],              // ... and whether its filters show
+  evKill: ["on", "off"], evCrash: ["on", "off"], evEject: ["on", "off"], evCapture: ["on", "off"],   // what ACTIVITY lists
+  evLaunch: ["off", "on"],                 // (about 70 launches a minute in a busy match)
+  evTakeoff: ["on", "off"], evLanding: ["on", "off"],
+  fAir: ["on", "off"], fGround: ["on", "off"], fBuilding: ["on", "off"], fSea: ["on", "off"],
+  fWeapon: ["off", "on"],                  // weapons shot down: 135 of 204 kills in the 11-04 test match, so off to start
+  fBdf: ["on", "off"], fPala: ["on", "off"], fPlayers: ["off", "on"],
   panel: ["full", "small"],                // the selected unit's panel: everything, or just the name and plane (Tomo, 10-26)
   labels: ["on", "players", "off"],        // on: every aircraft and ship; players: only the units players fly (Tomo, 10-26)
   trails: ["on", "off"],

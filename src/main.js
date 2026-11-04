@@ -18,6 +18,7 @@ import { Timeline } from "./ui/timeline.js";
 import { UnitList } from "./ui/unitlist.js";
 import { Inspector } from "./ui/inspector.js";
 import { Tour, tourSeen } from "./ui/tour.js";
+import { Feed } from "./ui/feed.js";
 import { CameraSliders } from "./ui/camsliders.js";
 import { loadSettings, SettingsPanel, RESOLUTION, FPS } from "./ui/settings.js";
 import { LiveFeed, LIVE_BUFFER_S, LIVE_PVE, LIVE_FEEDS, liveMatch } from "./live.js";
@@ -160,6 +161,7 @@ function start(replay, fileName, opts = {}) {
   timeline.setReplay(replay, state.base);
   unitList.setReplay(replay, state.base);
   inspector.setReplay(replay);
+  if (feed) feed.setReplay(replay, !!opts.live);
   select(-1);
   overlay.hover = -1;
   const h = replay.header;
@@ -300,6 +302,7 @@ if (viewer) viewer.onFrame = (now) => {
   overlay.draw(rp, hoverInfo, rangeInfo, t);
   unitList.update(t, now);
   inspector.update(t, now, viewer.groundAt);
+  if (feed) feed.update(t);
   const b = unitList.hovered >= 0 ? unitList.hovered : state.sel;   // that unit's time in the mission
   timeline.band = b >= 0 ? [rp.o.t0[b], rp.o.t1[b]] : null;
   timeline.draw(t);
@@ -372,7 +375,7 @@ window.addEventListener("keydown", (e) => {
   if (tg && (tg.tagName === "TEXTAREA" || tg.isContentEditable || (tg.tagName === "INPUT" && tg.type !== "file"))) return;
   const rp = state.replay;
   if (e.key === "Escape") {
-    if (!$("keys").hidden || !$("settings").hidden) { toggleKeys(false); toggleSettings(false); }
+    if (!$("keys").hidden || !$("settings").hidden || ($("feed") && !$("feed").hidden)) { toggleKeys(false); toggleSettings(false); toggleFeed(false); }
     else if (rp) select(-1);
     hideToast();
     return;
@@ -456,19 +459,32 @@ function toggleKeys(show) {
   const on = show === undefined ? p.hidden : show;
   p.hidden = !on;
   $("keys-btn").setAttribute("aria-expanded", String(on));
-  if (on) toggleSettings(false);
+  if (on) { toggleSettings(false); toggleFeed(false); }
 }
+// FEED (chat and activity) shares that spot too. A page cached from before FEED has no panel: then it's left out.
+function toggleFeed(show) {
+  const p = $("feed");
+  if (!p) return;
+  const on = show === undefined ? p.hidden : show;
+  p.hidden = !on;
+  $("feed-btn").setAttribute("aria-expanded", String(on));
+  setKey($("feed-btn"), on);
+  if (on) { toggleSettings(false); toggleKeys(false); if (feed) feed.opened(); }
+}
+if ($("feed-btn")) $("feed-btn").addEventListener("click", () => toggleFeed());
 $("keys-btn").addEventListener("click", () => toggleKeys());
 function toggleSettings(show) {
   const p = $("settings");
   const on = show === undefined ? p.hidden : show;
   p.hidden = !on;
   $("settings-btn").setAttribute("aria-expanded", String(on));
-  if (on) toggleKeys(false);
+  if (on) { toggleKeys(false); toggleFeed(false); }
 }
 $("settings-btn").addEventListener("click", () => toggleSettings());
 
 // ---- settings --------------------------------------------------------------------------------------------
+let feed = null;   // made below, once the settings panel is
+const FEED_SETTINGS = /^(chat|ranks|swears|feedTab|feedFilters|ev[A-Z]\w*|f(Air|Ground|Building|Sea|Weapon|Bdf|Pala|Players))$/;
 const LINE_WIDTH = { thin: 1, medium: 2, thick: 3.5 };   // the lock and detection lines, in CSS pixels
 // puts one setting into effect; every one applies straight away except smooth edges (next time the page opens)
 function applySetting(key, value) {
@@ -478,6 +494,7 @@ function applySetting(key, value) {
     return;
   }
   if (key === "panel") { inspector.setSmall(value === "small"); return; }
+  if (FEED_SETTINGS.test(key)) { if (feed) feed.setting(key); return; }
   if (!viewer) return;
   const on = value === "on";
   switch (key) {
@@ -526,9 +543,24 @@ function showCamSliders() {
 PHONE.addEventListener("change", showCamSliders);
 const settingsPanel = new SettingsPanel($("settings"), settings, applySetting, smoothInUse);
 
+// FEED: chat and activity (src/ui/feed.js, Tomo 11-04)
+const SMALL = window.matchMedia("(max-width: 900px), (max-height: 520px)");
+if ($("feed") && $("chat-over")) {
+  feed = new Feed($("feed"), $("chat-over"), {
+    settings,
+    set: (k, v) => settingsPanel.set(k, v),
+    seek: (t) => seek(t),
+    select: (i) => select(i),
+    clock: (t) => duration(t - state.base),
+    marks: (ts, live) => { timeline.marks = ts; timeline.marksLive = live; },
+    picked: () => { if (SMALL.matches) toggleFeed(false); },   // no room for both panels: show the unit
+  });
+  setKey($("feed-btn"), false);
+}
+
 // the tour (src/ui/tour.js): by itself the first time a replay opens in this browser, and from the KEYS panel
 const tour = new Tour($("tour"), {
-  panel(name) { toggleSettings(name === "settings"); toggleKeys(name === "keys"); },
+  panel(name) { toggleSettings(name === "settings"); toggleKeys(name === "keys"); toggleFeed(false); },
   hasUnit: () => state.sel >= 0,
   // for the unit panel's step, when nothing is picked: a player's aircraft if one is up, else any aircraft or ship
   pickUnit() {
@@ -713,6 +745,7 @@ function swapReplay(replay) {
   timeline.setReplay(replay, state.base);
   unitList.setReplay(replay, state.base);
   inspector.setReplay(replay);
+  if (feed) feed.setReplay(replay, true);
   const find = (id) => {
     if (id === null) return -1;
     let best = -1;
@@ -810,4 +843,4 @@ else if (q.get("replay")) {
     .catch((e) => showStartError("Couldn't fetch that replay: " + e.message));
 }
 
-window.nov = { viewer, ground, scenery, blasts, ranges, lockLines, radarLines, sightLines, passiveLines, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, select, follow };
+window.nov = { viewer, ground, scenery, blasts, ranges, lockLines, radarLines, sightLines, passiveLines, units, trails, overlay, cameraMan, models, state, open, timeline, unitList, inspector, feed, select, follow };

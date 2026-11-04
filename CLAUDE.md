@@ -75,6 +75,11 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   - labels, trails and curtains are remembered too
   - lines (Tomo, 10-26): one LINES row (SELECTED / ALL / OFF, off in a new browser), each kind in the colour key a
     toggle, and LINE WIDTH (thin / medium / thick); the lines are quads (src/scene/fatlines.js), as WebGL lines are 1 px
+- FEED (Tomo 11-04): a top bar key opening ACTIVITY and CHAT tabs (src/ui/feed.js, data from src/feed.js); filters
+  SHOW (kills, crashes, ejects, captures, launches, takeoffs, landings), UNITS (WEAPONS off to start: missiles shot down
+  swamp it), WHO (BDF, PALA, players only); CHAT, RANKS and SWEAR FILTER rows in Settings; a fading chat overlay bottom
+  left on desktop; kill marks on the timeline; a click seeks 3 s before and picks the unit. Takeoffs and landings come
+  from AGL and TAS walked together (the recorder stops AGL at 0 on the runway).
 - A skippable tour (src/ui/tour.js, Tomo 10-26) runs the first time a replay opens in a browser (localStorage
   `nov.tour.v1`), and again from KEYS > TAKE THE TOUR. Keep its steps in step with the settings panel.
 
@@ -128,6 +133,20 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   and passive lines mid grey (#8a9096, darker 10-28 to keep apart from the white), with the same dash, also in green's gaps (Tomo, 10-26 and 10-27); no grey back along a
   yellow line, as in the game's warning lines; with a colour key in Settings in two groups (Tomo 10-29: OWN SENSORS, ENEMY SENSORS); the unit panel shows DATA LINK with a RADAR
   row and a SIGHT row under it naming what sees the unit.
+- **Chat and activity lines** (Tomo 11-04; recorder fd67c2b8c8aa, names trimmed in f7664f8777ea, not on the servers
+  yet; "from now onward", old replays list victims only). Every machine field sits in a `[kind key=value ...]` header, values percent-encoded (`%`, space, `]`, `=`,
+  `|`, `,`, `\`, control characters); the readable tail after `] ` is for Tacview only (commas escaped `\,`, no `|`, no
+  newlines). The last field of an event is always its text.
+  - Chat (public chat only; `!` commands and bare number votes dropped; no team chat, no server lines):
+    `0,Event=Message|<sender aircraft id, if flying>|[chat side=Boscali rank=<worn tag> name=<pilot name> text=<msg>] ...`
+  - Kill (one per kill the game reports, NukeStats' rule so it names who players saw; crashes too):
+    `0,Event=Destroyed|<victim id>|[kill how=shotdown kind=Aircraft vname=.. vside=.. vplayer=1 killer=.. kside=..
+    kid=<hex, if still recorded> kplayer=0 ff=0 weapon=..] ...`; `how` from the game's KillType (shotdown, destroyed,
+    demolished, intercepted, sank, crashed, collapsed), `kind` its kill feed category (Aircraft, Vehicle, Building, Ship,
+    Munition). The old `Has been destroyed.` line stays (the panel map reads it); the viewer merges the two.
+  - Eject: `0,Event=Message|<aircraft id>|[eject name=.. side=.. player=1] ...`; base capture:
+    `0,Event=Message|[capture base=.. side=<new> from=<old>] ...`; launches: `Parent=<launcher id>` on every missile, bomb
+    and shell (Tacview's own property). Takeoffs and landings: worked out by the viewer from AGL and TAS.
 - **Types seen:**
   - Air+FixedWing / Air+Rotorcraft.
   - Ground+... (Vehicle, Tank, AntiAircraft, Sensor, Static+Building).

@@ -17,6 +17,8 @@ const STEPS = [
     text: "Drag to move, right drag to turn, scroll to zoom. Click a unit to pick it." },
   { title: "UNITS", target: "#units-btn",
     text: "Every unit in the match. Tap one to follow it." },
+  { title: "FEED", target: "#feed-btn",
+    text: "Chat, and what happened: kills, crashes, ejects, launches. Tap a line to jump there." },
   { title: "SELECTED UNIT", target: "#inspector", unit: true,
     text: "Speed, height, locks and who can see it. LESS hides the extra info." },
   { title: "SETTINGS", target: "#settings-btn",

@@ -42,7 +42,7 @@ body { font: 15px/1.35 var(--mono); letter-spacing: 0; -webkit-font-smoothing: a
 /* The UI size setting zooms every panel and key, but not the 3D view and its labels under them. Sizes taken from the
    screen are percentages of it, which every browser fits to the screen however much a panel is zoomed. (Some browsers
    zoom vw and vh too and some don't: the top bar's two widths divide vw by --ui, and fit the bar either way.) */
-header#top, .start-plate, .units-panel, .inspector, .loader, .transport, .cam, .keys-panel, .toast, .drop-frame { zoom: var(--ui); }
+header#top, .start-plate, .units-panel, .inspector, .loader, .transport, .cam, .keys-panel, .toast, .drop-frame, .chat-over { zoom: var(--ui); }
 
 button { font: inherit; color: inherit; }
 a { color: var(--green); }
@@ -456,7 +456,8 @@ body:has(#cam:not([hidden])) .toast { bottom: 136px; }
     scrollbar-width: none; padding-bottom: 2px;
   }
   .top-keys::-webkit-scrollbar { display: none; }
-  #top .key { flex: none; min-height: 30px; padding: 0 10px; font-size: 12px; }
+  #top .key { flex: none; min-height: 30px; padding: 0 8px; font-size: 12px; }   /* five keys fit at 100% */
+  .top-keys { gap: 6px; }
   .inspector { left: 8px; right: 8px; width: auto; padding: 8px 10px; overflow-y: auto; }
   .insp-title { font-size: 15px; }
   .insp-sub { font-size: 10px; }
@@ -490,3 +491,61 @@ body:has(#cam:not([hidden])) .toast { bottom: 136px; }
    The choices go under the setting's name: UI size's five on an upright phone, every row when it's narrower still. */
 @container settings (max-width: 360px) { .set-row.sizes { grid-template-columns: 1fr; gap: 5px; } }
 @container settings (max-width: 300px) { .set-row { grid-template-columns: 1fr; gap: 5px; } }
+
+/* ---- FEED: chat and activity (src/ui/feed.js), and the chat overlay -------------------------------------------- */
+.feed-panel { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.feed-panel > * { flex: none; }
+.feed-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.feed-tabs .feed-fbtn { margin-left: auto; }
+.feed-view { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.feed-view > * { flex: none; }
+.feed-filters { display: grid; gap: 5px; padding-bottom: 7px; margin-bottom: 4px; border-bottom: 1px solid var(--green-faint); }
+.feed-view > .feed-filters { flex: 0 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }   /* a short screen: the filters scroll, the list keeps its room */
+.feed-filters .set-row { grid-template-columns: 54px 1fr; align-items: start; }
+.feed-filters .set-lbl { padding-top: 5px; }
+.feed-note { margin: 4px 0; font-size: 13px; color: var(--green-dim); }
+.feed-view > .feed-list { flex: 1 1 0; min-height: 60px; }   /* takes what the filters leave; they give way only below 60 px */
+.feed-list { position: relative; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--green-faint) transparent; }
+.feed-row { display: flex; gap: 8px; padding: 2px 4px 2px 6px; border-left: 2px solid transparent; cursor: pointer; font-size: 12px; line-height: 1.35; }
+.feed-row:hover { background: rgba(0, 255, 0, 0.07); }
+/* lines after the playhead, dimmed by colour: opacity on thousands of rows makes each one a layer and seeking crawls */
+.feed-row.later .feed-t, .feed-row.later .feed-x, .feed-row.later .feed-who, .feed-row.later .feed-rank { color: #3d6b3d; }
+.feed-row.later { border-left-color: rgba(0, 255, 0, 0.12) !important; }
+.feed-t { flex: none; color: var(--green-dim); font-variant-numeric: tabular-nums; }
+.feed-x { color: var(--green-text); font-family: var(--prose); font-weight: 500; font-size: 13px; overflow-wrap: anywhere; }
+.feed-who { font-weight: 600; }
+.feed-who.bdf { color: var(--bdf); }
+.feed-who.pala { color: var(--pala); }
+.feed-rank { color: #c8d0d8; font-size: 12px; }
+.feed-row.kill { border-left-color: #ff3b30; }
+.feed-row.crash { border-left-color: var(--warn); }
+.feed-row.death { border-left-color: var(--off); }
+.feed-row.eject { border-left-color: #00ffff; }
+.feed-row.capture { border-left-color: #ffffff; }
+.feed-row.launch { border-left-color: var(--pala); }
+.feed-row.takeoff, .feed-row.landing { border-left-color: var(--green-faint); }
+/* the last few chat lines at the bottom left, like the game's chat box; clear of the unit list when it's open */
+.chat-over {
+  position: fixed; left: 12px; bottom: 84px; width: min(460px, calc(45% - 24px)); z-index: 4;
+  display: grid; gap: 2px; pointer-events: none;
+}
+.chat-over .feed-row { pointer-events: auto; background: rgba(0, 0, 0, 0.55); border-radius: 2px; transition: opacity 0.4s linear; }
+.chat-over .feed-x { text-shadow: 0 0 3px #000; }
+/* clear of the unit list (the overlay's own zoom scales these), and out of the way where there's no room beside it */
+body:has(#units:not([hidden])) .chat-over { left: 324px; }
+@media (max-width: 1300px) { body:has(#units:not([hidden])) .chat-over { display: none !important; } }
+body:has(#cam:not([hidden])) .chat-over { bottom: 136px; }   /* above the camera sliders */
+/* on a wide screen the selected unit's panel moves left of FEED, so a line's unit can be seen */
+@media (min-width: 901px) and (min-height: 521px) { body:has(#feed:not([hidden])) .inspector { right: 404px; } }
+@media (max-width: 620px), (max-height: 520px) {
+  .chat-over { display: none !important; }
+  .feed-panel .key.small { min-height: 22px; padding: 0 6px; font-size: 10px; }
+  .feed-filters .set-row { grid-template-columns: 40px 1fr; gap: 6px; }
+  .feed-filters .set-lbl { font-size: 10px; padding-top: 4px; }
+  .feed-row { font-size: 11px; }
+  .feed-x { font-size: 12px; }
+}
+@media (max-width: 400px) {   /* the narrowest phones: the five top keys still fit */
+  #top .key { padding: 0 5px; font-size: 11px; }
+  .top-keys { gap: 4px; }
+}

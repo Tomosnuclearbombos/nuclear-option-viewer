@@ -132,6 +132,7 @@ export class AcmiParser {
     this.live = new Map();    // id -> record index
     this.justRemoved = new Map(); // id -> record index, for ids removed in the current frame
     this.recId = []; this.recName = []; this.recType = []; this.recCallSign = []; this.recPilot = [];
+    this.recParent = [];   // the record that launched a weapon (Parent=<id>, Tacview's own property; recorder 11-04 on)
     this.recCoalition = []; this.recColor = [];
     this.recSideNow = [];    // the side as of the line being read; recCoalition keeps each unit's first side
     this.sideChanges = [];   // flat (record, time, side): airbases and their buildings change hands mid mission
@@ -266,6 +267,7 @@ export class AcmiParser {
     this.recId.push(id); this.recName.push(""); this.recType.push(""); this.recCallSign.push(""); this.recPilot.push("");
     this.recCoalition.push(""); this.recSideNow.push(""); this.recColor.push(""); this.recKind.push(KIND.UNKNOWN);
     this.recT0.push(this.time); this.recT1.push(NaN); this.recRange.push(0); this.recRadius.push(0); this.recArmed.push(2);
+    this.recParent.push(-1);
     this.last.push(null);
     this.live.set(id, r);
     return r;
@@ -308,6 +310,11 @@ export class AcmiParser {
       }
       case "CallSign": this.recCallSign[r] = unescape(decode(b, s, e)).trim(); return;
       case "Pilot": this.recPilot[r] = unescape(decode(b, s, e)).trim(); return;
+      case "Parent": {   // resolved now: ids are reused after a unit is removed
+        const p = this.live.get(parseInt(decode(b, s, e), 16));
+        if (p !== undefined && p !== r) this.recParent[r] = p;
+        return;
+      }
       case "Coalition": {
         const v = decode(b, s, e);
         if (!v) return;
@@ -498,6 +505,7 @@ export class AcmiParser {
         range: Float32Array.from(this.recRange),
         radius: Float32Array.from(this.recRadius),
         armed: Uint8Array.from(this.recArmed),
+        parent: Int32Array.from(this.recParent),
         start, sampleCount,
         name: this.recName, type: this.recType, callSign: this.recCallSign, pilot: this.recPilot,
         coalition: this.recCoalition, color: this.recColor,
