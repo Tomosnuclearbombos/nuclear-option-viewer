@@ -88,9 +88,10 @@ export function buildFeed(rp) {
     }
   }
 
-  // the older "Has been destroyed." lines: what was destroyed, for recordings without kill lines (and any death the kill
-  // lines missed)
-  for (const ev of rp.events) {
+  // the older "Has been destroyed." lines: what was destroyed, for recordings from before kill lines
+  // With kill lines in the file they cover every kill the game reports, and an old line left over is scenery (a wall or
+  // a pad knocked down by a blast: the game doesn't report those), so it isn't listed.
+  for (const ev of kills.size ? [] : rp.events) {
     if (!isDeath(ev) || ev.kind !== "Message") continue;
     const r = ev.recs && ev.recs.length ? ev.recs[0] : -1;
     if (r < 0 || (kills.get(r) || []).some((kt) => Math.abs(kt - ev.t) < 5)) continue;
