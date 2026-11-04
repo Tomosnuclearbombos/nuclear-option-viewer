@@ -51,7 +51,9 @@ export class Inspector {
       if (list) list.push(r); else this.byId.set(id, [r]);
     }
     for (const ev of rp.events) {
-      if (/destroyed/i.test(ev.text || "")) for (const r of ev.recs || []) if (r >= 0 && !this.destroyedAt.has(r)) this.destroyedAt.set(r, ev.t);
+      if (!isDeath(ev)) continue;
+      const r = ev.recs && ev.recs[0];   // the destroyed unit is the event's first id
+      if (r >= 0 && !this.destroyedAt.has(r)) this.destroyedAt.set(r, ev.t);
     }
   }
 
@@ -175,3 +177,9 @@ function nameList(o, recs) {
 
 function fmt(v, d) { return Number.isFinite(v) ? v.toLocaleString("en-GB", { maximumFractionDigits: d, minimumFractionDigits: d }) : "0"; }
 function esc(s) { return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]); }
+
+// A death: the recorder's "Has been destroyed." line, or a Destroyed event (the kill lines, 11-04). Only those: a chat
+// line that says "destroyed" is not one.
+export function isDeath(ev) {
+  return ev.kind === "Destroyed" || (ev.kind === "Message" && /^Has been destroyed\.?$/.test(ev.text || ""));
+}

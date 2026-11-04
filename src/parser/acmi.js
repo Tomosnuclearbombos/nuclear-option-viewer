@@ -423,18 +423,16 @@ export class AcmiParser {
     }
   }
 
+  // Tacview's events end with their text, always (it may be empty): "Message|<id>|<id>|text", "Bookmark|text". So the
+  // last field is text even when it looks like an id: a chat line "3" or "beef" (chat and kill lines, 11-04).
   event(val) {
     const parts = val.split("|");
     const kind = parts[0];
     const ids = [];
-    let text = "";
-    for (let i = 1; i < parts.length; i++) {
+    const text = parts.length > 1 ? parts[parts.length - 1] : "";
+    for (let i = 1; i < parts.length - 1; i++) {
       const p = parts[i];
-      if (i < parts.length - 1 || /^[0-9A-Fa-f]+$/.test(p)) {
-        const id = parseInt(p, 16);
-        if (Number.isFinite(id)) { ids.push(id); continue; }
-      }
-      text = p;
+      if (/^[0-9A-Fa-f]+$/.test(p)) ids.push(parseInt(p, 16));
     }
     // resolve ids to the record live right now
     const recs = ids.map((id) => { const r = this.live.get(id); return r === undefined ? -1 : r; });
