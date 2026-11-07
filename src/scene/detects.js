@@ -15,10 +15,9 @@
 // sight lines go to it: radar comes first (Tomo, 10-26: "a unit that has seen and detected by radar should just show
 // the radar line"). And no passive line goes back along a radar line: a jet that radar has detected is no longer just
 // hearing it, as the game's own warning lines turn from grey to yellow (Tomo, 10-27: "no grey when there is yellow is
-// correct"). Each is a setting: SELECTED, ALL or OFF. SELECTED is every line to and
-// from the selected unit: what it detects or hears, and what detects or hears it (for radar and sight, the enemy only,
-// as the unit panel counts them). It was only what detects the selected unit (10-25), which left a radar's own lines
-// on ALL only (Tomo, 10-26: "it only shows detected by radar when all is toggled on").
+// correct"). Each is a setting: SELECTED, ALL or OFF. SELECTED follows the colour key (Tomo, 11-07): radar and optical
+// are what can see the selected unit (enemies only), passive is the radars the selected unit hears. Every line joins a
+// BDF unit and a PALA unit: the recorder's lists also hold neutral scenery and teammates, which give nobody away.
 //
 // Drawn over everything (no depth test), like the lock lines. A wreck that stays in the recording (a destroyed radar
 // station, Visible=0) has none.
@@ -64,6 +63,8 @@ export function holds(rp, g, h, j, t, byId) {
   return false;
 }
 
+const TEAMS = new Set(["Boscali", "Primeva"]);
+
 export class DetectLines {
   // key: the series drawn, "radarDetects", "sightDetects" or "passiveTracks"; look: RADAR, SIGHT or PASSIVE; enemyOnly:
   // with "selected", only the enemy's lines to the selected unit; under: the lines that come first (the radar lines),
@@ -107,19 +108,21 @@ export class DetectLines {
     if (!this.rp) return;
     const rp = this.rp, g = this.g;
     this.batch.begin();
+    this.t = t;
     this.frame++;
     this.pairs.clear();
     this.cam = viewer.camera;
     if (mode === "all") {
       for (const h of this.holders) if (this.spot(h, t)) this.from(h, t);
     } else if (mode === "selected" && selected >= 0 && this.spot(selected, t)) {
-      if (g.count[selected]) this.from(selected, t);
-      // and every unit whose list has it; for what detects it, the enemy only, as the unit panel counts them (a base's
-      // building keeps its list for a scan after it changes hands)
-      const side = this.enemyOnly ? rp.sideAt(selected, t) : null;
-      for (const h of this.holders) {
-        if (h !== selected && rp.alive(h, t) && holds(rp, g, h, selected, t, this.byId) && (side === null || rp.sideAt(h, t) !== side) && this.spot(h, t)) this.put(h, selected);
-      }
+      // As the colour key says (Tomo, 11-07: "The blue lines show what can see it, not what it can see"): radar and
+      // optical are ENEMY SENSORS, the enemy units whose list has the selected unit; passive is OWN SENSORS, the radars
+      // the selected unit itself hears. put() keeps every line between BDF and PALA.
+      if (this.enemyOnly) {
+        for (const h of this.holders) {
+          if (h !== selected && rp.alive(h, t) && holds(rp, g, h, selected, t, this.byId) && this.spot(h, t)) this.put(h, selected);
+        }
+      } else if (g.count[selected]) this.from(selected, t);
     }
     this.batch.end(viewer, this.width);
   }
@@ -149,6 +152,10 @@ export class DetectLines {
 
   // one segment, from unit i to unit j (both spotted this frame), unless the lines under these hide it this frame
   put(i, j) {
+    // only between enemies, BDF and PALA: the recorder's lists also hold neutral scenery and teammates a unit sees, and
+    // those give nobody away (Tomo, 11-07: "only things that can should show the visual")
+    const si = this.rp.sideAt(i, this.t), sj = this.rp.sideAt(j, this.t);
+    if (si === sj || !TEAMS.has(si) || !TEAMS.has(sj)) return;
     const u = this.under, N = this.rp.count;
     if (u && u.rp === this.rp && (this.back ? u.pairs.has(j * N + i) : u.hit[j] === u.frame)) return;
     this.hit[j] = this.frame;

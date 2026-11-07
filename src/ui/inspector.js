@@ -159,7 +159,7 @@ export class Inspector {
     if (!here) return out;
     const rp = this.rp;
     for (const h of holders) {
-      if (rp.alive(h, t) && rp.sideAt(h, t) !== side && holds(rp, g, h, i, t, this.byId) && rp.visibleAt(h, t) && !(skip && skip.includes(h))) out.push(h);
+      if (rp.alive(h, t) && enemies(rp.sideAt(h, t), side) && holds(rp, g, h, i, t, this.byId) && rp.visibleAt(h, t) && !(skip && skip.includes(h))) out.push(h);
     }
     return out;
   }
@@ -183,3 +183,6 @@ function esc(s) { return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<"
 export function isDeath(ev) {
   return ev.kind === "Destroyed" || (ev.kind === "Message" && /^Has been destroyed\.?$/.test(ev.text || ""));
 }
+
+// BDF and PALA against each other: neutral scenery and teammates give nobody away (Tomo, 11-07)
+function enemies(a, b) { return a !== b && (a === "Boscali" || a === "Primeva") && (b === "Boscali" || b === "Primeva"); }

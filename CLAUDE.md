@@ -131,7 +131,9 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   line changes to a red line"): from RadarLockedBy where the file has it (held 4 s against blinking), else a lock
   whose unit's radar list has the target too; in green's gaps, over the radar line's dashes. Radar lines lemon yellow, sight lines light blue (the game's visual range cyan)
   and passive lines mid grey (#8a9096, darker 10-28 to keep apart from the white), with the same dash, also in green's gaps (Tomo, 10-26 and 10-27); no grey back along a
-  yellow line, as in the game's warning lines; with a colour key in Settings in two groups (Tomo 10-29: OWN SENSORS, ENEMY SENSORS); the unit panel shows DATA LINK with a RADAR
+  yellow line, as in the game's warning lines; with a colour key in Settings in two groups (Tomo 10-29: OWN SENSORS, ENEMY SENSORS); SELECTED follows the key (Tomo 11-07): radar and
+  optical lines are the enemies that can see the selected unit, passive the radars it hears; every detection line joins a
+  BDF and a PALA unit (the recorder's lists also hold neutral scenery and teammates, which inform no data link); the unit panel shows DATA LINK with a RADAR
   row and a SIGHT row under it naming what sees the unit.
 - **Chat and activity lines** (Tomo 11-04; recorder fd67c2b8c8aa, names trimmed in f7664f8777ea, not on the servers
   yet; "from now onward", old replays list victims only). Every machine field sits in a `[kind key=value ...]` header, values percent-encoded (`%`, space, `]`, `=`,
