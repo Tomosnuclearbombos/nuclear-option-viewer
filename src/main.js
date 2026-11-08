@@ -19,6 +19,7 @@ import { UnitList } from "./ui/unitlist.js";
 import { Inspector } from "./ui/inspector.js";
 import { Tour, tourSeen } from "./ui/tour.js";
 import { Feed } from "./ui/feed.js";
+import { Atis } from "./ui/atis.js";
 import { CameraSliders } from "./ui/camsliders.js";
 import { loadSettings, SettingsPanel, RESOLUTION, FPS } from "./ui/settings.js";
 import { LiveFeed, LIVE_BUFFER_S, LIVE_PVE, LIVE_FEEDS, liveMatch } from "./live.js";
@@ -303,6 +304,7 @@ if (viewer) viewer.onFrame = (now) => {
   unitList.update(t, now);
   inspector.update(t, now, viewer.groundAt);
   if (feed) feed.update(t);
+  if (atis) atis.update(rp, t, viewer.camera);
   const b = unitList.hovered >= 0 ? unitList.hovered : state.sel;   // that unit's time in the mission
   timeline.band = b >= 0 ? [rp.o.t0[b], rp.o.t1[b]] : null;
   timeline.draw(t);
@@ -484,6 +486,7 @@ $("settings-btn").addEventListener("click", () => toggleSettings());
 
 // ---- settings --------------------------------------------------------------------------------------------
 let feed = null;   // made below, once the settings panel is
+const atis = $("atis") ? new Atis($("atis")) : null;   // the live weather (a page cached from before has no panel)
 const FEED_SETTINGS = /^(chat|ranks|swears|feedTab|feedFilters|ev[A-Z]\w*|f(Air|Ground|Building|Sea|Weapon|Bdf|Pala|Players))$/;
 const LINE_WIDTH = { thin: 1, medium: 2, thick: 3.5 };   // the lock and detection lines, in CSS pixels
 // puts one setting into effect; every one applies straight away except smooth edges (next time the page opens)
@@ -661,6 +664,7 @@ const OVER_SAYS = "The match is over. Its full replay goes up in the Discord #re
 function startLive(url) {
   if (!viewer) { showStartError(NO_WEBGL); return; }
   showProgress(0, "CONNECTING TO THE LIVE MATCH");
+  if (atis) atis.setFeed(url);
   live = new LiveFeed(url, {
     onBuild: liveBuild,
     onStatus: liveStatus,
@@ -672,6 +676,7 @@ function startLive(url) {
 }
 function stopLive() {
   live.stop();
+  if (atis) atis.setFeed(null);
   live = null;
   Object.assign(onAir, { match: null, status: "", end: false, told: false, stuck: 0 });
   $("live").hidden = true;

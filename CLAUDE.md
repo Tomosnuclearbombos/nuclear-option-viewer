@@ -49,6 +49,11 @@ Owner: Tomo (GitHub `Tomosnuclearbombos`). Started 2026-10-14 from a plan he app
   10-31 "if it is only a minute I think it's fine", 11-02 "Remove the block" (S2's old --pvp-list block). Units, all on
   the pinned runner ~/nov-live/pin-69ee594: nov-live-s1 and nov-live-s4 on the PvP PC (/home/container/tacview,
   /home/arena/tacview), nov-live-s2 and nov-live-s3 on the PvE box (box changes go through Server Ops).
+- **ATIS (Tomo 11-08, from 2.4.0 on 09 Nov, PvE+ and PvP+):** the plugin writes <tacview>/weather.json every 10 s;
+  tools/live_weather.py (user units nov-weather-s1 on the PvP PC, nov-weather-s2 on the box) publishes the last 5
+  minutes of it as /srv/nov-live/sN/weather.json {"v":1,"samples":[...]}; src/ui/atis.js shows the sample for the
+  playback time under the mission name (on phones a plate under the keys): letter, wind with an arrow turned to the
+  camera (windToDeg, 0 = +V), turbulence, sky, outlook. Hidden with no file or running false.
 - **Delay:** about a minute. The publisher holds every piece until it is 45 s old (enforced on the publishing side);
   the viewer plays 15 s behind the newest piece. In the player it just says LIVE, no delay wording (Tomo).
 - **Hosting:** his OVH VPS (Caddy) serves the pieces. Pieces are deleted about 10 minutes after the match ends; replays

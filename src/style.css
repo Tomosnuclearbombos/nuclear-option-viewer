@@ -549,3 +549,19 @@ body:has(#cam:not([hidden])) .chat-over { bottom: 136px; }   /* above the camera
   #top .key { padding: 0 5px; font-size: 11px; }
   .top-keys { gap: 4px; }
 }
+
+/* ---- ATIS: the live weather (src/ui/atis.js), under the mission's name -------------------------------------------- */
+.atis { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--green-faint); font-size: 13px; color: var(--green); }
+.atis-row { display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+.atis-letter { color: var(--green); text-shadow: var(--glow); font-weight: 700; }
+.atis-arrow { width: 18px; height: 18px; fill: #00ffff; flex: none; transition: transform 0.2s linear; }
+.atis-sky { margin-top: 2px; color: var(--green-dim); }
+.atis-outlook { margin-top: 2px; font-size: 12px; color: var(--green-dim); }
+@media (max-width: 620px) {
+  /* a phone has no room for the mission's name: with live weather, the plate holds just the ATIS, under the keys */
+  header#top:has(#atis:not([hidden])) { flex-wrap: wrap; }
+  header#top:has(#atis:not([hidden])) .mission { display: block; order: 2; padding: 5px 8px; max-width: none; }
+  header#top:has(#atis:not([hidden])) .mission-name, header#top:has(#atis:not([hidden])) .mission-facts { display: none; }
+  .atis { margin-top: 0; padding-top: 0; border-top: 0; font-size: 11px; }
+  .atis-outlook { font-size: 11px; }
+}
